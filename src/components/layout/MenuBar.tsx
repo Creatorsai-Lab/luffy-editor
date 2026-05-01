@@ -1,0 +1,61 @@
+import {
+  Type, Square, ArrowRight, Code2, Table2, Image,
+  Sparkles, Layers, Settings2, Shuffle, Upload
+} from 'lucide-react'
+import { useEditorStore } from '../../store/editorStore'
+import type { ActiveTool, ActivePanel } from '../../types/editor'
+import { cn } from '../../utils/cn'
+
+interface ToolItem {
+  icon: React.ReactNode
+  label: string
+  tool?: ActiveTool
+  panel: ActivePanel
+  separator?: boolean
+}
+
+const TOOLS: ToolItem[] = [
+  { icon: <Type size={14} />,       label: 'Text',       tool: 'text',           panel: 'text' },
+  { icon: <Square size={14} />,     label: 'Shapes',     tool: 'shape-rect',     panel: 'shapes' },
+  { icon: <ArrowRight size={14} />, label: 'Arrow',      tool: 'arrow',          panel: 'arrows' },
+  { icon: <Code2 size={14} />,      label: 'Code',       tool: 'code',           panel: 'code' },
+  { icon: <Table2 size={14} />,     label: 'Table',      tool: 'table',          panel: 'table' },
+  { icon: <Upload size={14} />,     label: 'Upload',     tool: 'image',          panel: 'upload', separator: true },
+  { icon: <Sparkles size={14} />,   label: 'Animations',                         panel: 'animations', separator: true },
+  { icon: <Shuffle size={14} />,    label: 'Transitions',                        panel: 'transitions' },
+  { icon: <Layers size={14} />,     label: 'Layers',                             panel: 'layers' },
+  { icon: <Settings2 size={14} />,  label: 'Background',                         panel: 'background' },
+]
+
+export default function MenuBar() {
+  const { activeTool, activePanel, setActiveTool, setActivePanel, project } = useEditorStore()
+
+  if (!project) return (
+    <div className="h-9 bg-editor-surface border-b border-editor-border" />
+  )
+
+  return (
+    <div className="h-9 bg-editor-surface border-b border-editor-border flex items-center px-2 gap-0.5 flex-none nodrag overflow-x-auto no-scrollbar">
+      {TOOLS.map((item, i) => (
+        <div key={i} className="flex items-center">
+          {item.separator && <div className="w-px h-4 bg-editor-border mx-1" />}
+          <button
+            onClick={() => {
+              if (item.tool) setActiveTool(item.tool)
+              setActivePanel(activePanel === item.panel ? null : item.panel)
+            }}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs transition-colors whitespace-nowrap',
+              (activePanel === item.panel)
+                ? 'bg-editor-accent-dim text-editor-accent'
+                : 'text-editor-secondary hover:text-editor-text hover:bg-editor-hover'
+            )}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}

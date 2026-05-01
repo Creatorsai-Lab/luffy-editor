@@ -1,0 +1,190 @@
+// ─── Element subtypes ────────────────────────────────────────────────────────
+
+export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table'
+export type ShapeType     = 'rect' | 'circle' | 'triangle' | 'star'
+export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'typewriter' | 'drawPath' | 'spin'
+export type EasingType    = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'bounce'
+export type AlignType     = 'left' | 'center' | 'right'
+export type ArrowHeadType = 'none' | 'end' | 'start' | 'both'
+export type SlideDir      = 'left' | 'right' | 'up' | 'down'
+export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom'
+export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated'
+export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
+export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'arrow' | 'code' | 'table' | 'image'
+export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'animations' | 'background' | 'layers' | 'transitions' | null
+
+// ─── Animation ───────────────────────────────────────────────────────────────
+
+export interface ElementAnimation {
+  id: string
+  type: AnimationType
+  startTime: number   // seconds from scene start
+  duration: number    // seconds
+  delay: number       // seconds
+  easing: EasingType
+  params?: {
+    direction?: SlideDir
+    distance?: number
+  }
+}
+
+// ─── Base element ─────────────────────────────────────────────────────────────
+
+export interface BaseElement {
+  id: string
+  type: ElementType
+  x: number
+  y: number
+  width: number
+  height: number
+  rotation: number
+  opacity: number
+  zIndex: number
+  locked: boolean
+  visible: boolean
+  name: string
+  animations: ElementAnimation[]
+}
+
+// ─── Concrete elements ────────────────────────────────────────────────────────
+
+export interface TextElement extends BaseElement {
+  type: 'text'
+  content: string
+  fontSize: number
+  fontFamily: string
+  fontWeight: FontWeight
+  italic: boolean
+  color: string
+  align: AlignType
+  lineHeight: number
+  letterSpacing: number
+  underline: boolean
+}
+
+export interface ShapeElement extends BaseElement {
+  type: 'shape'
+  shapeType: ShapeType
+  fill: string
+  stroke: string
+  strokeWidth: number
+  cornerRadius: number
+}
+
+export interface ArrowElement extends BaseElement {
+  type: 'arrow'
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  stroke: string
+  strokeWidth: number
+  arrowHead: ArrowHeadType
+  dashed: boolean
+}
+
+export interface CodeElement extends BaseElement {
+  type: 'code'
+  code: string
+  language: string
+  fontSize: number
+  showLineNumbers: boolean
+}
+
+export interface ImageElement extends BaseElement {
+  type: 'image'
+  src: string
+  assetId: string
+  cornerRadius: number
+}
+
+export interface TableElement extends BaseElement {
+  type: 'table'
+  rows: number
+  cols: number
+  cells: string[][]
+  cellWidth: number
+  cellHeight: number
+  borderColor: string
+  borderWidth: number
+  headerBg: string
+  cellBg: string
+  textColor: string
+  fontSize: number
+  showHeader: boolean
+}
+
+export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElement | ImageElement | TableElement
+
+// ─── Background ───────────────────────────────────────────────────────────────
+
+export interface SolidBg     { type: 'solid';    color: string }
+export interface GradientBg  { type: 'gradient'; from: string; to: string; angle: number }
+export interface GridBg      { type: 'grid';     bgColor: string; lineColor: string; cellSize: number }
+export interface DotsBg      { type: 'dots';     bgColor: string; dotColor: string; spacing: number; radius: number }
+export interface AnimatedBg  { type: 'animated'; variant: 'gradient-flow' | 'particles' | 'wave'; colors: string[]; speed: number }
+export type Background = SolidBg | GradientBg | GridBg | DotsBg | AnimatedBg
+
+// ─── Scene ────────────────────────────────────────────────────────────────────
+
+export interface SceneTransition {
+  type: TransitionType
+  duration: number
+  direction?: SlideDir
+}
+
+export interface Scene {
+  id: string
+  name: string
+  duration: number
+  background: Background
+  elements: EditorElement[]
+  transition: SceneTransition
+}
+
+// ─── Project ──────────────────────────────────────────────────────────────────
+
+export interface AssetMeta {
+  id: string
+  filename: string
+  path: string
+  type: 'image' | 'video'
+  name: string
+}
+
+export interface Project {
+  id: string
+  name: string
+  width: number
+  height: number
+  fps: number
+  scenes: Scene[]
+  assets: AssetMeta[]
+  createdAt: number
+  updatedAt: number
+}
+
+// ─── Canvas size presets ──────────────────────────────────────────────────────
+
+export interface CanvasPreset {
+  label: string
+  width: number
+  height: number
+}
+
+export const CANVAS_PRESETS: CanvasPreset[] = [
+  { label: 'Horizontal HD', width: 1920, height: 1080 },
+  { label: 'Vertical HD',   width: 1080, height: 1920 },
+  { label: 'Square HD',     width: 1080, height: 1080 },
+  { label: '4K',            width: 3840, height: 2160 }
+]
+
+export const FONT_FAMILIES = [
+  'Segoe UI', 'Arial', 'Georgia', 'Courier New', 'Impact',
+  'Verdana', 'Trebuchet MS', 'Tahoma', 'Times New Roman', 'Consolas'
+]
+
+export const LANGUAGES = [
+  'javascript', 'typescript', 'python', 'rust', 'go', 'java',
+  'cpp', 'c', 'bash', 'sql', 'json', 'yaml', 'html', 'css', 'markdown'
+]

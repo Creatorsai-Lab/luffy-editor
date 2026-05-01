@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: #0f0f0f;
+  color: #e5e5e5;
+  font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* Thin scrollbars */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #404040; }
+
+/* Drag region for frameless window */
+.drag  { -webkit-app-region: drag; }
+.nodrag { -webkit-app-region: no-drag; }
+
+/* Input resets */
+input, textarea, select {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font: inherit;
+}
+
+input[type=range] { cursor: pointer; }
+input[type=color] { cursor: pointer; padding: 0; border: none; }
+
+/* Panel label */
+.label { font-size: 10px; color: #737373; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Konva canvas cursor overrides */
+.konva-selecting * { cursor: crosshair !important; }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
