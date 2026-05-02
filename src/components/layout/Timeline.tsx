@@ -19,11 +19,13 @@ const ANIM_COLORS: Record<string, string> = {
 export default function Timeline() {
   const {
     project, currentSceneId,
-    playhead, isPlaying, zoom,
+    playhead, isPlaying,
     addScene, setCurrentScene,
     setPlayhead, play, pause, stop,
-    setZoom, getTotalDuration, getSceneAtTime
+    getTotalDuration, getSceneAtTime
   } = useEditorStore()
+
+  const zoom = 1  // fixed — no manual zoom control
 
   const containerRef = useRef<HTMLDivElement>(null)
   const rafRef       = useRef<number>(0)
@@ -66,8 +68,10 @@ export default function Timeline() {
   }, [zoom, setPlayhead, getTotalDuration])
 
   if (!project) return (
-    <div className="h-28 bg-editor-surface border-t border-editor-border flex items-center justify-center">
-      <span className="text-xs text-editor-muted">Open or create a project to use the timeline.</span>
+    <div className="flex flex-col bg-editor-surface border-t border-editor-border flex-none" style={{ height: 120 }}>
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-editor-border">
+        <span className="text-xs text-editor-muted">Timeline</span>
+      </div>
     </div>
   )
 
@@ -102,16 +106,6 @@ export default function Timeline() {
         </span>
 
         <div className="flex-1" />
-
-        {/* Zoom */}
-        <span className="label">Zoom</span>
-        <input
-          type="range" min={0.3} max={4} step={0.1}
-          value={zoom}
-          onChange={e => setZoom(Number(e.target.value))}
-          className="w-20 accent-editor-accent"
-        />
-        <span className="text-xs text-editor-muted w-8">{(zoom * 100).toFixed(0)}%</span>
 
         <button
           onClick={addScene}

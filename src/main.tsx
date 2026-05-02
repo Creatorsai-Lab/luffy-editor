@@ -3,6 +3,26 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 
+// Provide a no-op stub when running outside Electron (e.g. plain browser dev tab)
+if (typeof window !== 'undefined' && !window.api) {
+  const noop = async () => {}
+  const noopNull = async () => null
+  ;(window as unknown as { api: unknown }).api = {
+    win:     { minimize: noop, maximize: noop, close: noop },
+    projects: {
+      list:   async () => [],
+      create: async (name: string) => ({ id: `mem_${Date.now()}`, name, folder: '', createdAt: Date.now(), updatedAt: Date.now() }),
+      save:   noop,
+      load:   async () => { throw new Error('not available in browser') },
+      delete: noop,
+      rename: noop
+    },
+    assets:  { upload: async () => ({ id: '', filename: '', path: '' }), list: async () => [] },
+    dialog:  { openFile: noopNull, saveVideo: noopNull },
+    shell:   { openPath: async () => '' }
+  }
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

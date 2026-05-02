@@ -1,136 +1,177 @@
-import { useRef, useEffect, useCallback, useState } from 'react'
-import { Stage, Layer, Rect, Shape, Group, Transformer } from 'react-konva'
+import React, { useRef, useEffect, useCallback, useState } from 'react'
+import { Stage, Layer, Shape, Transformer } from 'react-konva'
 import type Konva from 'konva'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
-import {
-  makeText, makeShape, makeArrow, makeCode, makeTable, makeImage
-} from '../../utils/defaults'
-import type { Background, EditorElement } from '../../types/editor'
+import { registerStage } from '../../engine/stageRegistry'
+import { makeText, makeShape, makeArrow, makeCode, makeTable } from '../../utils/defaults'
+import type { Background } from '../../types/editor'
 import CanvasElement from './CanvasElement'
-
-const MIN_ZOOM = 0.1
-const MAX_ZOOM = 3
 
 export default function EditorCanvas() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const stageRef     = useRef<Konva.Stage>(null)
-  const trRef        = useRef<Konva.Transformer>(null)
-  const animRef      = useRef<number>(0)
-  const bgShapeRef   = useRef<Konva.Shape>(null)
+  const stageRef     = useRef<Konva.Stage | null>(null)
+  const trRef        = useRef<Konva.Transformer | null>(null)
+  const animFrameRef = useRef<number>(0)
+  const bgShapeRef   = useRef<Konva.Shape | null>(null)
 
-  const [stageSize, setStageSize]   = useState({ w: 800, h: 450 })
-  const [stageScale, setStageScale] = useState(1)
-  const [stagePos, setStagePos]     = useState({ x: 0, y: 0 })
+  // Computed display size (project coords → screen pixels)
+  const [scale,    setScale]    = useState(1)
+  const [canvasW,  setCanvasW]  = useState(800)
+  const [canvasH,  setCanvasH]  = useState(450)
+  const [offsetX,  setOffsetX]  = useState(0)
+  const [offsetY,  setOffsetY]  = useState(0)
+
   const [drawingArrow, setDrawingArrow] = useState<{x1:number;y1:number;x2:number;y2:number}|null>(null)
 
   const {
     project, currentSceneId, selectedIds,
-    playhead, isPlaying, activeTool, zoom,
+    playhead, isPlaying, activeTool,
     addElement, selectElement, deselectAll,
-    setActiveTool, setStageRef, openCodeModal
+    removeElement, setActiveTool, openCodeModal
   } = useEditorStore()
 
   const currentScene = project?.scenes.find(s => s.id === currentSceneId) ?? null
 
-  // Register stage ref with store (for export)
+  // ── Register stage in module registry (never stored in Zustand/Immer) ─────────
   useEffect(() => {
-    if (stageRef.current) setStageRef(stageRef as React.RefObject<unknown>)
-  }, [stageRef.current])
+    registerStage(stageRef.current)
+    return () => registerStage(null)
+  })
 
-  // Fit canvas to container
+  // ── Fit slide canvas to available space ────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current || !project) return
-    const fit = () => {
-      const cw = containerRef.current!.clientWidth  - 40
-      const ch = containerRef.current!.clientHeight - 40
-      const pw = project.width, ph = project.height
-      const scale = Math.min(cw / pw, ch / ph)
-      const sw = pw * scale, sh = ph * scale
-      setStageSize({ w: sw, h: sh })
-      setStageScale(scale)
-      setStagePos({ x: (containerRef.current!.clientWidth - sw) / 2, y: (containerRef.current!.clientHeight - sh) / 2 })
+    const el = containerRef.current
+
+    const recalc = () => {
+      if (!containerRef.current) return
+      const PAD   = 32
+      const cw    = containerRef.current.clientWidth  - PAD * 2
+      const ch    = containerRef.current.clientHeight - PAD * 2
+      const pw    = project.width
+      const ph    = project.height
+      const s     = Math.min(cw / pw, ch / ph, 1)   // never upscale beyond 1:1
+      const dw    = Math.round(pw * s)
+      const dh    = Math.round(ph * s)
+      const ox    = Math.round((containerRef.current.clientWidth  - dw) / 2)
+      const oy    = Math.round((containerRef.current.clientHeight - dh) / 2)
+
+      console.log(`[Canvas] project=${pw}×${ph}  container=${containerRef.current.clientWidth}×${containerRef.current.clientHeight}  scale=${s.toFixed(3)}  display=${dw}×${dh}  offset=(${ox},${oy})`)
+
+      setScale(s)
+      setCanvasW(dw)
+      setCanvasH(dh)
+      setOffsetX(ox)
+      setOffsetY(oy)
     }
-    fit()
-    const ro = new ResizeObserver(fit)
-    ro.observe(containerRef.current)
+
+    recalc()
+    const ro = new ResizeObserver(recalc)
+    ro.observe(el)
     return () => ro.disconnect()
   }, [project?.width, project?.height])
 
-  // Animated background rAF
+  // ── Animated background rAF ────────────────────────────────────────────────────
   useEffect(() => {
-    if (currentScene?.background.type !== 'animated') { cancelAnimationFrame(animRef.current); return }
-    const draw = () => {
-      bgShapeRef.current?.getLayer()?.batchDraw()
-      animRef.current = requestAnimationFrame(draw)
+    if (currentScene?.background.type !== 'animated') {
+      cancelAnimationFrame(animFrameRef.current)
+      return
     }
-    animRef.current = requestAnimationFrame(draw)
-    return () => cancelAnimationFrame(animRef.current)
+    const tick = () => {
+      bgShapeRef.current?.getLayer()?.batchDraw()
+      animFrameRef.current = requestAnimationFrame(tick)
+    }
+    animFrameRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(animFrameRef.current)
   }, [currentScene?.background.type])
 
-  // Sync transformer with selected nodes
+  // ── Sync Transformer to selected nodes ────────────────────────────────────────
   useEffect(() => {
     if (!trRef.current || !stageRef.current) return
     const nodes = selectedIds
       .map(id => stageRef.current!.findOne(`#${id}`) as Konva.Node | null)
-      .filter(Boolean) as Konva.Node[]
+      .filter((n): n is Konva.Node => n !== null)
     trRef.current.nodes(nodes)
     trRef.current.getLayer()?.batchDraw()
   }, [selectedIds])
 
-  // ── Coordinate helpers ─────────────────────────────────────────────────────
+  // ── Global keyboard shortcuts ──────────────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        selectedIds.forEach(id => removeElement(id))
+      }
+      if (e.key === 'Escape') {
+        deselectAll()
+        setActiveTool('select')
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectedIds, removeElement, deselectAll, setActiveTool])
 
-  function toCanvasCoords(clientX: number, clientY: number) {
-    if (!containerRef.current) return { x: 0, y: 0 }
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = (clientX - rect.left - stagePos.x) / stageScale
-    const y = (clientY - rect.top  - stagePos.y) / stageScale
-    return { x, y }
+  // ── Coordinate helper: client → project space ─────────────────────────────────
+  // Uses the stage canvas DOM element's own bounding rect (handles CSS offset correctly)
+  function toProjectCoords(clientX: number, clientY: number) {
+    const dom = stageRef.current?.container()
+    if (!dom) return { x: 0, y: 0 }
+    const r = dom.getBoundingClientRect()
+    return {
+      x: (clientX - r.left) / scale,
+      y: (clientY - r.top)  / scale
+    }
   }
 
-  // ── Canvas click → add element ─────────────────────────────────────────────
-
+  // ── Stage event handlers ───────────────────────────────────────────────────────
   function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
-    const target = e.target
-    // Clicked on empty canvas
-    if (target === e.target.getStage() || target.name() === 'bg') {
+    if (e.target === e.target.getStage() || e.target.name() === 'bg') {
       deselectAll()
     }
-
     if (!currentScene) return
-    const { x, y } = toCanvasCoords(e.evt.clientX, e.evt.clientY)
+    const { x, y } = toProjectCoords(e.evt.clientX, e.evt.clientY)
 
     switch (activeTool) {
-      case 'text': {
+      case 'text':
         addElement(makeText(x, y))
         setActiveTool('select')
         break
+      case 'shape-rect':
+      case 'shape-circle':
+      case 'shape-triangle':
+      case 'shape-star': {
+        const t = activeTool.replace('shape-', '') as 'rect' | 'circle' | 'triangle' | 'star'
+        addElement(makeShape(t, x - 60, y - 60))
+        setActiveTool('select')
+        break
       }
-      case 'shape-rect':     addElement(makeShape('rect',     x - 60, y - 60)); setActiveTool('select'); break
-      case 'shape-circle':   addElement(makeShape('circle',   x - 60, y - 60)); setActiveTool('select'); break
-      case 'shape-triangle': addElement(makeShape('triangle', x - 60, y - 60)); setActiveTool('select'); break
-      case 'shape-star':     addElement(makeShape('star',     x - 60, y - 60)); setActiveTool('select'); break
-      case 'code':           openCodeModal(); setActiveTool('select'); break
-      case 'table':          addElement(makeTable(x - 180, y - 60)); setActiveTool('select'); break
+      case 'code':
+        openCodeModal()
+        setActiveTool('select')
+        break
+      case 'table':
+        addElement(makeTable(x - 180, y - 60))
+        setActiveTool('select')
+        break
     }
   }
 
-  // ── Arrow drawing ──────────────────────────────────────────────────────────
-
   function handleMouseDown(e: Konva.KonvaEventObject<MouseEvent>) {
     if (activeTool !== 'arrow') return
-    const { x, y } = toCanvasCoords(e.evt.clientX, e.evt.clientY)
+    const { x, y } = toProjectCoords(e.evt.clientX, e.evt.clientY)
     setDrawingArrow({ x1: x, y1: y, x2: x, y2: y })
   }
 
   function handleMouseMove(e: Konva.KonvaEventObject<MouseEvent>) {
-    if (!drawingArrow || activeTool !== 'arrow') return
-    const { x, y } = toCanvasCoords(e.evt.clientX, e.evt.clientY)
+    if (!drawingArrow) return
+    const { x, y } = toProjectCoords(e.evt.clientX, e.evt.clientY)
     setDrawingArrow(a => a ? { ...a, x2: x, y2: y } : null)
   }
 
   function handleMouseUp() {
-    if (!drawingArrow || activeTool !== 'arrow') return
+    if (!drawingArrow) return
     const { x1, y1, x2, y2 } = drawingArrow
     if (Math.abs(x2 - x1) > 5 || Math.abs(y2 - y1) > 5) {
       addElement(makeArrow(x1, y1, x2, y2))
@@ -139,14 +180,24 @@ export default function EditorCanvas() {
     setActiveTool('select')
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────────
 
   if (!project || !currentScene) {
     return (
-      <div ref={containerRef} className="flex-1 flex items-center justify-center bg-editor-bg">
-        <p className="text-editor-muted text-sm">Create or open a project to start editing.</p>
+      <div ref={containerRef} className="flex-1 flex items-center justify-center bg-[#0a0a0a]">
+        <div className="w-5 h-5 border-2 border-editor-accent border-t-transparent rounded-full animate-spin" />
       </div>
     )
+  }
+
+  // Compute scene-local time for animations
+  let localTime = 0
+  {
+    let acc = 0
+    for (const sc of project.scenes) {
+      if (sc.id === currentSceneId) { localTime = playhead - acc; break }
+      acc += sc.duration
+    }
   }
 
   const sortedEls = [...currentScene.elements].sort((a, b) => a.zIndex - b.zIndex)
@@ -154,112 +205,111 @@ export default function EditorCanvas() {
   return (
     <div
       ref={containerRef}
-      className="flex-1 relative overflow-hidden bg-editor-bg"
-      style={{ cursor: activeTool !== 'select' ? 'crosshair' : 'default' }}
+      className="flex-1 relative overflow-hidden"
+      style={{
+        background: '#0a0a0a',
+        cursor: activeTool !== 'select' ? 'crosshair' : 'default'
+      }}
     >
-      <Stage
-        ref={stageRef}
-        width={stageSize.w}
-        height={stageSize.h}
-        x={stagePos.x}
-        y={stagePos.y}
-        scaleX={stageScale}
-        scaleY={stageScale}
-        onClick={handleStageClick}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        style={{ position: 'absolute' }}
+      {/* Slide canvas — positioned by CSS, NOT by Konva x/y props */}
+      <div
+        style={{
+          position: 'absolute',
+          left: offsetX,
+          top:  offsetY,
+          width:  canvasW,
+          height: canvasH,
+          boxShadow: '0 4px 32px rgba(0,0,0,0.6)',
+          borderRadius: 2
+        }}
       >
-        {/* Background layer */}
-        <Layer name="bg-layer">
-          <BackgroundShape
-            ref={bgShapeRef}
-            bg={currentScene.background}
-            w={project.width}
-            h={project.height}
-            time={playhead}
-          />
-        </Layer>
-
-        {/* Elements layer */}
-        <Layer name="elements-layer">
-          {sortedEls.filter(el => el.visible).map(el => {
-            // Compute scene-local time for animation
-            let localTime = 0
-            if (isPlaying || true) {
-              let acc = 0
-              for (const sc of project.scenes) {
-                if (sc.id === currentSceneId) { localTime = playhead - acc; break }
-                acc += sc.duration
-              }
-            }
-            const animProps = isPlaying ? getAnimatedProps(el, localTime) : null
-
-            return (
-              <CanvasElement
-                key={el.id}
-                element={el}
-                animProps={animProps}
-                isSelected={selectedIds.includes(el.id)}
-                onSelect={(multi) => {
-                  if (!el.locked) selectElement(el.id, multi)
-                }}
-                onDblClick={() => {
-                  if (el.type === 'code') openCodeModal(el.id)
-                }}
-                stageScale={stageScale}
-              />
-            )
-          })}
-        </Layer>
-
-        {/* Selection / Transformer layer */}
-        <Layer name="tr-layer">
-          <Transformer
-            ref={trRef}
-            rotateEnabled
-            enabledAnchors={['top-left','top-center','top-right','middle-right','bottom-right','bottom-center','bottom-left','middle-left']}
-            boundBoxFunc={(old, box) => ({ ...box, width: Math.max(10, box.width), height: Math.max(10, box.height) })}
-            anchorSize={7}
-            anchorFill="#fff"
-            anchorStroke="#6366f1"
-            anchorStrokeWidth={1.5}
-            borderStroke="#6366f1"
-            borderStrokeWidth={1.5}
-          />
-
-          {/* Live arrow preview while drawing */}
-          {drawingArrow && (
-            <Shape
-              sceneFunc={(ctx, shape) => {
-                if (!drawingArrow) return
-                const { x1, y1, x2, y2 } = drawingArrow
-                ctx.beginPath()
-                ctx.moveTo(x1, y1)
-                ctx.lineTo(x2, y2)
-                ctx.strokeShape(shape)
-              }}
-              stroke="#6366f1"
-              strokeWidth={2}
-              dash={[4, 4]}
-              listening={false}
+        <Stage
+          ref={stageRef}
+          width={canvasW}
+          height={canvasH}
+          scaleX={scale}
+          scaleY={scale}
+          onClick={handleStageClick}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+        >
+          {/* Background */}
+          <Layer>
+            <BackgroundShape
+              ref={bgShapeRef}
+              bg={currentScene.background}
+              w={project.width}
+              h={project.height}
+              time={playhead}
             />
-          )}
-        </Layer>
-      </Stage>
+          </Layer>
 
-      {/* Zoom indicator */}
-      <div className="absolute bottom-3 right-3 text-xs text-editor-muted bg-editor-surface px-2 py-1 rounded border border-editor-border">
-        {Math.round(stageScale * 100)}%
+          {/* Elements */}
+          <Layer>
+            {sortedEls.filter(el => el.visible).map(el => {
+              const animProps = getAnimatedProps(el, localTime)
+              return (
+                <CanvasElement
+                  key={el.id}
+                  element={el}
+                  animProps={isPlaying ? animProps : null}
+                  isSelected={selectedIds.includes(el.id)}
+                  onSelect={multi => { if (!el.locked) selectElement(el.id, multi) }}
+                  onDblClick={() => { if (el.type === 'code') openCodeModal(el.id) }}
+                  stageScale={scale}
+                />
+              )
+            })}
+          </Layer>
+
+          {/* Transformer + arrow preview */}
+          <Layer>
+            <Transformer
+              ref={trRef}
+              rotateEnabled
+              enabledAnchors={['top-left','top-center','top-right','middle-right','bottom-right','bottom-center','bottom-left','middle-left']}
+              boundBoxFunc={(_old, box) => ({
+                ...box,
+                width:  Math.max(10, box.width),
+                height: Math.max(10, box.height)
+              })}
+              anchorSize={7}
+              anchorFill="#fff"
+              anchorStroke="#6366f1"
+              anchorStrokeWidth={1.5}
+              borderStroke="#6366f1"
+              borderStrokeWidth={1.5}
+            />
+
+            {drawingArrow && (
+              <Shape
+                sceneFunc={(ctx, shape) => {
+                  const { x1, y1, x2, y2 } = drawingArrow
+                  ctx.beginPath()
+                  ctx.moveTo(x1, y1)
+                  ctx.lineTo(x2, y2)
+                  ctx.strokeShape(shape)
+                }}
+                stroke="#6366f1"
+                strokeWidth={2}
+                dash={[4, 4]}
+                listening={false}
+              />
+            )}
+          </Layer>
+        </Stage>
+      </div>
+
+      {/* Scale indicator */}
+      <div className="absolute bottom-2 right-3 text-xs text-editor-muted bg-editor-surface/80 px-2 py-0.5 rounded border border-editor-border">
+        {project.width}×{project.height} · {Math.round(scale * 100)}%
       </div>
     </div>
   )
 }
 
-// ── Background rendering ───────────────────────────────────────────────────────
-
-import React from 'react'
+// ── Background renderer ────────────────────────────────────────────────────────
 
 const BackgroundShape = React.forwardRef<Konva.Shape, {
   bg: Background; w: number; h: number; time: number
@@ -268,14 +318,13 @@ const BackgroundShape = React.forwardRef<Konva.Shape, {
     const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
 
     if (bg.type === 'solid') {
-      ctx.fillStyle = bg.color
-      ctx.fillRect(0, 0, w, h)
+      raw.fillStyle = bg.color
+      raw.fillRect(0, 0, w, h)
     } else if (bg.type === 'gradient') {
       const angle = (bg.angle * Math.PI) / 180
-      const grd   = raw.createLinearGradient(
-        w / 2 - Math.cos(angle) * w / 2, h / 2 - Math.sin(angle) * h / 2,
-        w / 2 + Math.cos(angle) * w / 2, h / 2 + Math.sin(angle) * h / 2
-      )
+      const cx = w / 2, cy = h / 2
+      const dx = Math.cos(angle) * w / 2, dy = Math.sin(angle) * h / 2
+      const grd = raw.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy)
       grd.addColorStop(0, bg.from)
       grd.addColorStop(1, bg.to)
       raw.fillStyle = grd
@@ -284,7 +333,7 @@ const BackgroundShape = React.forwardRef<Konva.Shape, {
       raw.fillStyle = bg.bgColor
       raw.fillRect(0, 0, w, h)
       raw.strokeStyle = bg.lineColor
-      raw.lineWidth   = 1
+      raw.lineWidth = 1
       for (let x = 0; x <= w; x += bg.cellSize) {
         raw.beginPath(); raw.moveTo(x, 0); raw.lineTo(x, h); raw.stroke()
       }
@@ -295,11 +344,10 @@ const BackgroundShape = React.forwardRef<Konva.Shape, {
       raw.fillStyle = bg.bgColor
       raw.fillRect(0, 0, w, h)
       raw.fillStyle = bg.dotColor
-      for (let x = bg.spacing / 2; x < w; x += bg.spacing) {
+      for (let x = bg.spacing / 2; x < w; x += bg.spacing)
         for (let y = bg.spacing / 2; y < h; y += bg.spacing) {
           raw.beginPath(); raw.arc(x, y, bg.radius, 0, Math.PI * 2); raw.fill()
         }
-      }
     } else if (bg.type === 'animated') {
       drawAnimatedBg(raw, time, w, h, bg.colors, bg.variant, bg.speed)
     }

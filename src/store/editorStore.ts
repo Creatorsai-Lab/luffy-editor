@@ -25,7 +25,6 @@ interface EditorState {
   previewOpen:       boolean
   exportOpen:        boolean
   exportProgress:    number
-  stageRef:          React.RefObject<unknown> | null
 }
 
 interface EditorActions {
@@ -79,7 +78,6 @@ interface EditorActions {
   setPreviewOpen:   (v: boolean) => void
   setExportOpen:    (v: boolean) => void
   setExportProgress:(v: number) => void
-  setStageRef:      (ref: React.RefObject<unknown>) => void
 
   // Assets
   addAsset:         (a: AssetMeta) => void
@@ -113,7 +111,6 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       previewOpen:      false,
       exportOpen:       false,
       exportProgress:   0,
-      stageRef:         null,
 
       // ── Project ────────────────────────────────────────────────────────────
       loadProject: (project) => set(s => {
@@ -347,7 +344,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       setPreviewOpen:   (v) => set(s => { s.previewOpen = v }),
       setExportOpen:    (v) => set(s => { s.exportOpen = v }),
       setExportProgress:(v) => set(s => { s.exportProgress = v }),
-      setStageRef:      (r) => set(s => { s.stageRef = r as unknown }),
+
       markDirty:        ()  => set(s => { s.isDirty = true }),
       markClean:        ()  => set(s => { s.isDirty = false }),
 

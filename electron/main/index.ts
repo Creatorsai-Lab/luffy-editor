@@ -1,4 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
+
+// Suppress GPU shader-cache permission errors on Windows
+app.commandLine.appendSwitch('disable-gpu-shader-cache')
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { mkdir, readFile, writeFile, copyFile, readdir, rm } from 'fs/promises'

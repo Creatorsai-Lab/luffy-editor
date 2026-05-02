@@ -13,16 +13,15 @@ import UploadPanel from '../panels/UploadPanel'
 export default function LeftSidebar() {
   const { project, activePanel, getSelectedEls } = useEditorStore()
 
-  if (!project) return (
-    <aside className="w-56 flex-none bg-editor-panel border-r border-editor-border" />
-  )
-
-  const selected = getSelectedEls()
+  const selected = project ? getSelectedEls() : []
   const firstEl  = selected[0]
 
-  // Determine which panel to show
   function renderPanel() {
-    // If an element is selected and no explicit panel overrides it, show element props
+    if (!project) {
+      return <HintPanel text="Open or create a project to start editing." />
+    }
+
+    // Auto-show element panel when element is selected and no explicit panel is active
     if (firstEl && !activePanel) {
       if (firstEl.type === 'text')   return <TextPanel />
       if (firstEl.type === 'shape')  return <ShapePanel />
@@ -30,6 +29,7 @@ export default function LeftSidebar() {
       if (firstEl.type === 'code')   return <CodePanel />
       if (firstEl.type === 'table')  return <TablePanel />
     }
+
     switch (activePanel) {
       case 'text':        return <TextPanel />
       case 'shapes':      return <ShapePanel />
@@ -41,7 +41,8 @@ export default function LeftSidebar() {
       case 'background':  return <BackgroundPanel />
       case 'layers':      return <LayersPanel />
       case 'transitions': return <TransitionPanel />
-      default:            return <EmptyPanel />
+      default:
+        return <HintPanel text="Select a tool from the menu bar to see options here." />
     }
   }
 
@@ -52,12 +53,10 @@ export default function LeftSidebar() {
   )
 }
 
-function EmptyPanel() {
+function HintPanel({ text }: { text: string }) {
   return (
     <div className="flex-1 flex items-center justify-center p-4">
-      <p className="text-xs text-editor-muted text-center leading-relaxed">
-        Select a tool from the menu bar to see options here.
-      </p>
+      <p className="text-xs text-editor-muted text-center leading-relaxed">{text}</p>
     </div>
   )
 }
