@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Settings2 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import type { Background, BgType, AnimatedBg } from '../../types/editor'
+import type { Background, BgType, AnimatedBg, GradientBg } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
 import { cn } from '../../utils/cn'
 
@@ -32,7 +32,7 @@ export default function BackgroundPanel() {
   function changeBgType(type: BgType) {
     const defaults: Record<BgType, Background> = {
       solid:    { type: 'solid', color: '#1a1a2e' },
-      gradient: { type: 'gradient', from: '#6366f1', to: '#0f0f1a', angle: 135 },
+      gradient: { type: 'gradient', from: '#6366f1', to: '#0f0f1a', angle: 135, fromStop: 0, toStop: 1 },
       grid:     { type: 'grid', bgColor: '#0f0f1a', lineColor: '#2a2a2a', cellSize: 40 },
       dots:     { type: 'dots', bgColor: '#0f0f1a', dotColor: '#2a2a2a', spacing: 24, radius: 1.5 },
       animated: { type: 'animated', variant: 'gradient-flow', colors: ['#6366f1', '#0f0f1a'], speed: 3 }
@@ -76,6 +76,14 @@ export default function BackgroundPanel() {
             <Row label="Angle">
               <Slider value={bg.angle} min={0} max={360} step={1}
                 onChange={v => setBg({ angle: v })} display={`${bg.angle}°`} />
+            </Row>
+            <Row label="Start Stop">
+              <Slider value={(bg as GradientBg).fromStop ?? 0} min={0} max={1} step={0.01}
+                onChange={v => setBg({ fromStop: v } as Partial<GradientBg>)} display={`${Math.round(((bg as GradientBg).fromStop ?? 0) * 100)}%`} />
+            </Row>
+            <Row label="End Stop">
+              <Slider value={(bg as GradientBg).toStop ?? 1} min={0} max={1} step={0.01}
+                onChange={v => setBg({ toStop: v } as Partial<GradientBg>)} display={`${Math.round(((bg as GradientBg).toStop ?? 1) * 100)}%`} />
             </Row>
           </>
         )}

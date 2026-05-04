@@ -23,7 +23,7 @@ export default function TopBar() {
     : '—'
 
   return (
-    <div className="h-10 bg-editor-panel border-b border-editor-border flex items-center gap-3 px-4 flex-none nodrag">
+    <div className="h-8 bg-[#171717] border-b border-editor-border flex items-center gap-3 px-4 flex-none nodrag">
       {/* Project name */}
       {project && editingName ? (
         <input

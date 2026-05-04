@@ -5,15 +5,18 @@ import { makeAnimation } from '../../utils/defaults'
 import { PanelHeader, Row, Slider } from './TextPanel'
 import { cn } from '../../utils/cn'
 
-const ANIM_TYPES: { label: string; value: AnimationType }[] = [
-  { label: 'Fade In',      value: 'fadeIn' },
-  { label: 'Fade Out',     value: 'fadeOut' },
-  { label: 'Slide In',     value: 'slideIn' },
-  { label: 'Slide Out',    value: 'slideOut' },
-  { label: 'Scale In',     value: 'scaleIn' },
-  { label: 'Scale Out',    value: 'scaleOut' },
-  { label: 'Typewriter',   value: 'typewriter' },
-  { label: 'Spin',         value: 'spin' }
+const ANIM_TYPES: { label: string; value: AnimationType; group?: string }[] = [
+  { label: 'Fade In',      value: 'fadeIn',      group: 'Entrance' },
+  { label: 'Slide In',     value: 'slideIn',     group: 'Entrance' },
+  { label: 'Scale In',     value: 'scaleIn',     group: 'Entrance' },
+  { label: 'Typewriter',   value: 'typewriter',  group: 'Entrance' },
+  { label: 'Fade Out',     value: 'fadeOut',     group: 'Exit' },
+  { label: 'Slide Out',    value: 'slideOut',    group: 'Exit' },
+  { label: 'Scale Out',    value: 'scaleOut',    group: 'Exit' },
+  { label: 'Spin',         value: 'spin',        group: 'One-shot' },
+  { label: 'Pulse',        value: 'pulse',       group: 'Loop' },
+  { label: 'Bounce',       value: 'bounceLoop',  group: 'Loop' },
+  { label: 'Rotate',       value: 'rotateLoop',  group: 'Loop' },
 ]
 
 const EASINGS: { label: string; value: EasingType }[] = [
@@ -87,8 +90,10 @@ function AnimBlock({ anim, index, elId, elType }: {
     updateAnimation(elId, anim.id, patch)
   }
 
-  const hasDir = anim.type === 'slideIn' || anim.type === 'slideOut'
+  const hasDir  = anim.type === 'slideIn' || anim.type === 'slideOut'
   const textOnly = anim.type === 'typewriter'
+  const isLoop  = anim.type === 'pulse' || anim.type === 'bounceLoop' || anim.type === 'rotateLoop'
+  const hasDist = anim.type === 'bounceLoop'
 
   if (textOnly && elType !== 'text') return null
 
@@ -107,8 +112,21 @@ function AnimBlock({ anim, index, elId, elType }: {
         onChange={e => upd({ type: e.target.value as AnimationType })}
         className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
       >
-        {ANIM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        {['Entrance', 'Exit', 'One-shot', 'Loop'].map(group => (
+          <optgroup key={group} label={group}>
+            {ANIM_TYPES.filter(t => t.group === group).map(t =>
+              <option key={t.value} value={t.value}>{t.label}</option>
+            )}
+          </optgroup>
+        ))}
       </select>
+
+      {/* Loop badge */}
+      {isLoop && (
+        <div className="text-2xs text-editor-accent bg-editor-accent-dim rounded px-2 py-0.5 w-fit">
+          ∞ Loops continuously
+        </div>
+      )}
 
       {/* Direction */}
       {hasDir && (
@@ -119,6 +137,19 @@ function AnimBlock({ anim, index, elId, elType }: {
         >
           {DIRECTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
         </select>
+      )}
+
+      {/* Bounce distance */}
+      {hasDist && (
+        <div>
+          <span className="label block">Distance (px)</span>
+          <input
+            type="number" min={4} max={200} step={2}
+            value={anim.params?.distance ?? 24}
+            onChange={e => upd({ params: { ...anim.params, distance: Number(e.target.value) } })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+          />
+        </div>
       )}
 
       {/* Timing */}
@@ -133,7 +164,7 @@ function AnimBlock({ anim, index, elId, elType }: {
           />
         </div>
         <div className="flex-1">
-          <span className="label block">Duration</span>
+          <span className="label block">{isLoop ? 'Period' : 'Duration'}</span>
           <input
             type="number" min={0.1} max={30} step={0.1}
             value={anim.duration}

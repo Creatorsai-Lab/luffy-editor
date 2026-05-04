@@ -27,26 +27,51 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     x:        animProps?.x        ?? element.x,
     y:        animProps?.y        ?? element.y,
     opacity:  animProps?.opacity  ?? element.opacity,
-    scaleX:   animProps?.scaleX   ?? 1,
-    scaleY:   animProps?.scaleY   ?? 1,
+    scaleX:   element.type === 'text'
+      ? (animProps?.scaleX ?? 1) * ((element as import('../../types/editor').TextElement).stretchX ?? 1)
+      : (animProps?.scaleX ?? 1),
+    scaleY:   element.type === 'text'
+      ? (animProps?.scaleY ?? 1) * ((element as import('../../types/editor').TextElement).stretchY ?? 1)
+      : (animProps?.scaleY ?? 1),
     rotation: animProps?.rotation ?? element.rotation,
     draggable: !element.locked,
     listening: !element.locked,
     onClick:  (e: Konva.KonvaEventObject<MouseEvent>) => onSelect(e.evt.shiftKey),
     onDblClick,
     onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
-      updateElement(element.id, { x: e.target.x(), y: e.target.y() })
+      if (element.type === 'arrow') {
+        const el = element as import('../../types/editor').ArrowElement
+        const dx = e.target.x(), dy = e.target.y()
+        e.target.x(0); e.target.y(0)
+        updateElement(element.id, { x1: el.x1 + dx, y1: el.y1 + dy, x2: el.x2 + dx, y2: el.y2 + dy })
+      } else {
+        updateElement(element.id, { x: e.target.x(), y: e.target.y() })
+      }
     },
     onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
       const node = e.target
-      updateElement(element.id, {
-        x:        node.x(),
-        y:        node.y(),
-        width:    Math.abs(node.width()  * node.scaleX()),
-        height:   Math.abs(node.height() * node.scaleY()),
-        rotation: node.rotation()
-      })
-      node.scaleX(1); node.scaleY(1)
+      if (element.type === 'arrow') {
+        const el = element as import('../../types/editor').ArrowElement
+        const dx = node.x(), dy = node.y()
+        const sX = node.scaleX(), sY = node.scaleY()
+        const rot = node.rotation() * Math.PI / 180
+        const transform = (px: number, py: number) => ({
+          x: dx + (px * sX) * Math.cos(rot) - (py * sY) * Math.sin(rot),
+          y: dy + (px * sX) * Math.sin(rot) + (py * sY) * Math.cos(rot),
+        })
+        const p1 = transform(el.x1, el.y1), p2 = transform(el.x2, el.y2)
+        node.x(0); node.y(0); node.scaleX(1); node.scaleY(1); node.rotation(0)
+        updateElement(element.id, { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
+      } else {
+        updateElement(element.id, {
+          x:        node.x(),
+          y:        node.y(),
+          width:    Math.abs(node.width()  * node.scaleX()),
+          height:   Math.abs(node.height() * node.scaleY()),
+          rotation: node.rotation()
+        })
+        node.scaleX(1); node.scaleY(1)
+      }
     }
   }
 

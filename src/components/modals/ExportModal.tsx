@@ -59,15 +59,14 @@ export default function ExportModal() {
 
   async function handleSave() {
     if (!blobRef.current || !project) return
-    const path = await window.api.dialog.saveVideo(`${project.name}.mp4`)
+    const path = await window.api.dialog.saveVideo(`${project.name}.webm`)
     if (!path) return
     setSavePath(path)
 
-    // Write via download link (Electron renderer can do this)
     const url = URL.createObjectURL(blobRef.current)
     const a   = document.createElement('a')
     a.href    = url
-    a.download = path.split(/[\\/]/).pop() ?? `${project.name}.mp4`
+    a.download = path.split(/[\\/]/).pop() ?? `${project.name}.webm`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -95,7 +94,7 @@ export default function ExportModal() {
         <div className="flex items-center justify-between px-4 py-3 border-b border-editor-border">
           <div className="flex items-center gap-2">
             <Download size={14} className="text-editor-accent" />
-            <span className="text-sm font-medium text-editor-text">Export MP4</span>
+            <span className="text-sm font-medium text-editor-text">Export Video</span>
           </div>
           <button onClick={handleClose} className="text-editor-muted hover:text-editor-text transition-colors">
             <X size={16} />

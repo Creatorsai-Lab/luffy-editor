@@ -29,6 +29,9 @@ export default defineConfig({
     resolve: {
       alias: { '@': resolve('src') }
     },
-    plugins: [react()]
+    plugins: [react()],
+    optimizeDeps: {
+      exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util']
+    }
   }
 })

@@ -42,12 +42,12 @@ export default function LeftSidebar() {
       case 'layers':      return <LayersPanel />
       case 'transitions': return <TransitionPanel />
       default:
-        return <HintPanel text="Select a tool from the menu bar to see options here." />
+        return <HintPanel text="Menu Options Panel (select to see)" />
     }
   }
 
   return (
-    <aside className="w-56 flex-none bg-editor-panel border-r border-editor-border flex flex-col overflow-hidden">
+    <aside className="w-55 flex-none bg-[#171717] flex flex-col overflow-hidden">
       {renderPanel()}
     </aside>
   )
@@ -55,8 +55,7 @@ export default function LeftSidebar() {
 
 function HintPanel({ text }: { text: string }) {
   return (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <p className="text-xs text-editor-muted text-center leading-relaxed">{text}</p>
+    <div className="flex-1 flex mx-5 my-2 items-center text-center justify-center">{text}
     </div>
   )
 }

@@ -11,8 +11,8 @@ html, body, #root {
 }
 
 body {
-  background: #0f0f0f;
-  color: #e5e5e5;
+  background: #000000;
+  color: #ffffff;
   font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 12px;
   line-height: 1.5;
@@ -43,7 +43,7 @@ input[type=range] { cursor: pointer; }
 input[type=color] { cursor: pointer; padding: 0; border: none; }
 
 /* Panel label */
-.label { font-size: 10px; color: #737373; text-transform: uppercase; letter-spacing: 0.05em; }
+.label { font-size: 10px; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* Konva canvas cursor overrides */
 .konva-selecting * { cursor: crosshair !important; }

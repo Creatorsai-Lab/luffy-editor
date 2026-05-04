@@ -105,6 +105,47 @@ export default function TextPanel() {
             <Slider value={el.opacity} min={0} max={1} step={0.01}
               onChange={v => upd({ opacity: v })} display={`${Math.round(el.opacity * 100)}%`} />
           </Row>
+
+          <Row label="Stretch H">
+            <Slider value={el.stretchX ?? 1} min={0.2} max={3} step={0.05}
+              onChange={v => upd({ stretchX: v })} display={`${((el.stretchX ?? 1) * 100).toFixed(0)}%`} />
+          </Row>
+
+          <Row label="Stretch V">
+            <Slider value={el.stretchY ?? 1} min={0.2} max={3} step={0.05}
+              onChange={v => upd({ stretchY: v })} display={`${((el.stretchY ?? 1) * 100).toFixed(0)}%`} />
+          </Row>
+
+          <Row label="Border">
+            <ColorInput value={el.textStroke || '#ffffff'} onChange={v => upd({ textStroke: v })} />
+          </Row>
+
+          <Row label="Border Width">
+            <Slider value={el.textStrokeWidth ?? 0} min={0} max={10} step={0.5}
+              onChange={v => upd({ textStrokeWidth: v })} display={`${el.textStrokeWidth ?? 0}px`} />
+          </Row>
+
+          <Row label="Shadow Color">
+            <ColorInput value={el.shadowColor || '#000000'} onChange={v => upd({ shadowColor: v })} />
+          </Row>
+
+          <Row label="Shadow Blur">
+            <Slider value={el.shadowBlur ?? 0} min={0} max={40} step={1}
+              onChange={v => upd({ shadowBlur: v })} display={`${el.shadowBlur ?? 0}`} />
+          </Row>
+
+          <Row label="Shadow Offset">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <span className="label block">X</span>
+                <NumberInput value={el.shadowOffsetX ?? 0} min={-50} max={50} onChange={v => upd({ shadowOffsetX: v })} />
+              </div>
+              <div className="flex-1">
+                <span className="label block">Y</span>
+                <NumberInput value={el.shadowOffsetY ?? 0} min={-50} max={50} onChange={v => upd({ shadowOffsetY: v })} />
+              </div>
+            </div>
+          </Row>
         </div>
       )}
     </div>

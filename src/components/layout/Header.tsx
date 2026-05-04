@@ -62,7 +62,7 @@ export default function Header() {
   }
 
   return (
-    <header className="drag flex items-center justify-between h-8 bg-editor-surface border-b border-editor-border px-3 flex-none relative z-50">
+    <header className="drag flex items-center justify-between h-8 bg-black px-3 flex-none relative z-50">
       {/* Left: logo + project switcher */}
       <div className="nodrag flex items-center gap-2" ref={panelRef}>
         <Clapperboard size={13} className="text-editor-accent flex-none" />

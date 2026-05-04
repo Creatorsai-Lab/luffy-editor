@@ -184,7 +184,7 @@ export default function EditorCanvas() {
 
   if (!project || !currentScene) {
     return (
-      <div ref={containerRef} className="flex-1 flex items-center justify-center bg-[#0a0a0a]">
+      <div ref={containerRef} className="flex-1 flex items-center justify-center bg-[#5c1f03]">
         <div className="w-5 h-5 border-2 border-editor-accent border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -207,7 +207,6 @@ export default function EditorCanvas() {
       ref={containerRef}
       className="flex-1 relative overflow-hidden"
       style={{
-        background: '#0a0a0a',
         cursor: activeTool !== 'select' ? 'crosshair' : 'default'
       }}
     >
@@ -302,7 +301,7 @@ export default function EditorCanvas() {
       </div>
 
       {/* Scale indicator */}
-      <div className="absolute bottom-2 right-3 text-xs text-editor-muted bg-editor-surface/80 px-2 py-0.5 rounded border border-editor-border">
+      <div className="absolute bottom-2 right-3 text-xs text-white bg-black px-2 py-0.5 ">
         {project.width}×{project.height} · {Math.round(scale * 100)}%
       </div>
     </div>
@@ -325,8 +324,8 @@ const BackgroundShape = React.forwardRef<Konva.Shape, {
       const cx = w / 2, cy = h / 2
       const dx = Math.cos(angle) * w / 2, dy = Math.sin(angle) * h / 2
       const grd = raw.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy)
-      grd.addColorStop(0, bg.from)
-      grd.addColorStop(1, bg.to)
+      grd.addColorStop(bg.fromStop ?? 0, bg.from)
+      grd.addColorStop(bg.toStop ?? 1, bg.to)
       raw.fillStyle = grd
       raw.fillRect(0, 0, w, h)
     } else if (bg.type === 'grid') {

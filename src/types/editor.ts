@@ -2,12 +2,12 @@
 
 export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table'
 export type ShapeType     = 'rect' | 'circle' | 'triangle' | 'star'
-export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'typewriter' | 'drawPath' | 'spin'
+export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'typewriter' | 'drawPath' | 'spin' | 'pulse' | 'bounceLoop' | 'rotateLoop'
 export type EasingType    = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'bounce'
 export type AlignType     = 'left' | 'center' | 'right'
 export type ArrowHeadType = 'none' | 'end' | 'start' | 'both'
 export type SlideDir      = 'left' | 'right' | 'up' | 'down'
-export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom'
+export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'push' | 'morph'
 export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated'
 export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
 export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'arrow' | 'code' | 'table' | 'image'
@@ -60,6 +60,14 @@ export interface TextElement extends BaseElement {
   lineHeight: number
   letterSpacing: number
   underline: boolean
+  shadowColor: string
+  shadowBlur: number
+  shadowOffsetX: number
+  shadowOffsetY: number
+  textStroke: string
+  textStrokeWidth: number
+  stretchX: number
+  stretchY: number
 }
 
 export interface ShapeElement extends BaseElement {
@@ -81,6 +89,11 @@ export interface ArrowElement extends BaseElement {
   strokeWidth: number
   arrowHead: ArrowHeadType
   dashed: boolean
+  dotted: boolean
+  pointerLength: number
+  pointerWidth: number
+  arrowHeadColor: string
+  curve: number
 }
 
 export interface CodeElement extends BaseElement {
@@ -119,7 +132,7 @@ export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElem
 // ─── Background ───────────────────────────────────────────────────────────────
 
 export interface SolidBg     { type: 'solid';    color: string }
-export interface GradientBg  { type: 'gradient'; from: string; to: string; angle: number }
+export interface GradientBg  { type: 'gradient'; from: string; to: string; angle: number; fromStop: number; toStop: number }
 export interface GridBg      { type: 'grid';     bgColor: string; lineColor: string; cellSize: number }
 export interface DotsBg      { type: 'dots';     bgColor: string; dotColor: string; spacing: number; radius: number }
 export interface AnimatedBg  { type: 'animated'; variant: 'gradient-flow' | 'particles' | 'wave'; colors: string[]; speed: number }

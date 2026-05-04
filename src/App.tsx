@@ -22,13 +22,11 @@ export default function App() {
   const [ready, setReady] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Auto-load most recent project, or create a fresh vertical-HD project
   useEffect(() => {
     async function boot() {
       try {
         const list = await window.api.projects.list()
         if (list.length > 0) {
-          // Most recent is first (index is prepended on create)
           const data = await window.api.projects.load(list[0].id)
           loadProject(data as ReturnType<typeof makeProject>)
         } else {
@@ -40,7 +38,6 @@ export default function App() {
           loadProject(proj)
         }
       } catch (err) {
-        // IPC unavailable (e.g., running outside Electron) — create in-memory project
         console.warn('Project IPC unavailable, using in-memory project', err)
         const proj  = makeProject('default', 'My Project')
         proj.width  = 1080
@@ -52,7 +49,6 @@ export default function App() {
     boot()
   }, [])
 
-  // Auto-save
   const doSave = useCallback(async () => {
     if (!project || project.id === 'default') return
     try {
@@ -72,7 +68,7 @@ export default function App() {
 
   if (!ready) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-editor-bg">
+      <div className="h-screen w-screen flex items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-3">
           <div className="w-5 h-5 border-2 border-editor-accent border-t-transparent rounded-full animate-spin" />
           <span className="text-xs text-editor-muted">Loading project…</span>
@@ -82,17 +78,28 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-editor-bg overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-black overflow-hidden gap-1.5">
       <Header />
-      <TopBar />
-      <MenuBar />
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <LeftSidebar />
+      {/* TopBar + MenuBar combined in one bordered pill */}
+      <div className="mx-2 flex-none border border-editor-border rounded-lg overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+        <TopBar />
+        <MenuBar />
+      </div>
+
+      {/* Canvas area */}
+      <div className="flex flex-1 min-h-0 overflow-hidden gap-1.5 px-2">
+        {/* Left sidebar bordered */}
+        <div className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
+          <LeftSidebar />
+        </div>
         <EditorCanvas />
       </div>
 
-      <Timeline />
+      {/* Timeline bordered */}
+      <div className="mx-2 mb-2 flex-none border border-editor-border rounded-lg overflow-hidden shadow-[0_-1px_6px_rgba(0,0,0,0.4)]">
+        <Timeline />
+      </div>
 
       {codeModalOpen && <CodeEditorModal />}
       {previewOpen   && <PreviewModal />}

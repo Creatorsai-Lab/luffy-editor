@@ -40,7 +40,15 @@ export function makeText(x: number, y: number): TextElement {
     content: 'Double-click to edit',
     fontSize: 32, fontFamily: 'Segoe UI', fontWeight: 'normal',
     italic: false, color: '#ffffff', align: 'left',
-    lineHeight: 1.4, letterSpacing: 0, underline: false
+    lineHeight: 1.4, letterSpacing: 0, underline: false,
+    shadowColor: 'transparent',
+    shadowBlur: 0,
+    shadowOffsetX: 0,
+    shadowOffsetY: 0,
+    textStroke: '',
+    textStrokeWidth: 0,
+    stretchX: 1,
+    stretchY: 1,
   }
 }
 
@@ -63,7 +71,12 @@ export function makeArrow(x1: number, y1: number, x2: number, y2: number): Arrow
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     x1, y1, x2, y2,
-    stroke: '#e5e5e5', strokeWidth: 2, arrowHead: 'end', dashed: false
+    stroke: '#e5e5e5', strokeWidth: 2, arrowHead: 'end', dashed: false,
+    dotted: false,
+    pointerLength: 12,
+    pointerWidth: 10,
+    arrowHeadColor: '',
+    curve: 0,
   }
 }
 

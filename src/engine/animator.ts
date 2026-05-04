@@ -28,7 +28,6 @@ export interface AnimatedProps {
   opacity: number
   scaleX: number; scaleY: number
   rotation: number
-  // typewriter progress (0–1) for text reveal
   textProgress: number
 }
 
@@ -41,28 +40,26 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
     textProgress: 1
   }
 
-  // Collect all entrance animations — pre-compute "before first entrance" state
   const entrances = el.animations.filter(a =>
     ['fadeIn', 'slideIn', 'scaleIn', 'typewriter'].includes(a.type)
   )
   if (entrances.length > 0) {
     const firstStart = Math.min(...entrances.map(a => a.startTime + a.delay))
     if (localTime < firstStart) {
-      // Element invisible before its first entrance
       props.opacity = 0
       return props
     }
   }
 
   for (const anim of el.animations) {
-    const start   = anim.startTime + anim.delay
-    const end     = start + anim.duration
-    const raw     = (localTime - start) / anim.duration
-    const t       = ease(Math.max(0, Math.min(1, raw)), anim.easing)
-    const before  = localTime < start
-    const after   = localTime >= end
+    const start  = anim.startTime + anim.delay
+    const end    = start + anim.duration
+    const raw    = (localTime - start) / anim.duration
+    const t      = ease(Math.max(0, Math.min(1, raw)), anim.easing)
+    const before = localTime < start
+    const after  = localTime >= end
 
-    applyAnim(anim, t, before, after, el, props)
+    applyAnim(anim, t, before, after, el, props, localTime)
   }
 
   return props
@@ -74,7 +71,8 @@ function applyAnim(
   before: boolean,
   after: boolean,
   el: EditorElement,
-  out: AnimatedProps
+  out: AnimatedProps,
+  localTime: number
 ) {
   const dist = anim.params?.distance ?? 80
 
@@ -155,6 +153,36 @@ function applyAnim(
       if (before || after) return
       out.rotation = el.rotation + lerp(0, 360, t)
       break
+
+    // ─── Loop animations ────────────────────────────────────────────────────
+    case 'pulse': {
+      if (before) return
+      const elapsed = localTime - (anim.startTime + anim.delay)
+      const phase   = (elapsed % anim.duration) / anim.duration
+      const v       = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2)
+      out.scaleX    = 0.88 + 0.24 * v   // oscillates 0.88 → 1.12
+      out.scaleY    = out.scaleX
+      out.opacity   = lerp(el.opacity * 0.65, el.opacity, v)
+      break
+    }
+
+    case 'bounceLoop': {
+      if (before) return
+      const elapsed = localTime - (anim.startTime + anim.delay)
+      const phase   = (elapsed % anim.duration) / anim.duration
+      const v       = Math.sin(phase * Math.PI * 2)
+      const loopDist = anim.params?.distance ?? 24
+      out.y = el.y + v * loopDist
+      break
+    }
+
+    case 'rotateLoop': {
+      if (before) return
+      const elapsed = localTime - (anim.startTime + anim.delay)
+      const turns   = elapsed / anim.duration
+      out.rotation  = el.rotation + (turns * 360) % 360
+      break
+    }
   }
 }
 
@@ -196,7 +224,6 @@ export function drawAnimatedBg(
     ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill()
     ctx.globalAlpha = 1
   } else {
-    // particles fallback — just gradient
     const grad = ctx.createLinearGradient(0, 0, w, h)
     const c1 = colors[0] ?? '#6366f1'
     const c2 = colors[1] ?? '#0f0f1a'

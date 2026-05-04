@@ -1,6 +1,6 @@
 import {
   Type, Square, ArrowRight, Code2, Table2, Image,
-  Sparkles, Layers, Settings2, Shuffle, Upload
+  Sparkles, Layers, Shuffle, Upload
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ActiveTool, ActivePanel } from '../../types/editor'
@@ -24,7 +24,6 @@ const TOOLS: ToolItem[] = [
   { icon: <Sparkles size={14} />,   label: 'Animations',                          panel: 'animations',  separator: true },
   { icon: <Shuffle size={14} />,    label: 'Transitions',                         panel: 'transitions' },
   { icon: <Layers size={14} />,     label: 'Layers',                              panel: 'layers' },
-  { icon: <Settings2 size={14} />,  label: 'Background',                          panel: 'background' },
 ]
 
 export default function MenuBar() {
@@ -32,7 +31,7 @@ export default function MenuBar() {
   const disabled = !project
 
   return (
-    <div className="h-9 bg-editor-surface border-b border-editor-border flex items-center px-2 gap-0.5 flex-none nodrag overflow-x-auto no-scrollbar">
+    <div className="h-8 bg-[#171717] flex items-center px-2 gap-0.5 flex-none nodrag overflow-x-auto no-scrollbar">
       {TOOLS.map((item, i) => (
         <div key={i} className="flex items-center">
           {item.separator && <div className="w-px h-4 bg-editor-border mx-1" />}

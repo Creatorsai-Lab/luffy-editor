@@ -5,7 +5,8 @@
       "Bash(Select-Object Name, PSIsContainer)",
       "Bash(npm run *)",
       "Bash(npx electron-vite *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

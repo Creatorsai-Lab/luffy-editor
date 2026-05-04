@@ -1,6 +1,5 @@
 import { useRef } from 'react'
-import { Text, Group } from 'react-konva'
-import type Konva from 'konva'
+import { Text } from 'react-konva'
 import type { TextElement } from '../../../types/editor'
 
 interface Props {
@@ -32,6 +31,14 @@ export default function TextKonva({ el, konvaProps, textProgress }: Props) {
       lineHeight={el.lineHeight}
       letterSpacing={el.letterSpacing}
       wrap="word"
+      stroke={el.textStroke || undefined}
+      strokeWidth={el.textStrokeWidth || 0}
+      strokeEnabled={!!(el.textStroke && el.textStrokeWidth > 0)}
+      shadowColor={el.shadowBlur > 0 ? el.shadowColor : undefined}
+      shadowBlur={el.shadowBlur || 0}
+      shadowOffsetX={el.shadowOffsetX || 0}
+      shadowOffsetY={el.shadowOffsetY || 0}
+      shadowEnabled={el.shadowBlur > 0}
       perfectDrawEnabled={false}
     />
   )
