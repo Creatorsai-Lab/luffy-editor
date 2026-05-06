@@ -1,8 +1,8 @@
 import { v4 as uuid } from 'uuid'
 import type {
   Project, Scene, Background, TextElement, ShapeElement,
-  ArrowElement, CodeElement, ImageElement, TableElement,
-  ElementAnimation, SceneTransition
+  ArrowElement, CodeElement, ImageElement, TableElement, ChartElement, VideoElement,
+  ElementAnimation, SceneTransition, ShapeType
 } from '../types/editor'
 
 export const DEFAULT_BG: Background = { type: 'solid', color: '#1a1a2e' }
@@ -52,7 +52,7 @@ export function makeText(x: number, y: number): TextElement {
   }
 }
 
-export function makeShape(type: 'rect' | 'circle' | 'triangle' | 'star', x: number, y: number): ShapeElement {
+export function makeShape(type: ShapeType, x: number, y: number): ShapeElement {
   return {
     id: uuid(), type: 'shape', name: type.charAt(0).toUpperCase() + type.slice(1),
     x, y, width: 120, height: 120,
@@ -129,5 +129,40 @@ export function makeAnimation(): ElementAnimation {
     duration: 0.6,
     delay: 0,
     easing: 'easeOut'
+  }
+}
+
+export function makeChart(x: number, y: number): ChartElement {
+  return {
+    id: uuid(), type: 'chart', name: 'Chart',
+    x, y, width: 400, height: 300,
+    rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
+    animations: [],
+    chartType: 'bar',
+    data: {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+      datasets: [{
+        label: 'Dataset 1',
+        data: [12, 19, 3, 5, 2],
+        color: '#6366f1'
+      }]
+    },
+    showLegend: true,
+    showGrid: true,
+    backgroundColor: '#1a1a2e'
+  }
+}
+
+export function makeVideo(x: number, y: number, src: string, assetId: string): VideoElement {
+  return {
+    id: uuid(), type: 'video', name: 'Video',
+    x, y, width: 640, height: 360,
+    rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
+    animations: [],
+    src, assetId, cornerRadius: 0,
+    volume: 1,
+    playbackRate: 1,
+    loop: false,
+    muted: false
   }
 }

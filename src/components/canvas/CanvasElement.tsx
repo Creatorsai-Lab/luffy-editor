@@ -9,6 +9,8 @@ import ArrowKonva  from './elements/ArrowKonva'
 import CodeKonva   from './elements/CodeKonva'
 import ImageKonva  from './elements/ImageKonva'
 import TableKonva  from './elements/TableKonva'
+import ChartKonva  from './elements/ChartKonva'
+import VideoKonva  from './elements/VideoKonva'
 
 interface Props {
   element:    EditorElement
@@ -82,6 +84,8 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     case 'code':   return <CodeKonva   el={element} konvaProps={props} />
     case 'image':  return <ImageKonva  el={element} konvaProps={props} />
     case 'table':  return <TableKonva  el={element} konvaProps={props} />
+    case 'chart':  return <ChartKonva  el={element} konvaProps={props} />
+    case 'video':  return <VideoKonva  el={element} konvaProps={props} />
     default:       return null
   }
 }

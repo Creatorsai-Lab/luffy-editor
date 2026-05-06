@@ -1,6 +1,6 @@
 import {
   Type, Square, ArrowRight, Code2, Table2, Image,
-  Sparkles, Layers, Shuffle, Upload, Wand2
+  Sparkles, Layers, Shuffle, Upload, Wand2, BarChart3
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ActiveTool, ActivePanel } from '../../types/editor'
@@ -22,6 +22,7 @@ const TOOLS: ToolItem[] = [
   { icon: <ArrowRight size={14} />, label: 'Arrow',            tool: 'arrow',          panel: 'arrows',           tooltip: 'Add arrow (A)' },
   { icon: <Code2 size={14} />,      label: 'Code',             tool: 'code',           panel: 'code',             tooltip: 'Add code block (C)' },
   { icon: <Table2 size={14} />,     label: 'Table',            tool: 'table',          panel: 'table',            tooltip: 'Add table' },
+  { icon: <BarChart3 size={14} />,  label: 'Charts',           tool: 'chart',          panel: 'charts',           tooltip: 'Add charts/graphs' },
   { icon: <Upload size={14} />,     label: 'Upload',           tool: 'image',          panel: 'upload',           separator: true, tooltip: 'Upload image/video' },
   { icon: <Type size={14} />,       label: 'Text Animations',                          panel: 'textAnimations',   separator: true, tooltip: 'Text animations' },
   { icon: <Sparkles size={14} />,   label: 'Shape Animations',                         panel: 'shapeAnimations',  tooltip: 'Shape animations' },

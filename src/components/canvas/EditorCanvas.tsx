@@ -4,8 +4,8 @@ import type Konva from 'konva'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
 import { registerStage } from '../../engine/stageRegistry'
-import { makeText, makeShape, makeArrow, makeCode, makeTable } from '../../utils/defaults'
-import type { Background } from '../../types/editor'
+import { makeText, makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from '../../utils/defaults'
+import type { Background, ShapeType } from '../../types/editor'
 import CanvasElement from './CanvasElement'
 
 export default function EditorCanvas() {
@@ -141,8 +141,16 @@ export default function EditorCanvas() {
       case 'shape-rect':
       case 'shape-circle':
       case 'shape-triangle':
-      case 'shape-star': {
-        const t = activeTool.replace('shape-', '') as 'rect' | 'circle' | 'triangle' | 'star'
+      case 'shape-star':
+      case 'shape-pentagon':
+      case 'shape-hexagon':
+      case 'shape-octagon':
+      case 'shape-diamond':
+      case 'shape-oval':
+      case 'shape-speechBubble':
+      case 'shape-roundedSpeech':
+      case 'shape-cone': {
+        const t = activeTool.replace('shape-', '') as ShapeType
         addElement(makeShape(t, x - 60, y - 60))
         setActiveTool('select')
         break
@@ -153,6 +161,10 @@ export default function EditorCanvas() {
         break
       case 'table':
         addElement(makeTable(x - 180, y - 60))
+        setActiveTool('select')
+        break
+      case 'chart':
+        addElement(makeChart(x - 200, y - 150))
         setActiveTool('select')
         break
     }

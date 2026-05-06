@@ -1,14 +1,22 @@
-import { Square, Circle, Triangle, Star } from 'lucide-react'
+import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, Ellipsis, MessageCircle, MessageSquare, Triangle as TriangleIcon } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ShapeElement, ShapeType } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
 import { cn } from '../../utils/cn'
 
-const SHAPES: { icon: React.ReactNode; type: ShapeType }[] = [
-  { icon: <Square size={14} />,   type: 'rect' },
-  { icon: <Circle size={14} />,   type: 'circle' },
-  { icon: <Triangle size={14} />, type: 'triangle' },
-  { icon: <Star size={14} />,     type: 'star' }
+const SHAPES: { icon: React.ReactNode; type: ShapeType; label: string }[] = [
+  { icon: <Square size={14} />,        type: 'rect',          label: 'Rectangle' },
+  { icon: <Circle size={14} />,        type: 'circle',        label: 'Circle' },
+  { icon: <Triangle size={14} />,      type: 'triangle',      label: 'Triangle' },
+  { icon: <Star size={14} />,          type: 'star',          label: 'Star' },
+  { icon: <Pentagon size={14} />,      type: 'pentagon',      label: 'Pentagon' },
+  { icon: <Hexagon size={14} />,       type: 'hexagon',       label: 'Hexagon' },
+  { icon: <Octagon size={14} />,       type: 'octagon',       label: 'Octagon' },
+  { icon: <Diamond size={14} />,       type: 'diamond',       label: 'Diamond' },
+  { icon: <Circle size={14} />,        type: 'oval',          label: 'Oval' },
+  { icon: <MessageSquare size={14} />, type: 'speechBubble',  label: 'Speech Box' },
+  { icon: <MessageCircle size={14} />, type: 'roundedSpeech', label: 'Casual Speech' },
+  { icon: <TriangleIcon size={14} />,  type: 'cone',          label: 'Cone' }
 ]
 
 export default function ShapePanel() {
@@ -26,13 +34,14 @@ export default function ShapePanel() {
       {/* Shape picker */}
       <div className="px-3 py-2 border-b border-editor-border">
         <span className="label block mb-1.5">Add Shape</span>
-        <div className="flex gap-1">
+        <div className="grid grid-cols-4 gap-1">
           {SHAPES.map(s => (
             <button
               key={s.type}
-              onClick={() => setActiveTool(`shape-${s.type}` as 'shape-rect')}
+              onClick={() => setActiveTool(`shape-${s.type}` as ActiveTool)}
+              title={s.label}
               className={cn(
-                'flex items-center justify-center w-8 h-8 rounded border transition-colors',
+                'flex items-center justify-center w-full h-8 rounded border transition-colors',
                 el?.shapeType === s.type
                   ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
                   : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text'

@@ -4,6 +4,7 @@ import ShapePanel from '../panels/ShapePanel'
 import ArrowPanel from '../panels/ArrowPanel'
 import CodePanel from '../panels/CodePanel'
 import TablePanel from '../panels/TablePanel'
+import ChartPanel from '../panels/ChartPanel'
 import TextAnimationPanel from '../panels/TextAnimationPanel'
 import ShapeAnimationPanel from '../panels/ShapeAnimationPanel'
 import TextEffectsPanel from '../panels/TextEffectsPanel'
@@ -30,6 +31,7 @@ export default function LeftSidebar() {
       if (firstEl.type === 'arrow')  return <ArrowPanel />
       if (firstEl.type === 'code')   return <CodePanel />
       if (firstEl.type === 'table')  return <TablePanel />
+      if (firstEl.type === 'chart')  return <ChartPanel />
     }
 
     switch (activePanel) {
@@ -38,6 +40,7 @@ export default function LeftSidebar() {
       case 'arrows':          return <ArrowPanel />
       case 'code':            return <CodePanel />
       case 'table':           return <TablePanel />
+      case 'charts':          return <ChartPanel />
       case 'upload':          return <UploadPanel />
       case 'textAnimations':  return <TextAnimationPanel />
       case 'shapeAnimations': return <ShapeAnimationPanel />
