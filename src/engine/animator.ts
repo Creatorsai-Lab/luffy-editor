@@ -41,7 +41,9 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
   }
 
   const entrances = el.animations.filter(a =>
-    ['fadeIn', 'slideIn', 'scaleIn', 'typewriter'].includes(a.type)
+    ['fadeIn', 'slideIn', 'scaleIn', 'typewriter', 'typewriterChars', 'typewriterWords', 
+     'textFade', 'textBurst', 'textBounce', 'textBlock', 'textSquiz', 'textSpread', 
+     'textTwirl', 'textZoomIn'].includes(a.type)
   )
   if (entrances.length > 0) {
     const firstStart = Math.min(...entrances.map(a => a.startTime + a.delay))
@@ -153,6 +155,97 @@ function applyAnim(
       if (before || after) return
       out.rotation = el.rotation + lerp(0, 360, t)
       break
+
+    // ─── Text-specific animations ───────────────────────────────────────────
+    case 'typewriterChars':
+      if (before) { out.textProgress = 0; return }
+      if (after)  { out.textProgress = 1; return }
+      out.textProgress = t
+      break
+
+    case 'typewriterWords':
+      if (before) { out.textProgress = 0; return }
+      if (after)  { out.textProgress = 1; return }
+      out.textProgress = t
+      break
+
+    case 'textFade':
+      if (before) { out.opacity = 0; return }
+      if (after)  { out.opacity = el.opacity; return }
+      out.opacity = lerp(0, el.opacity, t)
+      break
+
+    case 'textBurst': {
+      if (before) { out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
+      if (after)  { out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
+      const burst = t < 0.5 ? t * 2.4 : 1 - (t - 0.5) * 0.8
+      out.scaleX  = burst
+      out.scaleY  = burst
+      out.opacity = lerp(0, el.opacity, t)
+      break
+    }
+
+    case 'textBounce': {
+      if (before) { out.y = el.y - 100; out.opacity = 0; return }
+      if (after)  { out.y = el.y; out.opacity = el.opacity; return }
+      const bounceT = ease(t, 'bounce')
+      out.y = lerp(el.y - 100, el.y, bounceT)
+      out.opacity = lerp(0, el.opacity, t)
+      break
+    }
+
+    case 'textBlock': {
+      if (before) { out.scaleY = 0; out.opacity = 0; return }
+      if (after)  { out.scaleY = 1; out.opacity = el.opacity; return }
+      out.scaleY = t
+      out.opacity = lerp(0, el.opacity, t)
+      break
+    }
+
+    case 'textSquiz': {
+      if (before) { out.scaleX = 0; out.scaleY = 1.5; out.opacity = 0; return }
+      if (after)  { out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
+      out.scaleX = t
+      out.scaleY = lerp(1.5, 1, t)
+      out.opacity = lerp(0, el.opacity, t)
+      break
+    }
+
+    case 'textSpread': {
+      if (before) { out.scaleX = 0.2; out.opacity = 0; return }
+      if (after)  { out.scaleX = 1; out.opacity = el.opacity; return }
+      out.scaleX = lerp(0.2, 1, t)
+      out.opacity = lerp(0, el.opacity, t)
+      break
+    }
+
+    case 'textTwirl': {
+      if (before) { out.rotation = el.rotation - 180; out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
+      if (after)  { out.rotation = el.rotation; out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
+      out.rotation = lerp(el.rotation - 180, el.rotation, t)
+      out.scaleX = t
+      out.scaleY = t
+      out.opacity = lerp(0, el.opacity, t)
+      break
+    }
+
+    case 'textZoomIn': {
+      if (before) { out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
+      if (after)  { out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
+      out.scaleX = t
+      out.scaleY = t
+      out.opacity = lerp(0, el.opacity, t)
+      break
+    }
+
+    case 'textZoomOut': {
+      if (after)  { out.scaleX = 3; out.scaleY = 3; out.opacity = 0; return }
+      if (before) return
+      out.scaleX = lerp(1, 3, t)
+      out.scaleY = lerp(1, 3, t)
+      out.opacity = lerp(el.opacity, 0, t)
+      break
+    }
 
     // ─── Loop animations ────────────────────────────────────────────────────
     case 'pulse': {

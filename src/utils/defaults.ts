@@ -124,6 +124,7 @@ export function makeAnimation(): ElementAnimation {
   return {
     id: uuid(),
     type: 'fadeIn',
+    timing: 'onEnter',
     startTime: 0,
     duration: 0.6,
     delay: 0,

@@ -2,7 +2,12 @@
 
 export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table'
 export type ShapeType     = 'rect' | 'circle' | 'triangle' | 'star'
-export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'typewriter' | 'drawPath' | 'spin' | 'pulse' | 'bounceLoop' | 'rotateLoop'
+export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'typewriter' | 'drawPath' | 'spin' | 'pulse' | 'bounceLoop' | 'rotateLoop' | 
+  // Text-specific animations
+  'typewriterChars' | 'typewriterWords' | 'textFade' | 'textBurst' | 'textBounce' | 'textBlock' | 'textSquiz' | 'textSpread' | 'textTwirl' | 'textZoomIn' | 'textZoomOut'
+
+export type AnimationTiming = 'onEnter' | 'onExit' | 'loop'
+export type TextEffectType = 'shadow' | 'glow' | 'outline' | 'hollow' | 'glitch' | 'bubble'
 export type EasingType    = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'bounce'
 export type AlignType     = 'left' | 'center' | 'right'
 export type ArrowHeadType = 'none' | 'end' | 'start' | 'both'
@@ -11,13 +16,14 @@ export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'push
 export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated'
 export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
 export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'arrow' | 'code' | 'table' | 'image'
-export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'animations' | 'background' | 'layers' | 'transitions' | null
+export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'textAnimations' | 'shapeAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | null
 
 // ─── Animation ───────────────────────────────────────────────────────────────
 
 export interface ElementAnimation {
   id: string
   type: AnimationType
+  timing: AnimationTiming  // onEnter, onExit, or loop
   startTime: number   // seconds from scene start
   duration: number    // seconds
   delay: number       // seconds
@@ -68,6 +74,7 @@ export interface TextElement extends BaseElement {
   textStrokeWidth: number
   stretchX: number
   stretchY: number
+  effects?: TextEffectType[]  // New: text effects
 }
 
 export interface ShapeElement extends BaseElement {

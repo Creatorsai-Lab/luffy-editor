@@ -8,6 +8,7 @@ import type {
   ActiveTool, ActivePanel
 } from '../types/editor'
 import { makeScene, makeProject } from '../utils/defaults'
+import { useHistoryStore } from './historyStore'
 
 interface EditorState {
   project:           Project | null
@@ -25,6 +26,8 @@ interface EditorState {
   previewOpen:       boolean
   exportOpen:        boolean
   exportProgress:    number
+  timelineZoom:      number
+  snapEnabled:       boolean
 }
 
 interface EditorActions {
@@ -78,12 +81,19 @@ interface EditorActions {
   setPreviewOpen:   (v: boolean) => void
   setExportOpen:    (v: boolean) => void
   setExportProgress:(v: number) => void
+  setTimelineZoom:  (z: number) => void
+  setSnapEnabled:   (enabled: boolean) => void
 
   // Assets
   addAsset:         (a: AssetMeta) => void
   removeAsset:      (id: string) => void
   markDirty:        () => void
   markClean:        () => void
+
+  // History
+  undo:             () => void
+  redo:             () => void
+  saveHistory:      (description: string) => void
 
   // Getters
   getCurrentScene:  () => Scene | null
@@ -111,6 +121,8 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       previewOpen:      false,
       exportOpen:       false,
       exportProgress:   0,
+      timelineZoom:     1,
+      snapEnabled:      true,
 
       // ── Project ────────────────────────────────────────────────────────────
       loadProject: (project) => set(s => {
@@ -148,7 +160,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         s.project.scenes.push(scene)
         s.currentSceneId = scene.id
         s.isDirty = true
-      }),
+      }, false, 'addScene'),
 
       duplicateScene: (id) => set(s => {
         if (!s.project) return
@@ -161,7 +173,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         s.project.scenes.splice(idx + 1, 0, clone)
         s.currentSceneId = clone.id
         s.isDirty = true
-      }),
+      }, false, 'duplicateScene'),
 
       removeScene: (id) => set(s => {
         if (!s.project || s.project.scenes.length <= 1) return
@@ -171,7 +183,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
           s.currentSceneId = s.project.scenes[Math.max(0, idx - 1)].id
         }
         s.isDirty = true
-      }),
+      }, false, 'removeScene'),
 
       reorderScenes: (from, to) => set(s => {
         if (!s.project) return
@@ -344,9 +356,39 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       setPreviewOpen:   (v) => set(s => { s.previewOpen = v }),
       setExportOpen:    (v) => set(s => { s.exportOpen = v }),
       setExportProgress:(v) => set(s => { s.exportProgress = v }),
+      setTimelineZoom:  (z) => set(s => { s.timelineZoom = Math.max(0.1, Math.min(5, z)) }),
+      setSnapEnabled:   (enabled) => set(s => { s.snapEnabled = enabled }),
 
       markDirty:        ()  => set(s => { s.isDirty = true }),
       markClean:        ()  => set(s => { s.isDirty = false }),
+
+      // ── History ────────────────────────────────────────────────────────────
+      saveHistory: (description) => {
+        const { project } = get()
+        if (project) {
+          useHistoryStore.getState().pushHistory(project, description)
+        }
+      },
+
+      undo: () => {
+        const previousState = useHistoryStore.getState().undo()
+        if (previousState) {
+          set(s => {
+            s.project = previousState
+            s.isDirty = true
+          })
+        }
+      },
+
+      redo: () => {
+        const nextState = useHistoryStore.getState().redo()
+        if (nextState) {
+          set(s => {
+            s.project = nextState
+            s.isDirty = true
+          })
+        }
+      },
 
       // ── Assets ────────────────────────────────────────────────────────────
       addAsset: (a) => set(s => {

@@ -1,18 +1,45 @@
-import { useState } from 'react'
-import { Play, Download, Monitor, ChevronDown } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Play, Download, Monitor, ChevronDown, Undo2, Redo2 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
+import { useHistoryStore } from '../../store/historyStore'
 import { CANVAS_PRESETS } from '../../types/editor'
 import { cn } from '../../utils/cn'
+import Tooltip from '../ui/Tooltip'
 
 export default function TopBar() {
   const {
     project,
     setProjectName, setCanvasSize, setActivePanel,
-    setPreviewOpen, setExportOpen
+    setPreviewOpen, setExportOpen,
+    undo, redo
   } = useEditorStore()
+
+  const { canUndo, canRedo } = useHistoryStore()
 
   const [editingName, setEditingName] = useState(false)
   const [sizeOpen,    setSizeOpen]    = useState(false)
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input
+      if (e.target instanceof HTMLInputElement) return
+      if (e.target instanceof HTMLTextAreaElement) return
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        if (canUndo) undo()
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault()
+        if (canRedo) redo()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [canUndo, canRedo, undo, redo])
 
   const preset = project
     ? CANVAS_PRESETS.find(p => p.width === project.width && p.height === project.height)
@@ -45,6 +72,41 @@ export default function TopBar() {
           {project?.name ?? 'No project'}
         </button>
       )}
+
+      <div className="w-px h-4 bg-editor-border" />
+
+      {/* Undo/Redo */}
+      <div className="flex items-center gap-1">
+        <Tooltip text="Undo (Ctrl+Z)">
+          <button
+            onClick={undo}
+            disabled={!canUndo}
+            className={cn(
+              'p-1 rounded transition-colors',
+              canUndo
+                ? 'text-editor-text hover:text-white hover:bg-editor-hover'
+                : 'text-editor-muted cursor-not-allowed'
+            )}
+          >
+            <Undo2 size={14} />
+          </button>
+        </Tooltip>
+
+        <Tooltip text="Redo (Ctrl+Y)">
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            className={cn(
+              'p-1 rounded transition-colors',
+              canRedo
+                ? 'text-editor-text hover:text-white hover:bg-editor-hover'
+                : 'text-editor-muted cursor-not-allowed'
+            )}
+          >
+            <Redo2 size={14} />
+          </button>
+        </Tooltip>
+      </div>
 
       <div className="w-px h-4 bg-editor-border" />
 
@@ -92,24 +154,28 @@ export default function TopBar() {
       <div className="flex-1" />
 
       {/* Preview */}
-      <button
-        disabled={!project}
-        onClick={() => setPreviewOpen(true)}
-        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded bg-editor-hover text-editor-text hover:bg-editor-border transition-colors disabled:opacity-40 disabled:cursor-default"
-      >
-        <Play size={11} />
-        Preview
-      </button>
+      <Tooltip text="Preview video (Ctrl+P)">
+        <button
+          disabled={!project}
+          onClick={() => setPreviewOpen(true)}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded bg-editor-hover text-editor-text hover:bg-editor-border transition-colors disabled:opacity-40 disabled:cursor-default"
+        >
+          <Play size={11} />
+          Preview
+        </button>
+      </Tooltip>
 
       {/* Export */}
-      <button
-        disabled={!project}
-        onClick={() => setExportOpen(true)}
-        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded bg-editor-accent text-white hover:bg-editor-accent-hover transition-colors disabled:opacity-40 disabled:cursor-default"
-      >
-        <Download size={11} />
-        Export MP4
-      </button>
+      <Tooltip text="Export video (Ctrl+E)">
+        <button
+          disabled={!project}
+          onClick={() => setExportOpen(true)}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded bg-editor-accent text-white hover:bg-editor-accent-hover transition-colors disabled:opacity-40 disabled:cursor-default"
+        >
+          <Download size={11} />
+          Export Video
+        </button>
+      </Tooltip>
     </div>
   )
 }

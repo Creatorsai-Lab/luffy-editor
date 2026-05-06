@@ -22,26 +22,27 @@ export default function TextPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-0 overflow-y-auto flex-1">
+    <div className="flex flex-col h-full overflow-hidden">
       <PanelHeader icon={<Type size={12} />} title="Text" />
 
-      {!el && (
-        <p className="text-xs text-editor-muted px-3 py-3">
-          Click <strong className="text-editor-secondary">Text</strong> in the menu then click the canvas to add a text block.
-        </p>
-      )}
+      <div className="flex-1 overflow-y-auto">
+        {!el && (
+          <p className="text-xs text-editor-muted px-3 py-3">
+            Click <strong className="text-editor-secondary">Text</strong> in the menu then click the canvas to add a text block.
+          </p>
+        )}
 
-      {el && (
-        <div className="flex flex-col gap-0.5 px-3 py-2">
-          {/* Content */}
-          <Row label="Content">
-            <textarea
-              className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1.5 resize-none"
-              rows={3}
-              value={el.content}
-              onChange={e => upd({ content: e.target.value })}
-            />
-          </Row>
+        {el && (
+          <div className="flex flex-col gap-0.5 px-3 py-2">
+            {/* Content */}
+            <Row label="Content">
+              <textarea
+                className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1.5 resize-none"
+                rows={3}
+                value={el.content}
+                onChange={e => upd({ content: e.target.value })}
+              />
+            </Row>
 
           {/* Font family */}
           <Row label="Font">
@@ -147,7 +148,8 @@ export default function TextPanel() {
             </div>
           </Row>
         </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

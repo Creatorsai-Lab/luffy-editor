@@ -1,12 +1,16 @@
 import { useRef, useCallback, useEffect, useState } from 'react'
-import { Plus, Play, Pause, SkipBack } from 'lucide-react'
+import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Eye, EyeOff, ArrowRight, ArrowLeft, Activity, RotateCw, RefreshCw, ArrowUpDown } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { cn } from '../../utils/cn'
+import Tooltip from '../ui/Tooltip'
+import type { AnimationType } from '../../types/editor'
 
 const RULER_HEIGHT = 18
-const SCENE_HEIGHT = 26
+const SCENE_HEIGHT = 32
 const TRACK_HEIGHT = 22
-const PX_PER_SEC   = 60
+const PX_PER_SEC_BASE = 60
+
+const SCENE_COLORS = ['#3b82f6', '#0ea5e9', '#6366f1', '#4169e1'] // blue, skyblue, indigo, royalblue
 
 const ANIM_COLORS: Record<string, string> = {
   fadeIn: '#6366f1', fadeOut: '#8b5cf6',
@@ -14,6 +18,21 @@ const ANIM_COLORS: Record<string, string> = {
   scaleIn: '#22c55e', scaleOut: '#16a34a',
   typewriter: '#f59e0b', spin: '#f97316', drawPath: '#ec4899',
   pulse: '#a78bfa', bounceLoop: '#34d399', rotateLoop: '#fb923c'
+}
+
+const ANIM_ICONS: Record<AnimationType, React.ReactNode> = {
+  fadeIn: <Eye size={10} />,
+  fadeOut: <EyeOff size={10} />,
+  slideIn: <ArrowRight size={10} />,
+  slideOut: <ArrowLeft size={10} />,
+  scaleIn: <ZoomIn size={9} />,
+  scaleOut: <ZoomOut size={9} />,
+  typewriter: <span style={{ fontSize: 8 }}>Aa</span>,
+  spin: <RotateCw size={10} />,
+  pulse: <Activity size={10} />,
+  bounceLoop: <ArrowUpDown size={10} />,
+  rotateLoop: <RefreshCw size={10} />,
+  drawPath: <span style={{ fontSize: 8 }}>~</span>
 }
 
 const TRANS_COLORS: Record<string, string> = {
@@ -25,16 +44,31 @@ export default function Timeline() {
   const {
     project, currentSceneId,
     playhead, isPlaying,
-    addScene, setCurrentScene, updateScene,
+    timelineZoom, snapEnabled,
+    addScene, setCurrentScene, updateScene, reorderScenes, removeScene,
     setPlayhead, play, pause, stop,
-    getTotalDuration
+    getTotalDuration,
+    setTimelineZoom, setSnapEnabled
   } = useEditorStore()
 
   const [editDurId, setEditDurId] = useState<string | null>(null)
+  const [resizingScene, setResizingScene] = useState<{ id: string; edge: 'start' | 'end' } | null>(null)
+  const [draggingPlayhead, setDraggingPlayhead] = useState(false)
+  const [draggedSceneIndex, setDraggedSceneIndex] = useState<number | null>(null)
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null)
 
   const containerRef  = useRef<HTMLDivElement>(null)
   const rafRef        = useRef<number>(0)
   const lastTimeRef   = useRef<number>(0)
+
+  const PX_PER_SEC = PX_PER_SEC_BASE * timelineZoom
+
+  // Snap helper
+  const snapTime = useCallback((time: number): number => {
+    if (!snapEnabled) return time
+    const gridSize = 0.1 // 100ms grid
+    return Math.round(time / gridSize) * gridSize
+  }, [snapEnabled])
 
   // Playback RAF
   useEffect(() => {
@@ -62,13 +96,141 @@ export default function Timeline() {
     return () => cancelAnimationFrame(rafRef.current)
   }, [isPlaying])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input
+      if (e.target instanceof HTMLInputElement) return
+      if (e.target instanceof HTMLTextAreaElement) return
+
+      switch (e.key) {
+        case ' ':  // Space - Play/Pause
+          e.preventDefault()
+          isPlaying ? pause() : play()
+          break
+
+        case 'ArrowLeft':  // Previous frame
+          if (!isPlaying) {
+            e.preventDefault()
+            setPlayhead(Math.max(0, playhead - 1/30))
+          }
+          break
+
+        case 'ArrowRight':  // Next frame
+          if (!isPlaying) {
+            e.preventDefault()
+            setPlayhead(Math.min(getTotalDuration(), playhead + 1/30))
+          }
+          break
+
+        case 'Home':  // Jump to start
+          e.preventDefault()
+          setPlayhead(0)
+          break
+
+        case 'End':  // Jump to end
+          e.preventDefault()
+          setPlayhead(getTotalDuration())
+          break
+
+        case '+':
+        case '=':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            setTimelineZoom(Math.min(5, timelineZoom * 1.2))
+          }
+          break
+
+        case '-':
+        case '_':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            setTimelineZoom(Math.max(0.1, timelineZoom / 1.2))
+          }
+          break
+
+        case '0':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            setTimelineZoom(1)
+          }
+          break
+
+        case 'Delete':
+        case 'Backspace':
+          // Delete current scene if more than one scene exists
+          if (currentSceneId && project && project.scenes.length > 1) {
+            e.preventDefault()
+            removeScene(currentSceneId)
+          }
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isPlaying, playhead, timelineZoom, currentSceneId, project, pause, play, setPlayhead, getTotalDuration, setTimelineZoom, removeScene])
+
   const handleRulerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return
+    if (!containerRef.current || draggingPlayhead) return
     const rect = containerRef.current.getBoundingClientRect()
     const x    = e.clientX - rect.left + containerRef.current.scrollLeft
     const t    = x / PX_PER_SEC
-    setPlayhead(Math.max(0, Math.min(getTotalDuration(), t)))
-  }, [setPlayhead, getTotalDuration])
+    setPlayhead(snapTime(Math.max(0, Math.min(getTotalDuration(), t))))
+  }, [setPlayhead, getTotalDuration, PX_PER_SEC, snapTime, draggingPlayhead])
+
+  // Playhead scrubbing
+  const handlePlayheadMouseDown = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDraggingPlayhead(true)
+    pause()
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const x = e.clientX - rect.left + containerRef.current.scrollLeft
+      const time = x / PX_PER_SEC
+      setPlayhead(snapTime(Math.max(0, Math.min(getTotalDuration(), time))))
+    }
+
+    const handleMouseUp = () => {
+      setDraggingPlayhead(false)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [pause, setPlayhead, getTotalDuration, PX_PER_SEC, snapTime])
+
+  // Scene resize
+  const handleSceneEdgeMouseDown = useCallback((sceneId: string, edge: 'start' | 'end', e: React.MouseEvent) => {
+    e.stopPropagation()
+    setResizingScene({ id: sceneId, edge })
+
+    const scene = project!.scenes.find(s => s.id === sceneId)!
+    const startX = e.clientX
+    const startDuration = scene.duration
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - startX
+      const deltaTime = deltaX / PX_PER_SEC
+
+      if (edge === 'end') {
+        const newDuration = Math.max(0.5, startDuration + deltaTime)
+        updateScene(sceneId, { duration: snapTime(newDuration) })
+      }
+    }
+
+    const handleMouseUp = () => {
+      setResizingScene(null)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [project, updateScene, PX_PER_SEC, snapTime])
 
   if (!project) return (
     <div className="flex flex-col bg-orange flex-none" style={{ height: 120 }}>
@@ -95,26 +257,86 @@ export default function Timeline() {
     <div className="flex flex-col bg-[#171717] flex-none" style={{ height: 130 }}>
       {/* Controls row */}
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-editor-border flex-none">
-        <button onClick={stop} className="text-editor-muted hover:text-editor-text transition-colors">
-          <SkipBack size={12} />
-        </button>
-        <button
-          onClick={() => isPlaying ? pause() : play()}
-          className="flex items-center justify-center w-6 h-6 rounded bg-editor-accent hover:bg-editor-accent-hover text-white transition-colors"
-        >
-          {isPlaying ? <Pause size={10} /> : <Play size={10} />}
-        </button>
+        <Tooltip text="Stop (Home)">
+          <button onClick={stop} className="text-editor-muted hover:text-editor-text transition-colors">
+            <SkipBack size={12} />
+          </button>
+        </Tooltip>
+        
+        <Tooltip text={isPlaying ? "Pause (Space)" : "Play (Space)"}>
+          <button
+            onClick={() => isPlaying ? pause() : play()}
+            className="flex items-center justify-center w-6 h-6 rounded bg-editor-accent hover:bg-editor-accent-hover text-white transition-colors"
+          >
+            {isPlaying ? <Pause size={10} /> : <Play size={10} />}
+          </button>
+        </Tooltip>
+        
         <span className="text-xs text-editor-muted tabular-nums ml-1">
           {fmtTime(playhead)} / {fmtTime(totalDur)}
         </span>
+
+        <div className="w-px h-4 bg-editor-border mx-1" />
+
+        {/* Zoom controls */}
+        <Tooltip text="Zoom Out (Ctrl -)">
+          <button 
+            onClick={() => setTimelineZoom(Math.max(0.1, timelineZoom / 1.2))}
+            className="text-editor-muted hover:text-editor-text transition-colors"
+          >
+            <ZoomOut size={12} />
+          </button>
+        </Tooltip>
+        
+        <span className="text-xs text-editor-muted tabular-nums min-w-[40px] text-center">
+          {Math.round(timelineZoom * 100)}%
+        </span>
+        
+        <Tooltip text="Zoom In (Ctrl +)">
+          <button 
+            onClick={() => setTimelineZoom(Math.min(5, timelineZoom * 1.2))}
+            className="text-editor-muted hover:text-editor-text transition-colors"
+          >
+            <ZoomIn size={12} />
+          </button>
+        </Tooltip>
+
+        <Tooltip text="Reset Zoom (Ctrl 0)">
+          <button 
+            onClick={() => setTimelineZoom(1)}
+            className="text-xs text-editor-muted hover:text-editor-text transition-colors px-1"
+          >
+            1:1
+          </button>
+        </Tooltip>
+
+        {/* Snap toggle */}
+        <Tooltip text="Snap to Grid">
+          <button
+            onClick={() => setSnapEnabled(!snapEnabled)}
+            className={cn(
+              'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors',
+              snapEnabled 
+                ? 'bg-editor-accent-dim text-editor-accent' 
+                : 'text-editor-muted hover:text-editor-text'
+            )}
+          >
+            <Magnet size={11} />
+          </button>
+        </Tooltip>
+
         <div className="flex-1" />
-        <span className="text-2xs text-editor-muted">Double-click scene duration to edit</span>
-        <button
-          onClick={addScene}
-          className="flex items-center gap-1 text-xs text-editor-accent hover:text-white px-2 py-1 rounded border border-editor-accent hover:bg-editor-accent transition-colors"
-        >
-          <Plus size={11} /> Scene
-        </button>
+        
+        <span className="text-2xs text-editor-muted">Drag scene edges • Drag playhead • Space to play</span>
+        
+        <Tooltip text="Add Scene">
+          <button
+            onClick={addScene}
+            className="flex items-center gap-1 text-xs text-editor-accent hover:text-white px-2 py-1 rounded border border-editor-accent hover:bg-editor-accent transition-colors"
+          >
+            <Plus size={11} /> Scene
+          </button>
+        </Tooltip>
       </div>
 
       {/* Scrollable track area */}
@@ -140,33 +362,75 @@ export default function Timeline() {
 
           {/* Scene blocks */}
           <div className="absolute left-0 right-0" style={{ top: RULER_HEIGHT, height: SCENE_HEIGHT }}>
-            {project.scenes.map(sc => {
+            {project.scenes.map((sc, index) => {
               const startPx = sceneStarts[sc.id] * PX_PER_SEC
               const widthPx = sc.duration * PX_PER_SEC
               const hasTrans = sc.transition && sc.transition.type !== 'none'
               const transColor = hasTrans ? (TRANS_COLORS[sc.transition.type] ?? '#6366f1') : null
+              const isResizing = resizingScene?.id === sc.id
+              const isDragging = draggedSceneIndex === index
+              const isDropTarget = dropTargetIndex === index
+              const sceneColor = SCENE_COLORS[index % SCENE_COLORS.length]
+              const isActive = sc.id === currentSceneId
 
               return (
                 <div
                   key={sc.id}
+                  draggable
+                  onDragStart={(e) => {
+                    setDraggedSceneIndex(index)
+                    e.dataTransfer.effectAllowed = 'move'
+                  }}
+                  onDragEnd={() => {
+                    setDraggedSceneIndex(null)
+                    setDropTargetIndex(null)
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    setDropTargetIndex(index)
+                  }}
+                  onDragLeave={() => setDropTargetIndex(null)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    if (draggedSceneIndex !== null && draggedSceneIndex !== index) {
+                      reorderScenes(draggedSceneIndex, index)
+                    }
+                    setDraggedSceneIndex(null)
+                    setDropTargetIndex(null)
+                  }}
                   onClick={e => { e.stopPropagation(); setCurrentScene(sc.id) }}
                   className={cn(
-                    'absolute flex items-center px-2 cursor-pointer border-r border-editor-bg text-xs transition-colors select-none',
-                    sc.id === currentSceneId
-                      ? 'bg-editor-accent-dim text-editor-accent border-t-2 border-t-editor-accent'
-                      : 'bg-editor-panel text-editor-secondary hover:bg-editor-hover'
+                    'absolute flex items-center px-3 cursor-pointer text-xs transition-all select-none rounded-md',
+                    isDragging && 'opacity-50',
+                    isDropTarget && 'ring-2 ring-editor-accent',
+                    isResizing && 'ring-2 ring-white',
+                    isActive && 'ring-2 ring-white shadow-lg'
                   )}
-                  style={{ left: startPx, width: widthPx, height: SCENE_HEIGHT }}
+                  style={{ 
+                    left: startPx, 
+                    width: widthPx, 
+                    height: SCENE_HEIGHT - 4,
+                    top: 2,
+                    background: sceneColor,
+                    color: 'white',
+                    fontWeight: isActive ? 600 : 400
+                  }}
                 >
                   {/* Transition indicator stripe */}
                   {transColor && (
                     <div
-                      className="absolute left-0 top-0 bottom-0 w-1 rounded-tl"
+                      className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-md"
                       style={{ background: transColor }}
                     />
                   )}
 
-                  <span className="truncate flex-1 pl-1">{sc.name}</span>
+                  {/* Left resize handle */}
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-white/30 rounded-l-md z-10"
+                    onMouseDown={(e) => handleSceneEdgeMouseDown(sc.id, 'start', e)}
+                  />
+
+                  <span className="truncate flex-1 pl-1 font-medium">{sc.name}</span>
 
                   {/* Editable duration */}
                   {editDurId === sc.id ? (
@@ -175,7 +439,7 @@ export default function Timeline() {
                       type="number"
                       defaultValue={sc.duration}
                       min={0.5} max={120} step={0.5}
-                      className="w-12 bg-editor-bg border border-editor-accent rounded text-xs text-editor-text px-1 nodrag"
+                      className="w-12 bg-white/20 border border-white/40 rounded text-xs text-white px-1 nodrag"
                       onBlur={e => {
                         updateScene(sc.id, { duration: Math.max(0.5, Number(e.target.value)) })
                         setEditDurId(null)
@@ -192,13 +456,19 @@ export default function Timeline() {
                     />
                   ) : (
                     <span
-                      className="text-editor-muted flex-shrink-0 ml-1 cursor-text hover:text-editor-accent transition-colors"
+                      className="flex-shrink-0 ml-2 cursor-text hover:bg-white/20 px-1.5 py-0.5 rounded transition-colors"
                       onDoubleClick={e => { e.stopPropagation(); setEditDurId(sc.id) }}
                       title="Double-click to edit duration"
                     >
                       {sc.duration}s
                     </span>
                   )}
+
+                  {/* Right resize handle */}
+                  <div
+                    className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-white/30 rounded-r-md z-10"
+                    onMouseDown={(e) => handleSceneEdgeMouseDown(sc.id, 'end', e)}
+                  />
                 </div>
               )
             })}
@@ -214,8 +484,15 @@ export default function Timeline() {
                 style={{ top: RULER_HEIGHT + SCENE_HEIGHT + ei * TRACK_HEIGHT, height: TRACK_HEIGHT }}
               >
                 <div
-                  className="absolute left-0 flex items-center px-2 text-xs text-editor-muted truncate"
-                  style={{ width: 80, height: TRACK_HEIGHT, background: '#141414', zIndex: 1 }}
+                  className="absolute left-0 flex items-center px-2 text-xs text-white truncate rounded-r-md"
+                  style={{ 
+                    width: 100, 
+                    height: TRACK_HEIGHT - 4, 
+                    top: 2,
+                    background: '#2a2a2a', 
+                    zIndex: 1,
+                    fontWeight: 500
+                  }}
                 >
                   {el.name}
                 </div>
@@ -226,19 +503,21 @@ export default function Timeline() {
                   return (
                     <div
                       key={anim.id}
-                      className="absolute rounded-sm text-white"
+                      className="absolute rounded-md text-white flex items-center gap-1 px-1.5 shadow-sm"
                       style={{
-                        left: barStart + 80,
+                        left: barStart + 105,
                         width: Math.max(barW, 4),
                         top: 3, height: TRACK_HEIGHT - 6,
                         background: ANIM_COLORS[anim.type] ?? '#6366f1',
-                        fontSize: 9, paddingLeft: 2, lineHeight: `${TRACK_HEIGHT - 6}px`,
+                        fontSize: 9, lineHeight: `${TRACK_HEIGHT - 6}px`,
                         opacity: isLoop ? 0.85 : 1,
-                        borderRight: isLoop ? '2px dashed rgba(255,255,255,0.4)' : undefined
+                        borderRight: isLoop ? '2px dashed rgba(255,255,255,0.4)' : undefined,
+                        fontWeight: 500
                       }}
-                      title={`${anim.type}${isLoop ? ' (loop)' : ''}`}
+                      title={`${anim.type}${isLoop ? ' (loop)' : ''} - ${anim.duration}s`}
                     >
-                      {barW > 30 ? anim.type : ''}
+                      {ANIM_ICONS[anim.type]}
+                      {barW > 40 && <span className="truncate">{anim.type}</span>}
                     </div>
                   )
                 })}
@@ -248,10 +527,19 @@ export default function Timeline() {
 
           {/* Playhead */}
           <div
-            className="absolute top-0 bottom-0 pointer-events-none z-10"
-            style={{ left: playheadPx, width: 1, background: '#f59e0b' }}
+            className="absolute top-0 bottom-0 z-10"
+            style={{ 
+              left: playheadPx, 
+              width: 1, 
+              background: '#f59e0b',
+              cursor: draggingPlayhead ? 'grabbing' : 'grab'
+            }}
+            onMouseDown={handlePlayheadMouseDown}
           >
-            <div className="w-2.5 h-2.5 bg-warning rounded-full -translate-x-[5px]" />
+            <div 
+              className="w-2.5 h-2.5 bg-warning rounded-full -translate-x-[5px] cursor-grab hover:scale-110 transition-transform" 
+              style={{ cursor: draggingPlayhead ? 'grabbing' : 'grab' }}
+            />
           </div>
         </div>
       </div>

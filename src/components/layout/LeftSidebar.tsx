@@ -4,7 +4,9 @@ import ShapePanel from '../panels/ShapePanel'
 import ArrowPanel from '../panels/ArrowPanel'
 import CodePanel from '../panels/CodePanel'
 import TablePanel from '../panels/TablePanel'
-import AnimationPanel from '../panels/AnimationPanel'
+import TextAnimationPanel from '../panels/TextAnimationPanel'
+import ShapeAnimationPanel from '../panels/ShapeAnimationPanel'
+import TextEffectsPanel from '../panels/TextEffectsPanel'
 import BackgroundPanel from '../panels/BackgroundPanel'
 import LayersPanel from '../panels/LayersPanel'
 import TransitionPanel from '../panels/TransitionPanel'
@@ -31,23 +33,25 @@ export default function LeftSidebar() {
     }
 
     switch (activePanel) {
-      case 'text':        return <TextPanel />
-      case 'shapes':      return <ShapePanel />
-      case 'arrows':      return <ArrowPanel />
-      case 'code':        return <CodePanel />
-      case 'table':       return <TablePanel />
-      case 'upload':      return <UploadPanel />
-      case 'animations':  return <AnimationPanel />
-      case 'background':  return <BackgroundPanel />
-      case 'layers':      return <LayersPanel />
-      case 'transitions': return <TransitionPanel />
+      case 'text':            return <TextPanel />
+      case 'shapes':          return <ShapePanel />
+      case 'arrows':          return <ArrowPanel />
+      case 'code':            return <CodePanel />
+      case 'table':           return <TablePanel />
+      case 'upload':          return <UploadPanel />
+      case 'textAnimations':  return <TextAnimationPanel />
+      case 'shapeAnimations': return <ShapeAnimationPanel />
+      case 'textEffects':     return <TextEffectsPanel />
+      case 'background':      return <BackgroundPanel />
+      case 'layers':          return <LayersPanel />
+      case 'transitions':     return <TransitionPanel />
       default:
         return <HintPanel text="Menu Options Panel (select to see)" />
     }
   }
 
   return (
-    <aside className="w-55 flex-none bg-[#171717] flex flex-col overflow-hidden">
+    <aside className="w-55 flex-none bg-[#171717] flex flex-col overflow-hidden h-full">
       {renderPanel()}
     </aside>
   )
