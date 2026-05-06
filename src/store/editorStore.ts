@@ -438,3 +438,33 @@ export const useEditorStore = create<EditorState & EditorActions>()(
     }))
   )
 )
+
+// ── Auto-save history on important actions ────────────────────────────────────
+let lastProject: Project | null = null
+let saveTimeout: NodeJS.Timeout | null = null
+
+useEditorStore.subscribe(
+  (state) => state.project,
+  (project) => {
+    if (!project || !lastProject) {
+      lastProject = project
+      return
+    }
+
+    // Debounce history saves (wait 500ms after last change)
+    if (saveTimeout) clearTimeout(saveTimeout)
+    
+    saveTimeout = setTimeout(() => {
+      if (project && lastProject) {
+        // Check if there were actual changes
+        const currentStr = JSON.stringify(project)
+        const lastStr = JSON.stringify(lastProject)
+        
+        if (currentStr !== lastStr) {
+          useHistoryStore.getState().pushHistory(project, 'Edit')
+          lastProject = JSON.parse(currentStr)
+        }
+      }
+    }, 500)
+  }
+)
