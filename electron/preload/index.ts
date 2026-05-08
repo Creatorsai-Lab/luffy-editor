@@ -23,6 +23,9 @@ const api = {
     openFile:  (filters: { name: string; extensions: string[] }[]) => ipcRenderer.invoke('dialog:open-file', filters),
     saveVideo: (defaultName: string)                                => ipcRenderer.invoke('dialog:save-video', defaultName)
   },
+  fs: {
+    writeFile: (path: string, data: Uint8Array) => ipcRenderer.invoke('fs:write-file', path, data)
+  },
   shell: {
     openPath: (path: string) => ipcRenderer.invoke('shell:open-path', path)
   }

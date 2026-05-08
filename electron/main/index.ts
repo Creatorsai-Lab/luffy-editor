@@ -159,6 +159,11 @@ function createWindow(): void {
   })
 
   ipcMain.handle('shell:open-path', (_e, path: string) => shell.openPath(path))
+
+  // File system
+  ipcMain.handle('fs:write-file', async (_e, path: string, data: Uint8Array) => {
+    await writeFile(path, Buffer.from(data))
+  })
 }
 
 app.whenReady().then(async () => {

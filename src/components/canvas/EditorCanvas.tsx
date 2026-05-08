@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react'
-import { Stage, Layer, Shape, Transformer } from 'react-konva'
+import { Stage, Layer, Shape, Transformer, Circle, Path } from 'react-konva'
 import type Konva from 'konva'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
@@ -7,6 +7,10 @@ import { registerStage } from '../../engine/stageRegistry'
 import { makeText, makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from '../../utils/defaults'
 import type { Background, ShapeType } from '../../types/editor'
 import CanvasElement from './CanvasElement'
+import CanvasGrid from './CanvasGrid'
+import CanvasGuides from './CanvasGuides'
+import CanvasSafeArea from './CanvasSafeArea'
+import CanvasToolbar from './CanvasToolbar'
 
 export default function EditorCanvas() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -101,9 +105,21 @@ export default function EditorCanvas() {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        selectedIds.forEach(id => removeElement(id))
+        e.preventDefault() // Prevent browser back navigation
+        console.log('[EditorCanvas] Delete key pressed, selectedIds:', selectedIds)
+        if (selectedIds.length > 0) {
+          console.log('[EditorCanvas] Deleting elements:', selectedIds)
+          selectedIds.forEach(id => {
+            console.log('[EditorCanvas] Removing element:', id)
+            removeElement(id)
+          })
+        } else {
+          console.log('[EditorCanvas] No elements selected to delete')
+        }
       }
+      
       if (e.key === 'Escape') {
         deselectAll()
         setActiveTool('select')
@@ -254,6 +270,10 @@ export default function EditorCanvas() {
               h={project.height}
               time={playhead}
             />
+            {/* Grid, Guides, Safe Area */}
+            <CanvasGrid width={project.width} height={project.height} />
+            <CanvasGuides width={project.width} height={project.height} />
+            <CanvasSafeArea width={project.width} height={project.height} />
           </Layer>
 
           {/* Elements */}
@@ -280,17 +300,36 @@ export default function EditorCanvas() {
               ref={trRef}
               rotateEnabled
               enabledAnchors={['top-left','top-center','top-right','middle-right','bottom-right','bottom-center','bottom-left','middle-left']}
+              keepRatio={false}
               boundBoxFunc={(_old, box) => ({
                 ...box,
                 width:  Math.max(10, box.width),
                 height: Math.max(10, box.height)
               })}
-              anchorSize={7}
-              anchorFill="#fff"
-              anchorStroke="#6366f1"
-              anchorStrokeWidth={1.5}
+              anchorSize={10}
+              anchorFill="#6366f1"
+              anchorStroke="#fff"
+              anchorStrokeWidth={2}
+              anchorCornerRadius={10}
               borderStroke="#6366f1"
-              borderStrokeWidth={1.5}
+              borderStrokeWidth={2}
+              rotateAnchorOffset={40}
+              rotateLineVisible={false}
+              rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+              rotateAnchorCursor="grab"
+              anchorStyleFunc={(anchor) => {
+                // Make rotation anchor more visible
+                if (anchor.hasName('rotater')) {
+                  anchor.cornerRadius(12)
+                  anchor.fill('#10b981')
+                  anchor.stroke('#fff')
+                  anchor.strokeWidth(2)
+                  anchor.width(24)
+                  anchor.height(24)
+                  anchor.offsetX(12)
+                  anchor.offsetY(12)
+                }
+              }}
             />
 
             {drawingArrow && (
@@ -315,6 +354,11 @@ export default function EditorCanvas() {
       {/* Scale indicator */}
       <div className="absolute bottom-2 right-3 text-xs text-white bg-black px-2 py-0.5 ">
         {project.width}×{project.height} · {Math.round(scale * 100)}%
+      </div>
+
+      {/* Canvas Toolbar */}
+      <div className="absolute top-2 right-2">
+        <CanvasToolbar />
       </div>
     </div>
   )

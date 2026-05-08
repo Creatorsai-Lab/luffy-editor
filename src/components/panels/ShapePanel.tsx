@@ -1,6 +1,6 @@
 import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, Ellipsis, MessageCircle, MessageSquare, Triangle as TriangleIcon } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import type { ShapeElement, ShapeType } from '../../types/editor'
+import type { ShapeElement, ShapeType, ActiveTool } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
 import { cn } from '../../utils/cn'
 
@@ -56,7 +56,21 @@ export default function ShapePanel() {
       {el && (
         <div className="flex flex-col px-3 py-2 gap-0.5">
           <Row label="Fill">
-            <ColorInput value={el.fill} onChange={v => upd({ fill: v })} />
+            <div className="flex items-center gap-1">
+              <ColorInput value={el.fill} onChange={v => upd({ fill: v })} />
+              <button
+                onClick={() => upd({ fill: el.fill === 'transparent' ? '#6366f1' : 'transparent' })}
+                className={cn(
+                  'px-2 py-1 text-2xs rounded border transition-colors',
+                  el.fill === 'transparent'
+                    ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
+                    : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text'
+                )}
+                title="Toggle transparent fill"
+              >
+                {el.fill === 'transparent' ? 'Solid' : 'Clear'}
+              </button>
+            </div>
           </Row>
           <Row label="Stroke">
             <ColorInput value={el.stroke} onChange={v => upd({ stroke: v })} />

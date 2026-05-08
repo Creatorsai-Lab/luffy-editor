@@ -82,44 +82,115 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
   // Render all frames to memory
   const frames: Uint8Array[] = []
   
+  // Build scene timeline with transition info
+  interface SceneTimeInfo {
+    scene: typeof project.scenes[0]
+    startTime: number
+    endTime: number
+    transitionStart: number  // When transition to next scene starts
+    transitionDuration: number
+  }
+  
+  const sceneTimeline: SceneTimeInfo[] = []
+  let elapsed = 0
+  for (let i = 0; i < project.scenes.length; i++) {
+    const scene = project.scenes[i]
+    const nextScene = project.scenes[i + 1]
+    const transitionDuration = nextScene?.transition.duration ?? 0
+    
+    sceneTimeline.push({
+      scene,
+      startTime: elapsed,
+      endTime: elapsed + scene.duration,
+      transitionStart: elapsed + scene.duration - transitionDuration,
+      transitionDuration
+    })
+    
+    elapsed += scene.duration
+  }
+  
   for (let i = 0; i < totalFrames; i++) {
     const time = i / fps
     
-    // Update playhead and render
-    await renderFrame(time)
-    await new Promise(r => requestAnimationFrame(r))
+    // Find current scene and check if we're in a transition
+    let currentSceneInfo: SceneTimeInfo | null = null
+    let nextSceneInfo: SceneTimeInfo | null = null
+    let transitionProgress = 0
     
-    const stage = getStage()
-    if (stage) {
-      // Get high-quality image from stage
-      const dataUrl = stage.toDataURL({ 
-        mimeType: 'image/png',
-        quality: 1.0,
-        pixelRatio: 1
-      })
-      
-      // Load image and draw to canvas
-      const img = new Image()
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve()
-        img.onerror = reject
-        img.src = dataUrl
-      })
-      
-      ctx.drawImage(img, 0, 0, w, h)
-      
-      // Convert canvas to raw image data
-      const imageData = ctx.getImageData(0, 0, w, h)
-      const pngBlob = await new Promise<Blob>((resolve) => {
-        offscreen.toBlob((blob) => resolve(blob!), 'image/png', 1.0)
-      })
-      
-      const pngData = await pngBlob.arrayBuffer()
-      frames.push(new Uint8Array(pngData))
+    for (let j = 0; j < sceneTimeline.length; j++) {
+      const info = sceneTimeline[j]
+      if (time >= info.startTime && time < info.endTime) {
+        currentSceneInfo = info
+        
+        // Check if we're in transition period
+        if (time >= info.transitionStart && info.transitionDuration > 0) {
+          nextSceneInfo = sceneTimeline[j + 1] ?? null
+          transitionProgress = (time - info.transitionStart) / info.transitionDuration
+        }
+        break
+      }
     }
     
+    if (!currentSceneInfo) {
+      // Shouldn't happen, but fallback to last scene
+      currentSceneInfo = sceneTimeline[sceneTimeline.length - 1]
+    }
+    
+    // Update playhead and render - CRITICAL: Wait for animations to complete
+    await renderFrame(time)
+    
+    // Wait for React to update state
+    await new Promise(r => setTimeout(r, 0))
+    
+    // Wait for next animation frame to ensure Konva has rendered
+    await new Promise(r => requestAnimationFrame(r))
+    
+    // Additional wait to ensure all animations are applied
+    await new Promise(r => setTimeout(r, 50))
+    
+    const stage = getStage()
+    if (!stage) {
+      throw new Error('Stage not available during export')
+    }
+    
+    // Force stage to redraw
+    stage.batchDraw()
+    
+    // Wait for draw to complete
+    await new Promise(r => requestAnimationFrame(r))
+    
+    // Get high-quality image from stage
+    const dataUrl = stage.toDataURL({ 
+      mimeType: 'image/png',
+      quality: 1.0,
+      pixelRatio: 1
+    })
+    
+    // Load image and draw to canvas
+    const img = new Image()
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = reject
+      img.src = dataUrl
+    })
+    
+    ctx.drawImage(img, 0, 0, w, h)
+    
+    // Convert canvas to raw image data
+    const pngBlob = await new Promise<Blob>((resolve) => {
+      offscreen.toBlob((blob) => resolve(blob!), 'image/png', 1.0)
+    })
+    
+    const pngData = await pngBlob.arrayBuffer()
+    frames.push(new Uint8Array(pngData))
+    
     const frameProgress = Math.round((i / totalFrames) * 70)
-    onProgress(5 + frameProgress, `Rendering frame ${i + 1}/${totalFrames}`)
+    onProgress(5 + frameProgress, `Rendering frame ${i + 1}/${totalFrames} (${time.toFixed(2)}s)`)
+    
+    // Log progress every 30 frames
+    if (i % 30 === 0) {
+      onLog?.(`Rendered frame ${i + 1}/${totalFrames} at time ${time.toFixed(2)}s`)
+    }
   }
 
   onProgress(75, 'Writing frames to FFmpeg...')

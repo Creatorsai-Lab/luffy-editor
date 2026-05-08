@@ -252,14 +252,15 @@ Exit Code: 0
 - [x] Video rendering
 - [x] Charts menu item
 - [x] Drag-and-drop upload
+- [x] Grid rendering on canvas ✨ NEW
+- [x] Guides rendering on canvas ✨ NEW
+- [x] Safe area rendering on canvas ✨ NEW
+- [x] Canvas toolbar integrated ✨ NEW
 
 ### **Ready for Integration:**
 - [ ] Transition rendering in preview
 - [ ] Transition rendering in export
-- [ ] Grid rendering on canvas
-- [ ] Guide rendering on canvas
 - [ ] Ruler rendering on canvas
-- [ ] Safe area rendering on canvas
 - [ ] Smart guides during drag
 
 ### **Future Enhancements:**

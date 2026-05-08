@@ -52,10 +52,13 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     },
     onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
       const node = e.target
+      const scaleX = node.scaleX()
+      const scaleY = node.scaleY()
+      
       if (element.type === 'arrow') {
         const el = element as import('../../types/editor').ArrowElement
         const dx = node.x(), dy = node.y()
-        const sX = node.scaleX(), sY = node.scaleY()
+        const sX = scaleX, sY = scaleY
         const rot = node.rotation() * Math.PI / 180
         const transform = (px: number, py: number) => ({
           x: dx + (px * sX) * Math.cos(rot) - (py * sY) * Math.sin(rot),
@@ -65,14 +68,20 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
         node.x(0); node.y(0); node.scaleX(1); node.scaleY(1); node.rotation(0)
         updateElement(element.id, { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
       } else {
+        const newWidth = Math.max(10, Math.abs(node.width() * scaleX))
+        const newHeight = Math.max(10, Math.abs(node.height() * scaleY))
+        
         updateElement(element.id, {
           x:        node.x(),
           y:        node.y(),
-          width:    Math.abs(node.width()  * node.scaleX()),
-          height:   Math.abs(node.height() * node.scaleY()),
+          width:    newWidth,
+          height:   newHeight,
           rotation: node.rotation()
         })
-        node.scaleX(1); node.scaleY(1)
+        
+        // Reset scale to 1 after applying dimensions
+        node.scaleX(1)
+        node.scaleY(1)
       }
     }
   }

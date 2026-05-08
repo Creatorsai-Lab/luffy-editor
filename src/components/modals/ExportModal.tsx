@@ -61,9 +61,29 @@ export default function ExportModal() {
           },
           renderFrame: async (t) => {
             if (cancelRef.current) throw new Error('Cancelled')
+            
+            // Find which scene we're in at time t
+            let elapsed = 0
+            for (const scene of project.scenes) {
+              if (t < elapsed + scene.duration) {
+                // Switch to this scene if not already current
+                if (scene.id !== useEditorStore.getState().currentSceneId) {
+                  useEditorStore.getState().setCurrentScene(scene.id)
+                  // Wait for scene switch to complete
+                  await new Promise(r => setTimeout(r, 0))
+                }
+                break
+              }
+              elapsed += scene.duration
+            }
+            
             setPlayhead(t)
-            // Let React re-render + Konva repaint
-            await new Promise(r => setTimeout(r, 16))
+            // Wait for React state update
+            await new Promise(r => setTimeout(r, 0))
+            // Wait for Konva to render
+            await new Promise(r => requestAnimationFrame(r))
+            // Additional wait for animations to apply
+            await new Promise(r => setTimeout(r, 30))
           }
         })
       } else {
@@ -101,14 +121,23 @@ export default function ExportModal() {
     const ext = format === 'mp4' ? 'mp4' : 'webm'
     const path = await window.api.dialog.saveVideo(`${project.name}.${ext}`)
     if (!path) return
+    
     setSavePath(path)
+    setLog('Saving file...')
 
-    const url = URL.createObjectURL(blobRef.current)
-    const a   = document.createElement('a')
-    a.href    = url
-    a.download = path.split(/[\\/]/).pop() ?? `${project.name}.${ext}`
-    a.click()
-    URL.revokeObjectURL(url)
+    // Convert blob to array buffer
+    const arrayBuffer = await blobRef.current.arrayBuffer()
+    const buffer = new Uint8Array(arrayBuffer)
+
+    // Write file using Electron's fs
+    try {
+      await window.api.fs.writeFile(path, buffer)
+      setLog('File saved successfully!')
+    } catch (error) {
+      console.error('Failed to save file:', error)
+      setLog('Failed to save file')
+      setPhase('error')
+    }
   }
 
   async function handleOpenFolder() {

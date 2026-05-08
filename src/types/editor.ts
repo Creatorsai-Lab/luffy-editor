@@ -1,6 +1,6 @@
 // ─── Element subtypes ────────────────────────────────────────────────────────
 
-export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table' | 'chart' | 'video'
+export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table' | 'chart' | 'video' | 'audio'
 export type ShapeType     = 'rect' | 'circle' | 'triangle' | 'star' | 'pentagon' | 'hexagon' | 'octagon' | 'diamond' | 'oval' | 'speechBubble' | 'roundedSpeech' | 'cone'
 export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'typewriter' | 'drawPath' | 'spin' | 'pulse' | 'bounceLoop' | 'rotateLoop' | 
   // Text-specific animations
@@ -161,7 +161,20 @@ export interface VideoElement extends BaseElement {
   muted: boolean
 }
 
-export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElement | ImageElement | TableElement | ChartElement | VideoElement
+export interface AudioElement extends BaseElement {
+  type: 'audio'
+  src: string
+  assetId: string
+  volume: number
+  fadeIn: number
+  fadeOut: number
+  startTime: number  // Trim start (seconds)
+  duration: number   // Trim duration (seconds)
+  loop: boolean
+  track: 'background' | 'voiceover'
+}
+
+export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElement | ImageElement | TableElement | ChartElement | VideoElement | AudioElement
 
 // ─── Background ───────────────────────────────────────────────────────────────
 
@@ -195,8 +208,9 @@ export interface AssetMeta {
   id: string
   filename: string
   path: string
-  type: 'image' | 'video'
+  type: 'image' | 'video' | 'audio'
   name: string
+  duration?: number  // For audio/video
 }
 
 export interface Project {

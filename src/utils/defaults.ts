@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import type {
   Project, Scene, Background, TextElement, ShapeElement,
-  ArrowElement, CodeElement, ImageElement, TableElement, ChartElement, VideoElement,
+  ArrowElement, CodeElement, ImageElement, TableElement, ChartElement, VideoElement, AudioElement,
   ElementAnimation, SceneTransition, ShapeType
 } from '../types/editor'
 
@@ -164,5 +164,22 @@ export function makeVideo(x: number, y: number, src: string, assetId: string): V
     playbackRate: 1,
     loop: false,
     muted: false
+  }
+}
+
+export function makeAudio(src: string, assetId: string, duration: number): AudioElement {
+  return {
+    id: uuid(), type: 'audio', name: 'Audio',
+    x: 0, y: 0, width: 100, height: 40,
+    rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
+    animations: [],
+    src, assetId,
+    volume: 1,
+    fadeIn: 0,
+    fadeOut: 0,
+    startTime: 0,
+    duration,
+    loop: false,
+    track: 'background'
   }
 }

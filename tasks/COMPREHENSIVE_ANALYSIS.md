@@ -53,7 +53,7 @@ Your video editor has a solid foundation with scene-based architecture, animatio
 ### 3. **State Management Issues**
 
 #### Current Issues:
-- ❌ **No undo/redo system** - Critical for any editor
+- ❌ **No undo/redo system** - Critical for any editor (add undo redo in top bar)
 - ❌ **No history panel** - Can't see/navigate edit history
 - ❌ **No version control** - Can't save versions
 - ❌ **No auto-save indicator** - Users don't know when saved
@@ -61,20 +61,21 @@ Your video editor has a solid foundation with scene-based architecture, animatio
 - ❌ **Large state in Zustand** - Performance issues with big projects
 
 ### 4. **User Experience Issues**
+- ❌ **Image Upload not working** uanble to upload image and video correctly and show it in sidebar in small size for preview, unable to add it on canavs. need to add handle point to change size, rotate.
 - ❌ **No context menus** - Right-click does nothing
-- ❌ **No drag-and-drop** - Can't drag files into canvas
+- ❌ **No drag-and-drop** - Can't drag files (image, video or icon) into canvas, when drag in, also save it to upload sidebar and show there.
+- ❌ **No chart/graph elements** Need to add option in main menu bar so user add graphs, charts
+- ⚠️ **Unused imports** - `makeCode`, `Image`, `activeTool`, `activePanel`. Need to validate it
 
 ### 5. **Element System Gaps**
-
 #### Missing Element Types:
 - ❌ **No video elements** - Can't add video clips
 - ❌ **No audio elements** - No background music/voiceover
 - ❌ **No icon library** - Must upload manually
-- ❌ **No chart/graph elements** - Critical for educational content
+- ❌ **No chart/graph elements** - Critical for educational content already mentioned in issue list 4
 - ❌ **No equation editor** - No LaTeX/MathML support
 - ❌ **No mask/clipping** - Can't mask elements
-- ❌ **No effects** - No blur, shadow, glow, etc.
-- ❌ **No filters** - No color grading
+- ❌ **shapes options are limited** - need to add more like, rectangular speech box, casual speech box, hand drown look like oval, diamond shape, cone shape
 
 ### 6. **Performance Issues**
 
@@ -97,7 +98,6 @@ Your video editor has a solid foundation with scene-based architecture, animatio
 ### 8. **Code Quality Issues**
 
 #### Current Issues:
-- ⚠️ **Unused imports** - `makeCode`, `Image`, `activeTool`, `activePanel`
 - ⚠️ **No error boundaries** - App crashes on errors
 - ⚠️ **No loading states** - Poor feedback during operations
 - ⚠️ **No error handling** - Silent failures
@@ -105,6 +105,3 @@ Your video editor has a solid foundation with scene-based architecture, animatio
 - ⚠️ **Large components** - EditorCanvas is 300+ lines
 - ⚠️ **No tests** - Zero test coverage
 - ⚠️ **No TypeScript strict mode** - Loose type checking
-
----
-
