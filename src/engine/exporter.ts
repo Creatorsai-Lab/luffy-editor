@@ -9,8 +9,16 @@ export interface ExportOptions {
   renderFrame: (t: number) => Promise<void>
 }
 
-export async function exportToMP4(opts: ExportOptions): Promise<Blob> {
-  const { project, getStage, onProgress, renderFrame: setFrame } = opts
+/**
+ * MediaRecorder-based export.
+ *
+ * IMPORTANT:
+ * - Output is **WebM** (not MP4).
+ * - Timing is **not deterministic** (depends on browser scheduling + encoder).
+ * For deterministic MP4/WebM, use the FFmpeg exporter.
+ */
+export async function exportToWebM(opts: ExportOptions): Promise<Blob> {
+  const { project, getStage, onProgress, onLog, renderFrame: setFrame } = opts
   const fps    = project.fps
   const total  = project.scenes.reduce((s, sc) => s + sc.duration, 0)
   const frames = Math.ceil(total * fps)
@@ -46,10 +54,10 @@ export async function exportToMP4(opts: ExportOptions): Promise<Blob> {
 
     const stage = getStage()
     if (stage) {
-      const src = stage.toDataURL({ mimeType: 'image/jpeg', quality: 0.92, pixelRatio: 1 })
-      const img = new Image()
-      await new Promise<void>(res => { img.onload = () => res(); img.src = src })
-      ctx.drawImage(img, 0, 0, w, h)
+      // Avoid base64 encode/decode by exporting to a canvas.
+      const c = stage.toCanvas({ pixelRatio: 1 })
+      ctx.clearRect(0, 0, w, h)
+      ctx.drawImage(c, 0, 0, w, h)
     }
 
     videoTrack.requestFrame()
@@ -61,7 +69,14 @@ export async function exportToMP4(opts: ExportOptions): Promise<Blob> {
   await done
   onProgress(100)
 
-  return new Blob(chunks, { type: 'video/webm' })
+  onLog?.(`MediaRecorder export complete (${mimeType})`)
+  return new Blob(chunks, { type: mimeType })
+}
+
+// Back-compat: older callers used this name, but it never produced MP4.
+export async function exportToMP4(opts: ExportOptions): Promise<Blob> {
+  opts.onLog?.('exportToMP4() is deprecated; it exports WebM via MediaRecorder. Use exportToWebM() or FFmpeg exporter for MP4.')
+  return exportToWebM(opts)
 }
 
 export async function saveBlob(blob: Blob, savePath: string | null) {

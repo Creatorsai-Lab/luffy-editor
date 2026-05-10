@@ -2,6 +2,7 @@ import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
 import type { Project } from '../types/editor'
 import type Konva from 'konva'
+import { renderTransition } from './transitionRenderer'
 
 export interface FFmpegExportOptions {
   project: Project
@@ -9,6 +10,11 @@ export interface FFmpegExportOptions {
   onProgress: (pct: number, message: string) => void
   onLog?: (msg: string) => void
   renderFrame: (t: number) => Promise<void>
+  /**
+   * Optional: render a specific scene at a specific global time.
+   * This is needed to export transitions correctly (we must render both from/to scenes).
+   */
+  renderSceneFrame?: (sceneId: string, globalTime: number) => Promise<void>
   quality?: 'high' | 'ultra'
   format?: 'mp4' | 'webm'
 }
@@ -54,6 +60,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
     onProgress, 
     onLog, 
     renderFrame, 
+    renderSceneFrame,
     quality = 'high',
     format = 'mp4'
   } = opts
@@ -69,22 +76,20 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
 
   onProgress(5, 'Rendering frames...')
   
-  // Create offscreen canvas for high-quality rendering
-  const offscreen = document.createElement('canvas')
-  offscreen.width = w
-  offscreen.height = h
-  const ctx = offscreen.getContext('2d', { 
+  // Composite canvas (also used for transition rendering).
+  const composite = document.createElement('canvas')
+  composite.width = w
+  composite.height = h
+  const compositeCtx = composite.getContext('2d', { 
     alpha: false,
     desynchronized: false,
     willReadFrequently: false
   })!
 
-  // Render all frames to memory
-  const frames: Uint8Array[] = []
-  
   // Build scene timeline with transition info
   interface SceneTimeInfo {
-    scene: typeof project.scenes[0]
+    sceneId: string
+    sceneIndex: number
     startTime: number
     endTime: number
     transitionStart: number  // When transition to next scene starts
@@ -95,11 +100,13 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
   let elapsed = 0
   for (let i = 0; i < project.scenes.length; i++) {
     const scene = project.scenes[i]
-    const nextScene = project.scenes[i + 1]
-    const transitionDuration = nextScene?.transition.duration ?? 0
+    const hasNext = i < project.scenes.length - 1
+    // Transition belongs to THIS scene (from this scene -> next scene).
+    const transitionDuration = hasNext ? (scene.transition?.duration ?? 0) : 0
     
     sceneTimeline.push({
-      scene,
+      sceneId: scene.id,
+      sceneIndex: i,
       startTime: elapsed,
       endTime: elapsed + scene.duration,
       transitionStart: elapsed + scene.duration - transitionDuration,
@@ -109,6 +116,35 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
     elapsed += scene.duration
   }
   
+  const fromCanvas = document.createElement('canvas')
+  fromCanvas.width = w
+  fromCanvas.height = h
+  const fromCtx = fromCanvas.getContext('2d', { alpha: false })!
+
+  const toCanvas = document.createElement('canvas')
+  toCanvas.width = w
+  toCanvas.height = h
+  const toCtx = toCanvas.getContext('2d', { alpha: false })!
+
+  async function captureStageInto(ctx: CanvasRenderingContext2D) {
+    const stage = getStage()
+    if (!stage) throw new Error('Stage not available during export')
+    stage.batchDraw()
+    await new Promise(r => requestAnimationFrame(r))
+    const c = stage.toCanvas({ pixelRatio: 1 })
+    ctx.clearRect(0, 0, w, h)
+    ctx.drawImage(c, 0, 0, w, h)
+  }
+
+  async function canvasToJpegBytes(canvas: HTMLCanvasElement, q: number): Promise<Uint8Array> {
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob(b => resolve(b!), 'image/jpeg', q)
+    })
+    return new Uint8Array(await blob.arrayBuffer())
+  }
+
+  const jpegQuality = quality === 'ultra' ? 0.96 : 0.92
+
   for (let i = 0; i < totalFrames; i++) {
     const time = i / fps
     
@@ -136,73 +172,56 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
       currentSceneInfo = sceneTimeline[sceneTimeline.length - 1]
     }
     
-    // Update playhead and render - CRITICAL: Wait for animations to complete
-    await renderFrame(time)
-    
-    // Wait for React to update state
-    await new Promise(r => setTimeout(r, 0))
-    
-    // Wait for next animation frame to ensure Konva has rendered
-    await new Promise(r => requestAnimationFrame(r))
-    
-    // Additional wait to ensure all animations are applied
-    await new Promise(r => setTimeout(r, 50))
-    
-    const stage = getStage()
-    if (!stage) {
-      throw new Error('Stage not available during export')
+    if (nextSceneInfo && currentSceneInfo.transitionDuration > 0) {
+      if (!renderSceneFrame) {
+        // Without scene-specific rendering, we can't reliably render both scenes.
+        // Fallback: render only the current frame (no transition compositing).
+        await renderFrame(time)
+        await captureStageInto(compositeCtx)
+      } else {
+        const fromScene = project.scenes[currentSceneInfo.sceneIndex]
+        const toScene = project.scenes[nextSceneInfo.sceneIndex]
+
+        const delta = time - currentSceneInfo.transitionStart
+        const progress = Math.max(0, Math.min(1, delta / currentSceneInfo.transitionDuration))
+
+        // Render FROM scene at its natural global time.
+        await renderSceneFrame(fromScene.id, time)
+        await captureStageInto(fromCtx)
+
+        // Render TO scene as if it starts at transitionStart (so its localTime begins at 0).
+        const toGlobalTime = nextSceneInfo.startTime + delta
+        await renderSceneFrame(toScene.id, toGlobalTime)
+        await captureStageInto(toCtx)
+
+        renderTransition({
+          ctx: compositeCtx,
+          width: w,
+          height: h,
+          progress,
+          type: fromScene.transition.type,
+          direction: fromScene.transition.direction,
+          fromCanvas,
+          toCanvas
+        })
+        transitionProgress = progress
+      }
+    } else {
+      // Normal (non-transition) frame.
+      await renderFrame(time)
+      await captureStageInto(compositeCtx)
     }
-    
-    // Force stage to redraw
-    stage.batchDraw()
-    
-    // Wait for draw to complete
-    await new Promise(r => requestAnimationFrame(r))
-    
-    // Get high-quality image from stage
-    const dataUrl = stage.toDataURL({ 
-      mimeType: 'image/png',
-      quality: 1.0,
-      pixelRatio: 1
-    })
-    
-    // Load image and draw to canvas
-    const img = new Image()
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve()
-      img.onerror = reject
-      img.src = dataUrl
-    })
-    
-    ctx.drawImage(img, 0, 0, w, h)
-    
-    // Convert canvas to raw image data
-    const pngBlob = await new Promise<Blob>((resolve) => {
-      offscreen.toBlob((blob) => resolve(blob!), 'image/png', 1.0)
-    })
-    
-    const pngData = await pngBlob.arrayBuffer()
-    frames.push(new Uint8Array(pngData))
+
+    const filename = `frame${String(i).padStart(6, '0')}.jpg`
+    const bytes = await canvasToJpegBytes(composite, jpegQuality)
+    await ffmpeg.writeFile(filename, bytes)
     
     const frameProgress = Math.round((i / totalFrames) * 70)
-    onProgress(5 + frameProgress, `Rendering frame ${i + 1}/${totalFrames} (${time.toFixed(2)}s)`)
+    onProgress(5 + frameProgress, `Rendering frame ${i + 1}/${totalFrames} (${time.toFixed(2)}s${nextSceneInfo ? `, trans ${(transitionProgress * 100).toFixed(0)}%` : ''})`)
     
     // Log progress every 30 frames
     if (i % 30 === 0) {
       onLog?.(`Rendered frame ${i + 1}/${totalFrames} at time ${time.toFixed(2)}s`)
-    }
-  }
-
-  onProgress(75, 'Writing frames to FFmpeg...')
-  
-  // Write frames to FFmpeg virtual filesystem
-  for (let i = 0; i < frames.length; i++) {
-    const filename = `frame${String(i).padStart(6, '0')}.png`
-    await ffmpeg.writeFile(filename, frames[i])
-    
-    if (i % 10 === 0) {
-      const writeProgress = Math.round((i / frames.length) * 10)
-      onProgress(75 + writeProgress, `Writing frame ${i + 1}/${frames.length}`)
     }
   }
 
@@ -220,7 +239,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
   // Build FFmpeg command
   const ffmpegArgs = [
     '-framerate', String(fps),
-    '-i', 'frame%06d.png',
+    '-i', 'frame%06d.jpg',
     '-c:v', format === 'mp4' ? 'libx264' : 'libvpx-vp9',
     '-pix_fmt', 'yuv420p',
   ]
@@ -263,8 +282,8 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
   onProgress(98, 'Cleaning up...')
 
   // Clean up virtual filesystem
-  for (let i = 0; i < frames.length; i++) {
-    const filename = `frame${String(i).padStart(6, '0')}.png`
+  for (let i = 0; i < totalFrames; i++) {
+    const filename = `frame${String(i).padStart(6, '0')}.jpg`
     try {
       await ffmpeg.deleteFile(filename)
     } catch (e) {

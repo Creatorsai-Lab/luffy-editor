@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { X, Download, CheckCircle, AlertCircle, Loader2, Settings } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { exportToMP4WithFFmpeg, isFFmpegAvailable } from '../../engine/ffmpegExporter'
-import { exportToMP4 } from '../../engine/exporter'
+import { exportToWebM } from '../../engine/exporter'
 import { getStage } from '../../engine/stageRegistry'
 
 type Phase = 'idle' | 'exporting' | 'done' | 'error'
@@ -59,6 +59,17 @@ export default function ExportModal() {
           onLog: (msg) => {
             console.log('[Export]', msg)
           },
+          renderSceneFrame: async (sceneId, globalTime) => {
+            if (cancelRef.current) throw new Error('Cancelled')
+            if (sceneId !== useEditorStore.getState().currentSceneId) {
+              useEditorStore.getState().setCurrentScene(sceneId)
+              await new Promise(r => setTimeout(r, 0))
+            }
+            setPlayhead(globalTime)
+            await new Promise(r => setTimeout(r, 0))
+            await new Promise(r => requestAnimationFrame(r))
+            await new Promise(r => setTimeout(r, 30))
+          },
           renderFrame: async (t) => {
             if (cancelRef.current) throw new Error('Cancelled')
             
@@ -88,7 +99,7 @@ export default function ExportModal() {
         })
       } else {
         // Fallback to MediaRecorder (WebM only)
-        blob = await exportToMP4({
+        blob = await exportToWebM({
           project,
           getStage,
           onProgress: (pct) => {
