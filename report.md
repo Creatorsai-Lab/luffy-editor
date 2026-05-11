@@ -66,6 +66,7 @@ src/
 ```
 
 ---
+(halfed completed)
 
 ## 🔴 CRITICAL: Video Export Bugs
 
