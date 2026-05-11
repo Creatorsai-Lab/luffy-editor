@@ -19,6 +19,7 @@ if (typeof window !== 'undefined' && !window.api) {
     },
     assets:  { upload: async () => ({ id: '', filename: '', path: '' }), list: async () => [] },
     dialog:  { openFile: noopNull, saveVideo: noopNull },
+    fs:      { writeFile: async () => { console.warn('fs.writeFile not available in browser mode') } },
     shell:   { openPath: async () => '' }
   }
 }

@@ -1,238 +1,442 @@
-# Luffy Editor — Codebase Review (May 2026)
+# Luffy Editor — Full Codebase Audit & Export Fix Guide
 
-This report is based on reading the current repository at `d:\luffy-editor`, focusing on editor state, canvas rendering (Konva), timeline/playback, and export (MediaRecorder + FFmpeg.wasm), plus Electron IPC for projects/assets.
+> **Date**: May 2026 | **Scope**: Full codebase at `d:\luffy-editor`  
+> **Focus**: Video export bugs, architecture flaws, and improvement roadmap
 
-## Executive summary
+---
 
-You have a solid “PowerPoint-like scenes + elements + animations” foundation (React + Konva + Zustand). The biggest gaps are **deterministic rendering/export**, **audio pipeline**, **scene transitions integration**, and **state/history correctness & performance**. Export in particular will currently be **slow, memory-heavy, and not truly deterministic**, and one export function is **misnamed** (it claims MP4 but returns WebM).
+## Table of Contents
 
-If your goal is “high-quality video exports” for educational/scientific content, the next milestone should be a **deterministic render graph** (scene → frame → encoder) with **explicit time stepping**, **transition composition**, and **audio mixing** (even if minimal initially).
+1. [Executive Summary](#executive-summary)
+2. [Architecture Overview](#architecture-overview)
+3. [🔴 CRITICAL: Video Export Bugs (Your Current Issue)](#critical-video-export-bugs)
+4. [🟠 High-Priority Flaws](#high-priority-flaws)
+5. [🟡 Medium-Priority Issues](#medium-priority-issues)
+6. [🟢 What's Already Good](#whats-already-good)
+7. [Security & Reliability](#security--reliability)
+8. [Improvement Roadmap](#improvement-roadmap)
 
-## Status update (applied fixes)
+---
 
-The following items from the “Critical flaws” section have been **fixed in code**:
+## Executive Summary
 
-- **MediaRecorder export naming/behavior**: `src/engine/exporter.ts` now exposes `exportToWebM()` (truthful name). The old `exportToMP4()` remains only as a **deprecated back-compat wrapper** that returns WebM and logs a warning.
-- **Avoid base64 frame capture**: MediaRecorder path switched from `stage.toDataURL() → Image decode` to `stage.toCanvas()` for lower overhead.
-- **FFmpeg exporter JS OOM issue**: `src/engine/ffmpegExporter.ts` no longer buffers `frames: Uint8Array[]` in JS memory. Frames are written **per-frame** to the FFmpeg virtual FS as `frame%06d.jpg`.
-- **Transition rule + export compositing**: Transition ownership is now consistent: **`scene.transition` is “from scene → next scene”** (exporter no longer reads `nextScene.transition.duration`). FFmpeg export now composites transition frames using `renderTransition()` by rendering both scenes during the transition window.
+Luffy Editor has a solid foundation — React + Konva + Zustand with clean type definitions and a sensible scene/element/animation model. However, **video export is broken** due to several interacting bugs:
 
-Notes:
-- FFmpeg.wasm still stores encoded inputs in its virtual FS until encoding finishes (so long exports can still be memory-heavy), but the major “double buffering in JS + FFmpeg FS” problem is removed.
+1. **`window.api.fs` is not declared in the TypeScript global types** — the "Save File" button calls a method the type system doesn't know about, and more critically, the browser fallback stub in `main.tsx` doesn't include it either.
+2. **The save dialog only offers MP4 filter** even when exporting WebM — the saved file will have the wrong extension or fail to save.
+3. **Export rendering is non-deterministic** — it depends on `requestAnimationFrame` timing, `setTimeout` delays, and React state propagation, causing blank/corrupted frames.
+4. **FFmpeg.wasm loads from a CDN at runtime** — if the network is slow or offline, export fails silently.
+5. **Memory pressure** — FFmpeg.wasm virtual FS accumulates all JPEG frames before encoding begins.
 
-## What’s good already
+---
 
-- **Clear domain model** in `src/types/editor.ts`: `Project → scenes → elements`, animations attached to elements, plus backgrounds and transitions.
-- **Good separation of concerns**:
-  - Editor UI + Konva canvas in `src/components/canvas/EditorCanvas.tsx`
-  - Animation evaluation in `src/engine/animator.ts`
-  - Transition rendering utility in `src/engine/transitionRenderer.ts`
-  - Electron IPC for persistence/assets in `electron/main/index.ts` and `electron/preload/index.ts`
-- **Stage registry** (`src/engine/stageRegistry.ts`) correctly avoids putting Konva instances into Zustand/Immer (freezing issues).
+## Architecture Overview
 
-## Critical flaws (correctness / “will bite you”)
+```
+electron/
+  main/index.ts          — Electron main process, IPC handlers, file I/O
+  preload/index.ts       — Context bridge (window.api)
 
-### 1) `exportToMP4` doesn’t export MP4 (and isn’t deterministic)
-File: `src/engine/exporter.ts`
+src/
+  App.tsx                — Root component, project boot, auto-save
+  main.tsx               — Entry point, browser fallback stubs
+  
+  types/
+    editor.ts            — Domain model (Project, Scene, Element, Animation)
+    global.d.ts          — window.api type declarations
+  
+  store/
+    editorStore.ts       — Main Zustand store (project, playback, UI state)
+    canvasStore.ts        — Canvas settings (grid, guides, zoom)
+    historyStore.ts       — Undo/redo via JSON snapshots
+  
+  engine/
+    animator.ts           — Animation evaluation (getAnimatedProps)
+    exporter.ts           — MediaRecorder-based WebM export
+    ffmpegExporter.ts     — FFmpeg.wasm-based MP4/WebM export
+    transitionRenderer.ts — Scene transition compositing
+    stageRegistry.ts      — Konva stage singleton (avoids Immer freezing)
+  
+  components/
+    canvas/               — Konva stage, element renderers, toolbar
+    layout/               — Header, sidebar, timeline, top bar
+    modals/               — Code editor, preview, export dialogs
+    panels/               — Property panels (text, shapes, animations, etc.)
+    ui/                   — Shared UI components
+```
 
-- **Resolved**: MediaRecorder export is now exposed as `exportToWebM()`. `exportToMP4()` remains only as a deprecated wrapper for compatibility.
-- **Not deterministic**: it relies on:
-  - `requestAnimationFrame`
-  - `setTimeout(msPerFrame)`
-  - `MediaRecorder`’s internal scheduling
-  This makes frame timing depend on the machine load and browser scheduling. For “scientific/educational” visuals, this will cause subtle drift and inconsistent animation timing.
-- **Very slow frame path**: `stage.toDataURL()` → `new Image()` decode → `drawImage()` every frame. That’s expensive and can dominate runtime.
+---
 
-**Fix**
-- ✅ Implemented as `exportToWebM()` and replaced base64 capture with `stage.toCanvas()`.
-- For deterministic export, do **explicit frame stepping** with a fixed \(t = frameIndex / fps\) and render to a target canvas in one pass per frame (no sleeps).
-- Prefer `stage.toCanvas()` (Konva supports exporting to a canvas) to avoid base64 + decode overhead.
+## 🔴 CRITICAL: Video Export Bugs
 
-### 2) `ffmpegExporter.ts` is extremely memory-heavy and will OOM on real projects
-File: `src/engine/ffmpegExporter.ts`
+These are the bugs directly causing your export failures.
 
-- **Resolved (major part)**: exporter no longer keeps `frames[]` in JS memory. Frames are written per-frame to FFmpeg FS.
-- It includes multiple “waits” per frame. This still makes export **slow** and not perfectly deterministic (because rendering is driven by UI state + async waits).
-- **Resolved**: transition periods are now applied by compositing frames with `renderTransition()` when `renderSceneFrame(sceneId, globalTime)` is provided.
-- It loads FFmpeg core from `unpkg.com`. That’s a reliability and supply-chain risk (offline export breaks; CDN changes can break you).
+### Bug 1: `window.api.fs.writeFile` is undeclared in types
 
-**Fix**
-- ✅ Wrote frames per-frame and removed JS-side `frames[]`.
-- ✅ Integrated transitions by rendering **two scene canvases** and composing with `renderTransition()`.
-- Still recommended: use **native FFmpeg** in Electron for true streaming + long exports.
-- Bundle FFmpeg assets locally (or pin and ship them) rather than fetching from the public internet at runtime.
+**Files**: `src/types/global.d.ts`, `src/components/modals/ExportModal.tsx:145`
 
-### 3) Scene transitions data model is confusing (and likely wrong in export)
-Files:
-- `src/types/editor.ts` (transition lives on each `Scene` as `scene.transition`)
-- `src/engine/ffmpegExporter.ts` (reads `nextScene?.transition.duration`)
+The ExportModal calls `window.api.fs.writeFile(path, buffer)` to save the exported blob. However:
 
-In your model, a scene has a `transition` object. In the exporter, you treat the transition duration as belonging to the **next** scene (`nextScene?.transition.duration`). That’s ambiguous and will lead to off-by-one scene transition behavior.
+- **`global.d.ts` does NOT declare `fs` on `window.api`** — TypeScript doesn't catch this, but the browser fallback in `main.tsx` also doesn't stub it.
+- The preload script (`electron/preload/index.ts:26-28`) *does* expose `fs.writeFile`, and the main process (`electron/main/index.ts:164-166`) *does* handle `fs:write-file` — so it works in Electron but **crashes in dev/browser mode**.
 
-**Fix**
-- Pick one rule and encode it everywhere:
-  - **Rule A (recommended)**: `scene.transition` describes the transition **from this scene → next scene**.
-  - Then transition duration is `currentScene.transition.duration`, not `nextScene.transition.duration`.
-- ✅ Implemented in exporter: transition duration is taken from the current (“from”) scene and transition frames are composited during export.
+**Fix**: Add `fs` to the type declaration in `global.d.ts`:
 
-### 4) `zIndex` ordering operations are incorrect and can corrupt layering
-File: `src/store/editorStore.ts`
+```diff
+ declare global {
+   interface Window {
+     api: {
+       // ... existing ...
++      fs: {
++        writeFile: (path: string, data: Uint8Array) => Promise<void>
++      }
+     }
+   }
+ }
+```
 
-- `bringToFront` and `sendToBack` only set the selected element’s `zIndex` to `len - 1` or `0`, but **do not renormalize the other elements**. Over time you’ll get multiple elements with the same `zIndex`, gaps, and inconsistent ordering depending on sort stability.
-- `removeElement` doesn’t renormalize remaining elements.
-- `bringForward`/`sendBackward` assumes a dense contiguous `zIndex` layout that your other operations don’t maintain.
+And add the stub in `main.tsx`:
 
-**Fix**
-- Store ordering as an array order (recommended) and compute `zIndex = index` when needed, or…
-- Add a single `normalizeZIndices(scene)` utility and call it after any reorder/remove/bring-to-front/back operation.
+```diff
+ (window as unknown as { api: unknown }).api = {
+   // ... existing stubs ...
++  fs: { writeFile: async () => { console.warn('fs.writeFile not available in browser') } },
+ }
+```
 
-### 5) History system is expensive and duplicates work
-Files:
-- `src/store/historyStore.ts`
-- `src/store/editorStore.ts` (subscription at bottom)
+### Bug 2: Save dialog only offers `.mp4` filter
 
-- History snapshots are deep-cloned via `JSON.stringify/parse`, and the editor store subscription also JSON-stringifies the entire project (`currentStr` / `lastStr`) every time the project changes.
-- This will become a major performance bottleneck as projects grow (images, code blocks, charts, many elements).
-- It also marks the project dirty on undo/redo in a way that can spam autosave/history loops.
+**File**: `electron/main/index.ts:153-159`
 
-**Fix**
-- Use structural sharing (Immer patches) or store a compact diff format:
-  - Record actions (command pattern) or Immer patches rather than whole-project snapshots.
-- If you keep snapshots, use a **fast hash** of the small parts that changed, not `JSON.stringify(project)` repeatedly.
-- Tie undo/redo into the same mutation pipeline and disable history capture while applying undo/redo.
+```typescript
+ipcMain.handle('dialog:save-video', async (_, defaultName: string) => {
+  const r = await dialog.showSaveDialog(win, {
+    defaultPath: join(app.getPath('downloads'), defaultName),
+    filters: [{ name: 'MP4 Video', extensions: ['mp4'] }]  // ← HARDCODED!
+  })
+```
 
-### 6) Debug logging left in hot paths
-File: `src/components/canvas/EditorCanvas.tsx`
+When the user exports WebM, the dialog still only shows MP4 as a filter. The file gets saved with `.mp4` extension but contains WebM data — most players will refuse to open it.
 
-- Frequent `console.log()` calls (canvas resize logs, delete logs) will degrade performance and spam devtools, especially during playback/export.
+**Fix**: Pass the format from the renderer:
 
-**Fix**
-- Gate logs behind a `DEBUG` flag or remove them.
+```typescript
+ipcMain.handle('dialog:save-video', async (_, defaultName: string) => {
+  const ext = defaultName.split('.').pop() ?? 'mp4'
+  const filterName = ext === 'webm' ? 'WebM Video' : 'MP4 Video'
+  const r = await dialog.showSaveDialog(win, {
+    defaultPath: join(app.getPath('downloads'), defaultName),
+    filters: [
+      { name: filterName, extensions: [ext] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  })
+```
 
-## High-priority improvements (next 1–2 weeks)
+### Bug 3: Export frame rendering is non-deterministic
 
-### 1) Build a deterministic render pipeline (the “render graph”)
-Target outcome: given a project and a timestamp \(t\), you can render **the exact same frame** every time.
+**File**: `src/components/modals/ExportModal.tsx:73-98`
 
-**Suggested architecture**
-- `evaluateProjectAtTime(project, t) -> { sceneId, localTime, transition? }`
-- `renderSceneToCanvas(scene, localTime, canvasCtx)` (pure, deterministic)
-- `renderFrame(project, t) -> ImageBitmap | Uint8Array` (composite with transitions)
+The `renderFrame` callback does this per frame:
 
-Then:
-- Preview playback: uses RAF to advance `t` but renders via the same `renderFrame`.
-- Export: uses `for frameIndex in 0..N-1 => t=frameIndex/fps` and renders frames with no sleeps.
+```typescript
+renderFrame: async (t) => {
+  setPlayhead(t)                                    // React state update
+  await new Promise(r => setTimeout(r, 0))          // Yield to event loop
+  await new Promise(r => requestAnimationFrame(r))  // Wait for paint
+  await new Promise(r => setTimeout(r, 30))         // Arbitrary 30ms wait
+}
+```
 
-### 2) Integrate transitions into preview and export
-Right now transitions exist in types and a renderer exists, but they aren’t actually applied in export (and preview appears scene-switched by time).
+**Problems**:
+- `setPlayhead` is a React state update — it triggers a re-render cycle, but Konva may not have drawn by the time the frame is captured.
+- The 30ms wait is arbitrary. On a slow machine with complex scenes, Konva won't finish rendering in 30ms. On a fast machine, it wastes time.
+- Scene switching (`setCurrentScene`) also triggers a React re-render, and there's no guarantee the new scene's elements are mounted before capture.
 
-**Plan**
-- During the last `transitionDuration` seconds of a scene, render both:
-  - `fromScene` at its local time
-  - `toScene` at its local time
-- Compose via `renderTransition({ fromCanvas, toCanvas, progress, type, direction })`.
+**Fix**: The export should use a **synchronous render pipeline** that doesn't depend on React's render cycle:
 
-### 3) Fix export strategy for Electron (quality + speed)
-For a desktop editor, the highest ROI is using native encoding.
+```typescript
+// Ideal: renderFrame should directly call Konva's draw, not go through React state
+renderFrame: async (t) => {
+  // 1. Compute which scene we're in
+  // 2. Directly set element positions/opacity via getAnimatedProps
+  // 3. Call stage.batchDraw() synchronously
+  // 4. Capture frame
+}
+```
 
-**Recommended**
-- Bundle FFmpeg (or ship a known ffmpeg binary per platform).
-- Export frames to a temp folder as JPEG/PNG (or pipe raw frames), run ffmpeg with:
-  - H.264 (`libx264`) MP4 for compatibility
-  - Optional ProRes or lossless for “master exports”
-- Add `-movflags +faststart` for MP4 streaming friendliness.
+As a quick fix, increase the wait and add a retry/validation:
 
-If you want to stay browser-only, consider **WebCodecs** for deterministic encoding (but Electron support and codec availability must be checked).
+```typescript
+renderFrame: async (t) => {
+  setPlayhead(t)
+  await new Promise(r => setTimeout(r, 0))
+  // Wait for TWO animation frames to ensure Konva has drawn
+  await new Promise(r => requestAnimationFrame(r))
+  await new Promise(r => requestAnimationFrame(r))
+  // Force Konva redraw
+  const stage = getStage()
+  if (stage) stage.batchDraw()
+  await new Promise(r => setTimeout(r, 50))
+}
+```
 
-### 4) Audio pipeline is currently modeled but not rendered/encoded
-Files:
-- `src/types/editor.ts` includes `AudioElement`
-- Exporters do not mix audio
+### Bug 4: FFmpeg.wasm loads from CDN at runtime
 
-**Fix**
-- Define a simple audio model first:
-  - project-level tracks: background music + voiceover
-  - each audio element has `startAt` on the global timeline, trim, fade, volume
-- In export:
-  - Use ffmpeg `-filter_complex` to mix multiple audio inputs
-  - Or pre-render an audio track and mux with the video output
+**File**: `src/engine/ffmpegExporter.ts:42-47`
 
-## Medium-priority issues (stability / UX)
+```typescript
+const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm'
+await ffmpegInstance.load({
+  coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+  wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+})
+```
 
-### 1) Timeline playback updates state in a risky way
-File: `src/components/layout/Timeline.tsx`
+- **Offline = export broken**. No fallback, no user-visible error — it just hangs or crashes.
+- `toBlobURL` downloads ~30MB over the network every time (it's cached in memory but not persisted).
 
-- It uses `useEditorStore.setState` inside RAF and mutates `currentSceneId` based on time. This can cause surprising scene changes while scrubbing or editing.
-- Keyboard frame step uses hard-coded `1/30` even if `project.fps` changes.
+**Fix (short-term)**: Bundle the FFmpeg core files in your app:
 
-**Fix**
-- Use `project.fps` everywhere.
-- When the user is editing a specific scene, consider a mode where playback is constrained to the current scene vs whole-project timeline.
+```typescript
+// Copy @ffmpeg/core files to public/ and load locally
+const baseURL = '/ffmpeg'  // served from public/ffmpeg/
+```
 
-### 2) Element deletion loops cause multiple state updates
-File: `src/components/canvas/EditorCanvas.tsx`
+**Fix (long-term)**: Use native FFmpeg binary via Electron's main process for real performance.
 
-- Deleting `selectedIds.forEach(removeElement)` triggers multiple store updates; on large selections it’s slow and can cause intermediate inconsistent selection state.
+### Bug 5: `saveBlob` in exporter.ts is dead code
 
-**Fix**
-- Add a `removeElements(ids: string[])` store action that performs one mutation and normalizes `zIndex` afterwards.
+**File**: `src/engine/exporter.ts:82-90`
 
-### 3) Background renderer relies on Konva private internals
-File: `src/components/canvas/EditorCanvas.tsx` (`BackgroundShape`)
+The `saveBlob` function creates an `<a>` tag download link — this is a browser-only approach that won't work correctly in Electron (it downloads to the default location without a save dialog). The ExportModal doesn't even use this function; it has its own save flow. This is confusing dead code.
 
-- Accessing `(ctx as any)._context` is relying on Konva internals. A Konva update could break this.
+---
 
-**Fix**
-- Prefer supported Konva drawing APIs if possible, or isolate this in a small adapter with a fallback path.
+## 🟠 High-Priority Flaws
 
-## Security / reliability notes (Electron IPC)
+### 1. `zIndex` ordering operations corrupt layer order
 
-File: `electron/main/index.ts`
+**File**: `src/store/editorStore.ts:261-303`
 
-- **Asset upload** trusts a `sourcePath` coming from renderer IPC. If renderer is compromised, it can request copying arbitrary files readable by the user into the project folder.
-- `shell:open-path` and `fs:write-file` are powerful. They’re fine in a trusted app, but minimize attack surface.
-- Runtime-loading FFmpeg from the internet (in `ffmpegExporter.ts`) is a reliability and supply-chain concern.
+- `bringToFront(id)` sets `el.zIndex = sc.elements.length - 1` without adjusting other elements.
+- `sendToBack(id)` sets `el.zIndex = 0` without adjusting other elements.
+- After a few operations, multiple elements share the same `zIndex`, causing undefined render order.
+- `removeElement` doesn't renormalize remaining elements' indices.
 
-**Hardening suggestions**
-- Validate IPC inputs (projectId exists; sourcePath must come from a dialog result, not arbitrary strings).
-- Consider restricting `fs:write-file` to the project directory only.
-- Ship dependencies locally (FFmpeg core/binaries).
+**Fix**: Add a normalization utility:
 
-## Code quality / maintainability improvements
+```typescript
+function normalizeZIndices(elements: EditorElement[]) {
+  const sorted = [...elements].sort((a, b) => a.zIndex - b.zIndex)
+  sorted.forEach((el, i) => { el.zIndex = i })
+}
+```
 
-- **Naming**: rename misnamed functions (`exportToMP4` returning WebM).
-- **Normalization utilities**: add central utilities:
-  - `getSceneStarts(project)` / `getSceneAtTime(project, t)`
-  - `normalizeZIndices(scene)`
-  - `clampDuration`, `clampOpacity`, etc.
-- **Testing**: add unit tests for:
-  - `getSceneAtTime`
-  - transition window computation
-  - animation evaluation in `getAnimatedProps`
-  - z-index normalization
+Call it after every z-order mutation and element removal.
 
-## Suggested roadmap (practical + aligned with your goal)
+### 2. History system causes performance degradation
 
-### Phase 1: Deterministic core (foundation)
-- Deterministic `renderFrame(t)` with transitions.
-- Preview uses the same renderer as export.
-- Fix z-index ordering and batch element deletion.
+**File**: `src/store/editorStore.ts:446-470`, `src/store/historyStore.ts`
 
-### Phase 2: Export “MVP quality”
-- Native ffmpeg export in Electron (MP4 H.264).
-- Add audio mux/mix for at least 1 background track + 1 voiceover track.
-- Add export presets (1080p/4k, fps, bitrate, CRF).
+- Every project change triggers `JSON.stringify(project)` **twice** — once for comparison (`currentStr !== lastStr`) and once for the history snapshot.
+- With large projects (many elements, embedded data), this becomes a severe bottleneck.
+- Undo/redo sets `isDirty = true`, which triggers auto-save, which triggers another history entry — creating a feedback loop.
 
-### Phase 3: Education/science differentiators
-- LaTeX/math text rendering pipeline (KaTeX → vector or raster; cached).
-- Code highlighting rendered deterministically (Monaco is heavy; consider Shiki for export rendering).
-- Diagram primitives: arrows with labels, callouts, braces, highlight boxes, “step-by-step reveal”.
+**Fix**:
+- Use Immer patches instead of full JSON snapshots.
+- Add an `isUndoRedoing` flag to prevent history capture during undo/redo.
+- Debounce more aggressively or use a dirty counter instead of JSON comparison.
 
-## Concrete next actions (highest ROI)
+### 3. Timeline keyboard shortcut conflicts
 
-1) ✅ **Rename/fix** `exportToMP4` (it’s WebM) → `exportToWebM` exists; `exportToMP4` is deprecated wrapper.
-2) ✅ Replace frame capture `toDataURL → Image` with `stage.toCanvas()` or direct canvas extraction.
-3) Implement `normalizeZIndices(scene)` and call it consistently.
-4) ✅ Refactor `ffmpegExporter` to avoid JS `frames[]` buffering and apply transitions.
-5) Add a minimal audio mux/mix step for export.
+**Files**: `src/components/canvas/EditorCanvas.tsx:109-121`, `src/components/layout/Timeline.tsx:159-166`
 
+Both `EditorCanvas` and `Timeline` listen for `Delete`/`Backspace` globally:
+- EditorCanvas: deletes selected elements
+- Timeline: deletes the current scene
+
+Both handlers fire on the same keypress! If you have an element selected AND you're on a scene, pressing Delete could delete both the element and the scene.
+
+**Fix**: One handler should consume the event. Add priority logic:
+```typescript
+// In Timeline's handler:
+if (e.key === 'Delete' || e.key === 'Backspace') {
+  // Only delete scene if no elements are selected
+  const { selectedIds } = useEditorStore.getState()
+  if (selectedIds.length > 0) return  // Let EditorCanvas handle it
+  // ... delete scene
+}
+```
+
+### 4. Multiple element deletion triggers N state updates
+
+**File**: `src/components/canvas/EditorCanvas.tsx:114-117`
+
+```typescript
+selectedIds.forEach(id => {
+  removeElement(id)  // Each call triggers a separate Zustand mutation
+})
+```
+
+**Fix**: Add a batch action `removeElements(ids: string[])` to the store.
+
+### 5. WebM export doesn't handle multi-scene correctly
+
+**File**: `src/engine/exporter.ts:51-66`
+
+The `exportToWebM` function iterates frames using `renderFrame(t)` which sets the playhead, but it **doesn't switch scenes**. It relies on whoever calls `renderFrame` to also manage scene switching — but the ExportModal's WebM path (`lines 110-114`) only does `setPlayhead(t)` with a basic `setTimeout(16)`, never switching scenes.
+
+**Fix**: The WebM `renderFrame` callback in ExportModal needs the same scene-switching logic as the FFmpeg path.
+
+---
+
+## 🟡 Medium-Priority Issues
+
+### 1. Konva internals dependency
+
+**Files**: `src/components/canvas/EditorCanvas.tsx:373`, `src/components/modals/PreviewModal.tsx:196`
+
+Both access `(ctx as unknown as { _context: CanvasRenderingContext2D })._context` — this is an undocumented Konva internal. A Konva version bump could break background rendering silently.
+
+### 2. Debug logging in hot paths
+
+**File**: `src/components/canvas/EditorCanvas.tsx:64, 111-119`
+
+`console.log` on every canvas resize and every delete key press will spam devtools and degrade performance during playback/export.
+
+### 3. Preview transitions don't match export transitions
+
+**File**: `src/components/modals/PreviewModal.tsx:65-101`
+
+Preview uses CSS transforms for transitions (translateX, scale, opacity), while the export uses canvas compositing via `transitionRenderer.ts`. These produce visually different results — what you see in preview is NOT what you get in the export.
+
+### 4. Animation icons incomplete in Timeline
+
+**File**: `src/components/layout/Timeline.tsx:23-36`
+
+`ANIM_ICONS` only defines icons for the original 12 animation types but the type system has 23 types (including `typewriterChars`, `typewriterWords`, `textFade`, `textBurst`, `textBounce`, `textBlock`, `textSquiz`, `textSpread`, `textTwirl`, `textZoomIn`, `textZoomOut`). These new text animations will show `undefined` in the timeline.
+
+### 5. `AudioElement` is modeled but never rendered or exported
+
+**Files**: `src/types/editor.ts:164-175`, `src/utils/defaults.ts:170-185`
+
+Audio elements exist in the type system and have a factory function, but:
+- No `AudioKonva` renderer exists.
+- Neither exporter mixes audio.
+- No UI panel to control audio.
+
+### 6. Video element never plays during preview/export
+
+**File**: `src/components/canvas/elements/VideoKonva.tsx`
+
+The `VideoKonva` component creates a `<video>` element and shows one frame, but:
+- It never calls `video.play()`.
+- During export, the video frame is always the first frame (or whatever frame loaded).
+- No synchronization with the timeline playhead.
+
+### 7. `editorStore.getSceneAtTime` returns null for the last frame
+
+**File**: `src/store/editorStore.ts:426-437`
+
+```typescript
+getSceneAtTime: (t) => {
+  for (const scene of project.scenes) {
+    if (t < elapsed + scene.duration) {  // strict < means t === totalDuration returns null
+      return { scene, localTime: t - elapsed }
+    }
+    elapsed += scene.duration
+  }
+  return null  // ← Returns null at exactly the last frame
+}
+```
+
+This causes the last frame of a project to potentially not render during export.
+
+### 8. Canvas resize logging and "never upscale" limit
+
+**File**: `src/components/canvas/EditorCanvas.tsx:58`
+
+```typescript
+const s = Math.min(cw / pw, ch / ph, 1)  // never upscale beyond 1:1
+```
+
+For a 4K project (3840×2160) on a 1920×1080 display, this is correct. But for a 1080×1920 vertical project, the canvas will be tiny because it can't scale up. Consider allowing upscaling with a configurable max (e.g., 2x).
+
+---
+
+## 🟢 What's Already Good
+
+- **Clean type system**: `editor.ts` has well-defined discriminated unions for elements, backgrounds, transitions.
+- **Separation of concerns**: Engine (animator, exporter, transitions) is separate from UI components.
+- **Stage registry pattern**: Keeping Konva out of Zustand/Immer avoids object freezing bugs.
+- **Rich animation system**: 23 animation types with easing, delays, and loop support.
+- **Cross-Origin headers**: Electron main process correctly sets COEP/COOP headers for FFmpeg.wasm SharedArrayBuffer.
+- **Browser fallback**: `main.tsx` provides stubs so the app can run outside Electron for development.
+- **Auto-save with debouncing**: Prevents data loss without thrashing the disk.
+- **Transition renderer**: Canvas-based compositing for 7 transition types (fade, slide, push, zoom, wipe, morph, none).
+
+---
+
+## Security & Reliability
+
+| Issue | File | Risk |
+|-------|------|------|
+| Asset upload trusts arbitrary `sourcePath` from renderer | `electron/main/index.ts:125` | Medium — compromised renderer can exfiltrate files |
+| `shell:open-path` accepts any path | `electron/main/index.ts:161` | Low — expected for desktop app |
+| `fs:write-file` accepts any path | `electron/main/index.ts:164` | Medium — should restrict to project dirs |
+| FFmpeg loaded from unpkg CDN | `ffmpegExporter.ts:42` | High — offline breaks, supply-chain risk |
+
+**Recommendations**:
+- Validate `sourcePath` in asset upload comes from a dialog result.
+- Restrict `fs:write-file` to project directory or downloads folder.
+- Bundle FFmpeg core files locally.
+
+---
+
+## Improvement Roadmap
+
+### Phase 1: Fix Export (Immediate — 2-3 days)
+
+1. **Add `fs` to `global.d.ts`** and `main.tsx` browser stub.
+2. **Fix save dialog** to support both MP4 and WebM filters dynamically.
+3. **Add scene switching** to the WebM export path.
+4. **Increase frame render wait** and add `stage.batchDraw()` forcing in export.
+5. **Bundle FFmpeg core locally** instead of loading from CDN.
+6. **Fix `getSceneAtTime`** to handle `t === totalDuration`.
+
+### Phase 2: Deterministic Render Pipeline (1-2 weeks)
+
+1. Build a pure `renderFrame(project, t) → Canvas` function that doesn't depend on React state.
+2. Make preview and export use the same renderer.
+3. Implement proper video element playback synced to timeline.
+4. Fix z-index normalization.
+
+### Phase 3: Audio & Polish (2-3 weeks)
+
+1. Implement audio rendering (at least background music + voiceover).
+2. Add `AudioKonva` component (waveform visualization on canvas).
+3. Audio mixing in FFmpeg export pipeline.
+4. Batch element operations (multi-delete, multi-move).
+
+### Phase 4: Education/Science Features
+
+1. LaTeX/math rendering (KaTeX → raster, cached per expression).
+2. Deterministic code highlighting (Shiki instead of Monaco for export).
+3. Step-by-step reveal animations for educational content.
+4. Diagram primitives (labeled arrows, callouts, highlight boxes).
+
+---
+
+## Quick Reference: Files to Fix for Working Export
+
+| Priority | File | Issue |
+|----------|------|-------|
+| 🔴 P0 | `src/types/global.d.ts` | Add `fs.writeFile` declaration |
+| 🔴 P0 | `src/main.tsx` | Add `fs` to browser fallback stub |
+| 🔴 P0 | `electron/main/index.ts` | Fix save dialog filter for WebM |
+| 🔴 P0 | `src/components/modals/ExportModal.tsx` | Fix frame rendering timing, add scene switching for WebM |
+| 🟠 P1 | `src/engine/ffmpegExporter.ts` | Bundle FFmpeg locally, improve frame capture reliability |
+| 🟠 P1 | `src/store/editorStore.ts` | Fix `getSceneAtTime` off-by-one |
+| 🟡 P2 | `src/store/editorStore.ts` | Fix z-index operations |
+| 🟡 P2 | `src/components/layout/Timeline.tsx` | Fix keyboard conflict, add missing animation icons |

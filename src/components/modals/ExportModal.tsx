@@ -34,6 +34,44 @@ export default function ExportModal() {
 
   if (!project) return null
 
+  /** Shared helper: switch to a scene, set playhead, force Konva to draw, and wait. */
+  async function ensureFrameRendered(sceneId: string | null, globalTime: number) {
+    if (cancelRef.current) throw new Error('Cancelled')
+
+    // Switch scene if needed
+    if (sceneId && sceneId !== useEditorStore.getState().currentSceneId) {
+      useEditorStore.getState().setCurrentScene(sceneId)
+      // Yield so React can mount the new scene's elements
+      await new Promise(r => setTimeout(r, 0))
+    }
+
+    setPlayhead(globalTime)
+    // Yield for React state propagation
+    await new Promise(r => setTimeout(r, 0))
+    // Wait for first animation frame (layout/paint)
+    await new Promise(r => requestAnimationFrame(r))
+    // Wait for second animation frame (Konva internal draw cycle)
+    await new Promise(r => requestAnimationFrame(r))
+    // Force Konva to synchronously redraw all layers
+    const stage = getStage()
+    if (stage) stage.batchDraw()
+    // Small buffer for complex scenes to finish compositing
+    await new Promise(r => setTimeout(r, 16))
+  }
+
+  /** Find which scene contains global time t, return its id (or null). */
+  function findSceneIdAtTime(t: number): string | null {
+    if (!project) return null
+    let elapsed = 0
+    for (const scene of project.scenes) {
+      if (t < elapsed + scene.duration || scene === project.scenes[project.scenes.length - 1]) {
+        return scene.id
+      }
+      elapsed += scene.duration
+    }
+    return project.scenes[project.scenes.length - 1]?.id ?? null
+  }
+
   async function startExport() {
     if (!project) return
     cancelRef.current = false
@@ -60,41 +98,11 @@ export default function ExportModal() {
             console.log('[Export]', msg)
           },
           renderSceneFrame: async (sceneId, globalTime) => {
-            if (cancelRef.current) throw new Error('Cancelled')
-            if (sceneId !== useEditorStore.getState().currentSceneId) {
-              useEditorStore.getState().setCurrentScene(sceneId)
-              await new Promise(r => setTimeout(r, 0))
-            }
-            setPlayhead(globalTime)
-            await new Promise(r => setTimeout(r, 0))
-            await new Promise(r => requestAnimationFrame(r))
-            await new Promise(r => setTimeout(r, 30))
+            await ensureFrameRendered(sceneId, globalTime)
           },
           renderFrame: async (t) => {
-            if (cancelRef.current) throw new Error('Cancelled')
-            
-            // Find which scene we're in at time t
-            let elapsed = 0
-            for (const scene of project.scenes) {
-              if (t < elapsed + scene.duration) {
-                // Switch to this scene if not already current
-                if (scene.id !== useEditorStore.getState().currentSceneId) {
-                  useEditorStore.getState().setCurrentScene(scene.id)
-                  // Wait for scene switch to complete
-                  await new Promise(r => setTimeout(r, 0))
-                }
-                break
-              }
-              elapsed += scene.duration
-            }
-            
-            setPlayhead(t)
-            // Wait for React state update
-            await new Promise(r => setTimeout(r, 0))
-            // Wait for Konva to render
-            await new Promise(r => requestAnimationFrame(r))
-            // Additional wait for animations to apply
-            await new Promise(r => setTimeout(r, 30))
+            const sceneId = findSceneIdAtTime(t)
+            await ensureFrameRendered(sceneId, t)
           }
         })
       } else {
@@ -108,9 +116,9 @@ export default function ExportModal() {
             setLog(pct < 90 ? `Encoding frames… ${pct}%` : pct < 100 ? 'Muxing video…' : 'Done')
           },
           renderFrame: async (t) => {
-            if (cancelRef.current) throw new Error('Cancelled')
-            setPlayhead(t)
-            await new Promise(r => setTimeout(r, 16))
+            // Scene switching — previously missing for WebM export!
+            const sceneId = findSceneIdAtTime(t)
+            await ensureFrameRendered(sceneId, t)
           }
         })
       }

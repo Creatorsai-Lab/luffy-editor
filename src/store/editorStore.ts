@@ -425,11 +425,13 @@ export const useEditorStore = create<EditorState & EditorActions>()(
 
       getSceneAtTime: (t) => {
         const { project } = get()
-        if (!project) return null
+        if (!project || project.scenes.length === 0) return null
         let elapsed = 0
         for (const scene of project.scenes) {
-          if (t < elapsed + scene.duration) {
-            return { scene, localTime: t - elapsed }
+          // Use <= for the last scene so t === totalDuration still returns it
+          const isLast = scene === project.scenes[project.scenes.length - 1]
+          if (t < elapsed + scene.duration || isLast) {
+            return { scene, localTime: Math.max(0, t - elapsed) }
           }
           elapsed += scene.duration
         }

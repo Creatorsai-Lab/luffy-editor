@@ -38,13 +38,35 @@ async function loadFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> {
 
   if (!ffmpegLoaded) {
     onLog?.('Loading FFmpeg...')
-    
-    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm'
-    
-    await ffmpegInstance.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    })
+
+    // Try loading from local node_modules first (works offline),
+    // then fall back to CDN if local files aren't available.
+    const cdnBaseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm'
+
+    try {
+      // Attempt CDN load (most reliable for wasm cross-origin requirements)
+      onLog?.('Fetching FFmpeg core from CDN...')
+      await ffmpegInstance.load({
+        coreURL: await toBlobURL(`${cdnBaseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${cdnBaseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      })
+    } catch (cdnError) {
+      console.error('[FFmpeg] CDN load failed:', cdnError)
+      onLog?.('CDN load failed, trying local fallback...')
+
+      // Attempt local load as fallback
+      try {
+        await ffmpegInstance.load({
+          coreURL: new URL('/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.js', window.location.origin).href,
+          wasmURL: new URL('/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm', window.location.origin).href,
+        })
+      } catch (localError) {
+        console.error('[FFmpeg] Local load also failed:', localError)
+        const msg = 'FFmpeg failed to load. Check your internet connection or ensure @ffmpeg/core is installed.'
+        onLog?.(msg)
+        throw new Error(msg)
+      }
+    }
     
     ffmpegLoaded = true
     onLog?.('FFmpeg loaded successfully')
@@ -273,9 +295,9 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
 
   onProgress(95, 'Reading output file...')
 
-  // Read the output file
-  const data = await ffmpeg.readFile(outputFile)
-  const blob = new Blob([data], { 
+  // Read the output file (readFile returns FileData = Uint8Array | string; video is binary)
+  const data = await ffmpeg.readFile(outputFile) as Uint8Array
+  const blob = new Blob([data.buffer], { 
     type: format === 'mp4' ? 'video/mp4' : 'video/webm' 
   })
 

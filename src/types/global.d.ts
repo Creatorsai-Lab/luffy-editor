@@ -41,6 +41,9 @@ declare global {
         openFile:  (filters: { name: string; extensions: string[] }[]) => Promise<string | null>
         saveVideo: (defaultName: string)                                => Promise<string | null>
       }
+      fs: {
+        writeFile: (path: string, data: Uint8Array) => Promise<void>
+      }
       shell: {
         openPath: (path: string) => Promise<string>
       }

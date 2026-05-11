@@ -151,9 +151,14 @@ function createWindow(): void {
   })
 
   ipcMain.handle('dialog:save-video', async (_, defaultName: string) => {
+    const ext = (defaultName.split('.').pop() ?? 'mp4').toLowerCase()
+    const filters: Electron.FileFilter[] = ext === 'webm'
+      ? [{ name: 'WebM Video', extensions: ['webm'] }, { name: 'All Files', extensions: ['*'] }]
+      : [{ name: 'MP4 Video', extensions: ['mp4'] }, { name: 'All Files', extensions: ['*'] }]
+
     const r = await dialog.showSaveDialog(win, {
       defaultPath: join(app.getPath('downloads'), defaultName),
-      filters: [{ name: 'MP4 Video', extensions: ['mp4'] }]
+      filters
     })
     return r.canceled ? null : r.filePath
   })
