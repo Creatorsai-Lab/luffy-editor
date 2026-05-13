@@ -18,20 +18,20 @@ interface ToolItem {
 }
 
 const TOOLS: ToolItem[] = [
-  { icon: <Type size={16} />, label: 'Text', tool: 'text', panel: 'text' },
-  { icon: <Square size={16} />, label: 'Shapes', tool: 'shape-rect', panel: 'shapes' },
-  { icon: <ArrowRight size={16} />, label: 'Arrow', tool: 'arrow', panel: 'arrows' },
-  { icon: <Code2 size={16} />, label: 'Code', tool: 'code', panel: 'code' },
-  { icon: <Table2 size={16} />, label: 'Table', tool: 'table', panel: 'table' },
-  { icon: <BarChart3 size={16} />, label: 'Charts', tool: 'chart', panel: 'charts' },
-  { icon: <Upload size={16} />, label: 'Upload', tool: 'image', panel: 'upload' },
-  { icon: <Music size={16} />, label: 'Audio', panel: 'audio' },
-  { icon: <Type size={16} />, label: 'Text Anim', panel: 'textAnimations' },
-  { icon: <Sparkles size={16} />, label: 'Shape Anim', panel: 'shapeAnimations' },
-  { icon: <Wand2 size={16} />, label: 'Text Effects', panel: 'textEffects' },
-  { icon: <Shuffle size={16} />, label: 'Transitions', panel: 'transitions' },
-  { icon: <Layers size={16} />, label: 'Layers', panel: 'layers' },
-  { icon: <Settings size={16} />, label: 'Background', panel: 'background' },
+  { icon: <Type size={14} />, label: 'Text', tool: 'text', panel: 'text' },
+  { icon: <Square size={14} />, label: 'Shapes', tool: 'shape-rect', panel: 'shapes' },
+  { icon: <ArrowRight size={14} />, label: 'Arrow', tool: 'arrow', panel: 'arrows' },
+  { icon: <Code2 size={14} />, label: 'Code', tool: 'code', panel: 'code' },
+  { icon: <Table2 size={14} />, label: 'Table', tool: 'table', panel: 'table' },
+  { icon: <BarChart3 size={14} />, label: 'Charts', tool: 'chart', panel: 'charts' },
+  { icon: <Upload size={14} />, label: 'Upload', tool: 'image', panel: 'upload' },
+  { icon: <Music size={14} />, label: 'Audio', panel: 'audio' },
+  { icon: <Type size={14} />, label: 'Text Anim', panel: 'textAnimations' },
+  { icon: <Sparkles size={14} />, label: 'Shape Anim', panel: 'shapeAnimations' },
+  { icon: <Wand2 size={14} />, label: 'Text Effects', panel: 'textEffects' },
+  { icon: <Shuffle size={14} />, label: 'Transitions', panel: 'transitions' },
+  { icon: <Layers size={14} />, label: 'Layers', panel: 'layers' },
+  { icon: <Settings size={14} />, label: 'Background', panel: 'background' },
 ]
 
 export default function MenuSideBar() {
@@ -76,7 +76,7 @@ export default function MenuSideBar() {
         {project && editingName ? (
           <input
             autoFocus
-            className="bg-editor-elevated border border-editor-accent text-white text-[1.15rem] px-2 py-1 rounded w-full"
+            className="border border-white text-[#d8d8d8] text-[0.78rem] px-2 py-1 rounded w-full"
             defaultValue={project.name}
             onBlur={e => { setProjectName(e.target.value); setEditingName(false) }}
             onKeyDown={e => {
@@ -88,7 +88,7 @@ export default function MenuSideBar() {
           <button
             onClick={() => project && setEditingName(true)}
             disabled={disabled}
-            className="text-[1.15rem] font-semibold text-white hover:text-purple-400 py-1 text-left truncate disabled:text-editor-muted w-full transition-colors"
+            className="text-[0.78rem] font-semibold border-b text-[#d8d8d8] border-[#363636] hover:text-purple-400 py-1 text-left truncate disabled:text-[#c1c1c1] w-full transition-colors"
           >
             {project?.name ?? 'No project'}
           </button>
@@ -99,10 +99,10 @@ export default function MenuSideBar() {
           <button
             disabled={disabled}
             onClick={() => setSizeOpen(v => !v)}
-            className="flex items-center justify-between w-full text-[1.15rem] text-white hover:text-purple-400 py-1.5 transition-colors disabled:text-editor-muted"
+            className="flex items-center justify-between w-full text-[0.78rem] text-[#d8d8d8] hover:text-purple-400 py-1.5 transition-colors disabled:text-[#c1c1c1]"
           >
             <div className="flex items-center gap-2">
-              <Monitor size={16} />
+              <Monitor size={14} />
               <span className="truncate">{sizeLabel}</span>
             </div>
             {project && <ChevronDown size={14} />}
@@ -115,9 +115,9 @@ export default function MenuSideBar() {
                   key={p.label}
                   onClick={() => { setCanvasSize(p.width, p.height); setSizeOpen(false) }}
                   className={cn(
-                    'w-full text-left px-3 py-2 text-[1.15rem] hover:bg-editor-hover transition-colors flex items-center justify-between',
+                    'w-full text-left px-3 py-2 text-[0.78rem] hover:bg-editor-hover transition-colors flex items-center justify-between',
                     p.width === project.width && p.height === project.height
-                      ? 'text-purple-400' : 'text-white'
+                      ? 'text-purple-400' : 'text-[#d8d8d8]'
                   )}
                 >
                   <span>{p.label}</span>
@@ -132,18 +132,18 @@ export default function MenuSideBar() {
           <button
             onClick={undo}
             disabled={!canUndo}
-            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-white hover:text-purple-400 hover:bg-editor-hover disabled:text-editor-muted disabled:bg-transparent"
+            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
             title="Undo"
           >
-            <Undo2 size={16} />
+            <Undo2 size={14} />
           </button>
           <button
             onClick={redo}
             disabled={!canRedo}
-            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-white hover:text-purple-400 hover:bg-editor-hover disabled:text-editor-muted disabled:bg-transparent"
+            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
             title="Redo"
           >
-            <Redo2 size={16} />
+            <Redo2 size={14} />
           </button>
         </div>
 
@@ -152,17 +152,17 @@ export default function MenuSideBar() {
           <button
             disabled={disabled}
             onClick={() => setPreviewOpen(true)}
-            className="flex flex-col items-center gap-1 text-[1.15rem] py-2 rounded transition-colors text-white hover:text-purple-400 hover:bg-editor-hover disabled:text-editor-muted disabled:bg-transparent"
+            className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
           >
-            <Play size={16} />
+            <Play size={14} />
             <span>Preview</span>
           </button>
           <button
             disabled={disabled}
             onClick={() => setExportOpen(true)}
-            className="flex flex-col items-center gap-1 text-[1.15rem] py-2 rounded transition-colors text-white hover:text-purple-400 hover:bg-editor-hover disabled:text-editor-muted disabled:bg-transparent"
+            className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
           >
-            <Download size={16} />
+            <Download size={14} />
             <span>Export</span>
           </button>
         </div>
@@ -170,7 +170,7 @@ export default function MenuSideBar() {
 
       {/* Menu Bar Tools Grid (2 items per row) */}
       <div className="p-3">
-        <div className="text-[0.75rem] text-editor-muted uppercase tracking-wider mb-3 px-1 font-semibold">Tools</div>
+        <div className="text-[0.75rem] text-[#c1c1c1] uppercase tracking-wider mb-3 px-1 font-semibold">Tools</div>
         <div className="grid grid-cols-2 gap-2">
           {TOOLS.map((item, i) => {
             const isActive = activePanel === item.panel
@@ -185,12 +185,12 @@ export default function MenuSideBar() {
                 }}
                 className={cn(
                   'flex flex-col items-center justify-center gap-1.5 p-2 rounded transition-all',
-                  disabled ? 'text-editor-muted cursor-not-allowed' :
-                    isActive ? 'bg-purple-900/30 text-purple-400' : 'text-white hover:text-purple-400 hover:bg-editor-hover'
+                  disabled ? 'text-[#c1c1c1] cursor-not-allowed' :
+                    isActive ? 'bg-purple-900/30 text-purple-400' : 'text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover'
                 )}
               >
                 {item.icon}
-                <span className="text-[1.15rem] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">{item.label}</span>
+                <span className="text-[0.78rem] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">{item.label}</span>
               </button>
             )
           })}

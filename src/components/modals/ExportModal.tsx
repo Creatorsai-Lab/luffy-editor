@@ -191,7 +191,7 @@ export default function ExportModal() {
             <Download size={14} className="text-editor-accent" />
             <span className="text-sm font-medium text-editor-text">Export Video</span>
           </div>
-          <button onClick={handleClose} className="text-editor-muted hover:text-editor-text transition-colors">
+          <button onClick={handleClose} className="text-[#c1c1c1] hover:text-editor-text transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -234,7 +234,7 @@ export default function ExportModal() {
                         ? 'bg-editor-accent text-white'
                         : ffmpegAvailable
                         ? 'bg-editor-panel text-editor-text hover:bg-editor-hover'
-                        : 'bg-editor-panel text-editor-muted cursor-not-allowed'
+                        : 'bg-editor-panel text-[#c1c1c1] cursor-not-allowed'
                     }`}
                   >
                     MP4 {!ffmpegAvailable && '(Loading...)'}
@@ -284,7 +284,7 @@ export default function ExportModal() {
               )}
 
               {/* Estimated file size */}
-              <div className="text-2xs text-editor-muted">
+              <div className="text-2xs text-[#c1c1c1]">
                 Estimated size: ~{estimatedSizeMB} MB
               </div>
 
@@ -316,13 +316,13 @@ export default function ExportModal() {
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className="text-xs text-editor-muted text-right">{progress}%</span>
+              <span className="text-xs text-[#c1c1c1] text-right">{progress}%</span>
             </div>
           )}
 
           {/* Note about rendering */}
           {phase === 'exporting' && (
-            <p className="text-xs text-editor-muted bg-editor-elevated rounded px-3 py-2">
+            <p className="text-xs text-[#c1c1c1] bg-editor-elevated rounded px-3 py-2">
               Do not interact with the canvas during export — frames are being captured in sequence.
             </p>
           )}

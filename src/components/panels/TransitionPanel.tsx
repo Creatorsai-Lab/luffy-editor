@@ -30,7 +30,7 @@ export default function TransitionPanel() {
       <PanelHeader icon={<Shuffle size={12} />} title="Scene Transition" />
 
       <div className="flex flex-col px-3 py-2 gap-2">
-        <p className="text-xs text-editor-muted">
+        <p className="text-xs text-[#c1c1c1]">
           Applied when this scene enters.
         </p>
 
@@ -45,7 +45,7 @@ export default function TransitionPanel() {
                 'text-xs px-2.5 py-2 rounded border transition-colors text-left',
                 tr.type === t.value
                   ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
-                  : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text hover:border-editor-border-strong'
+                  : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text hover:border-editor-border-strong'
               )}
             >
               {t.label}
@@ -76,7 +76,7 @@ export default function TransitionPanel() {
               </Row>
             )}
 
-            <p className="text-2xs text-editor-muted bg-editor-elevated rounded px-2 py-1.5">
+            <p className="text-2xs text-[#c1c1c1] bg-editor-elevated rounded px-2 py-1.5">
               {TRANSITIONS.find(t => t.value === tr.type)?.desc}
             </p>
           </>

@@ -53,7 +53,7 @@ export default function ProjectsPanel() {
         <span className="label">Projects</span>
         <button
           onClick={createProject}
-          className="text-editor-muted hover:text-editor-accent transition-colors"
+          className="text-[#c1c1c1] hover:text-editor-accent transition-colors"
           title="New project"
         >
           <Plus size={13} />
@@ -63,7 +63,7 @@ export default function ProjectsPanel() {
       {/* List */}
       <div className="flex-1 overflow-y-auto py-1">
         {projects.length === 0 && (
-          <p className="text-xs text-editor-muted px-3 py-4 text-center">
+          <p className="text-xs text-[#c1c1c1] px-3 py-4 text-center">
             No projects yet.{' '}
             <button onClick={createProject} className="text-editor-accent hover:underline">Create one</button>
           </p>
@@ -102,13 +102,13 @@ export default function ProjectsPanel() {
             <div className="nodrag flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={e => { e.stopPropagation(); setRenamingId(p.id); setRenameVal(p.name) }}
-                className="text-editor-muted hover:text-editor-text"
+                className="text-[#c1c1c1] hover:text-editor-text"
               >
                 <Edit2 size={10} />
               </button>
               <button
                 onClick={e => { e.stopPropagation(); deleteProject(p.id) }}
-                className="text-editor-muted hover:text-red-400"
+                className="text-[#c1c1c1] hover:text-red-400"
               >
                 <Trash2 size={10} />
               </button>

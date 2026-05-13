@@ -133,7 +133,7 @@ export default function ChartPanel() {
                     'flex flex-col items-center justify-center p-2 rounded border transition-colors',
                     el.chartType === ct.type
                       ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
-                      : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text'
+                      : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text'
                   )}
                 >
                   {ct.icon}
@@ -191,7 +191,7 @@ export default function ChartPanel() {
                   <button
                     onClick={() => removeLabel(i)}
                     disabled={el.data.labels.length <= 1}
-                    className="p-1 text-editor-muted hover:text-red-400 disabled:opacity-30"
+                    className="p-1 text-[#c1c1c1] hover:text-red-400 disabled:opacity-30"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -229,7 +229,7 @@ export default function ChartPanel() {
                     <button
                       onClick={() => removeDataset(dsIndex)}
                       disabled={el.data.datasets.length <= 1}
-                      className="p-1 text-editor-muted hover:text-red-400 disabled:opacity-30"
+                      className="p-1 text-[#c1c1c1] hover:text-red-400 disabled:opacity-30"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -237,7 +237,7 @@ export default function ChartPanel() {
                   <div className="space-y-1">
                     {dataset.data.map((value, valIndex) => (
                       <div key={valIndex} className="flex items-center gap-1">
-                        <span className="text-[10px] text-editor-muted w-16 truncate">
+                        <span className="text-[10px] text-[#c1c1c1] w-16 truncate">
                           {el.data.labels[valIndex]}:
                         </span>
                         <input
@@ -262,7 +262,7 @@ export default function ChartPanel() {
       )}
 
       {!el && (
-        <p className="text-xs text-editor-muted px-3 py-3">
+        <p className="text-xs text-[#c1c1c1] px-3 py-3">
           Click "Add Chart to Canvas" above, then click the canvas to place it.
         </p>
       )}

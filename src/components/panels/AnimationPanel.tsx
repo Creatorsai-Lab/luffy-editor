@@ -44,7 +44,7 @@ export default function AnimationPanel() {
       <PanelHeader icon={<Sparkles size={12} />} title="Animations" />
 
       {!el && (
-        <p className="text-xs text-editor-muted px-3 py-3">
+        <p className="text-xs text-[#c1c1c1] px-3 py-3">
           Select an element to add animations.
         </p>
       )}
@@ -63,7 +63,7 @@ export default function AnimationPanel() {
 
           {/* Animation list */}
           {el.animations.length === 0 && (
-            <p className="text-xs text-editor-muted px-3 py-3">No animations yet.</p>
+            <p className="text-xs text-[#c1c1c1] px-3 py-3">No animations yet.</p>
           )}
 
           {el.animations.map((anim, i) => (
@@ -101,7 +101,7 @@ function AnimBlock({ anim, index, elId, elType }: {
     <div className="border-b border-editor-border px-3 py-2 flex flex-col gap-1">
       <div className="flex items-center justify-between">
         <span className="text-xs text-editor-secondary font-medium">Anim {index + 1}</span>
-        <button onClick={() => removeAnimation(elId, anim.id)} className="text-editor-muted hover:text-red-400">
+        <button onClick={() => removeAnimation(elId, anim.id)} className="text-[#c1c1c1] hover:text-red-400">
           <Trash2 size={11} />
         </button>
       </div>

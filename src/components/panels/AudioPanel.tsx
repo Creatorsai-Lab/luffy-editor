@@ -45,7 +45,7 @@ export default function AudioPanel() {
 
       <div className="flex-1 overflow-y-auto">
         {audioAssets.length === 0 ? (
-          <p className="text-xs text-editor-muted px-3 py-3">
+          <p className="text-xs text-[#c1c1c1] px-3 py-3">
             No audio files uploaded. Click the button below to add audio.
           </p>
         ) : (
@@ -57,11 +57,11 @@ export default function AudioPanel() {
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-editor-text truncate">{asset.name}</p>
-                  <p className="text-xs text-editor-muted truncate">{asset.filename}</p>
+                  <p className="text-xs text-[#c1c1c1] truncate">{asset.filename}</p>
                 </div>
                 <button
                   onClick={() => removeAsset(asset.id)}
-                  className="text-editor-muted hover:text-red-400 transition-colors flex-none"
+                  className="text-[#c1c1c1] hover:text-red-400 transition-colors flex-none"
                   title="Delete audio"
                 >
                   <Trash2 size={14} />

@@ -22,7 +22,7 @@ export default function CanvasToolbar() {
             'p-1.5 rounded transition-colors',
             showGrid
               ? 'bg-editor-accent text-white'
-              : 'text-editor-muted hover:text-editor-text hover:bg-editor-hover'
+              : 'text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover'
           )}
         >
           <Grid3x3 size={14} />
@@ -37,7 +37,7 @@ export default function CanvasToolbar() {
             'p-1.5 rounded transition-colors',
             showGuides
               ? 'bg-editor-accent text-white'
-              : 'text-editor-muted hover:text-editor-text hover:bg-editor-hover'
+              : 'text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover'
           )}
         >
           <Ruler size={14} />
@@ -52,7 +52,7 @@ export default function CanvasToolbar() {
             'p-1.5 rounded transition-colors',
             showRulers
               ? 'bg-editor-accent text-white'
-              : 'text-editor-muted hover:text-editor-text hover:bg-editor-hover'
+              : 'text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover'
           )}
         >
           <Ruler size={14} className="rotate-90" />
@@ -67,7 +67,7 @@ export default function CanvasToolbar() {
             'p-1.5 rounded transition-colors',
             showSafeArea
               ? 'bg-editor-accent text-white'
-              : 'text-editor-muted hover:text-editor-text hover:bg-editor-hover'
+              : 'text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover'
           )}
         >
           {showSafeArea ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -80,7 +80,7 @@ export default function CanvasToolbar() {
       <Tooltip text="Zoom Out (Ctrl+-)">
         <button
           onClick={zoomOut}
-          className="p-1.5 rounded text-editor-muted hover:text-editor-text hover:bg-editor-hover transition-colors"
+          className="p-1.5 rounded text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover transition-colors"
         >
           <ZoomOut size={14} />
         </button>
@@ -100,7 +100,7 @@ export default function CanvasToolbar() {
       <Tooltip text="Zoom In (Ctrl++)">
         <button
           onClick={zoomIn}
-          className="p-1.5 rounded text-editor-muted hover:text-editor-text hover:bg-editor-hover transition-colors"
+          className="p-1.5 rounded text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover transition-colors"
         >
           <ZoomIn size={14} />
         </button>
@@ -110,7 +110,7 @@ export default function CanvasToolbar() {
       <Tooltip text="Fit to Screen (Ctrl+1)">
         <button
           onClick={resetZoom}
-          className="p-1.5 rounded text-editor-muted hover:text-editor-text hover:bg-editor-hover transition-colors"
+          className="p-1.5 rounded text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover transition-colors"
         >
           <Maximize2 size={14} />
         </button>

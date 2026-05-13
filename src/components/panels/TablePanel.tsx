@@ -32,7 +32,7 @@ export default function TablePanel() {
       <PanelHeader icon={<Table2 size={12} />} title="Table" />
 
       {!el && (
-        <p className="text-xs text-editor-muted px-3 py-3">
+        <p className="text-xs text-[#c1c1c1] px-3 py-3">
           Click <strong className="text-editor-secondary">Table</strong> in the menu bar to add a table.
         </p>
       )}

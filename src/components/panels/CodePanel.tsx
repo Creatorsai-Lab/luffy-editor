@@ -18,7 +18,7 @@ export default function CodePanel() {
       <PanelHeader icon={<Code2 size={12} />} title="Code Block" />
 
       {!el && (
-        <p className="text-xs text-editor-muted px-3 py-3">
+        <p className="text-xs text-[#c1c1c1] px-3 py-3">
           Click <strong className="text-editor-secondary">Code</strong> in the menu bar to add a code block.
         </p>
       )}
@@ -53,7 +53,7 @@ export default function CodePanel() {
                 'text-xs px-3 py-1 rounded border transition-colors',
                 el.showLineNumbers
                   ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
-                  : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text'
+                  : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text'
               )}
             >
               {el.showLineNumbers ? 'Shown ✓' : 'Hidden'}

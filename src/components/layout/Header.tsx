@@ -99,7 +99,7 @@ export default function Header() {
             {/* Project list */}
             <div className="max-h-64 overflow-y-auto">
               {projects.length === 0 && (
-                <p className="text-xs text-editor-muted px-3 py-3 text-center">No saved projects.</p>
+                <p className="text-xs text-[#c1c1c1] px-3 py-3 text-center">No saved projects.</p>
               )}
               {projects.map(p => (
                 <div
@@ -117,7 +117,7 @@ export default function Header() {
                   <span className="flex-1 text-xs truncate">{p.name}</span>
                   <button
                     onClick={e => deleteProject(e, p.id)}
-                    className="opacity-0 group-hover:opacity-100 text-editor-muted hover:text-red-400 transition-all"
+                    className="opacity-0 group-hover:opacity-100 text-[#c1c1c1] hover:text-red-400 transition-all"
                   >
                     <Trash2 size={10} />
                   </button>
@@ -130,13 +130,13 @@ export default function Header() {
 
       {/* Right: window controls */}
       <div className="nodrag flex items-center">
-        <button onClick={minimize} className="flex items-center justify-center w-8 h-8 text-editor-muted hover:text-editor-text hover:bg-editor-hover transition-colors">
+        <button onClick={minimize} className="flex items-center justify-center w-8 h-8 text-[#2cff00] hover:text-editor-text hover:bg-editor-hover transition-colors">
           <Minus size={12} />
         </button>
-        <button onClick={maximize} className="flex items-center justify-center w-8 h-8 text-editor-muted hover:text-editor-text hover:bg-editor-hover transition-colors">
+        <button onClick={maximize} className="flex items-center justify-center w-8 h-8 text-[#ffbb52] hover:text-editor-text hover:bg-editor-hover transition-colors">
           <Square size={11} />
         </button>
-        <button onClick={close} className="flex items-center justify-center w-8 h-8 text-editor-muted hover:text-white hover:bg-red-600 transition-colors">
+        <button onClick={close} className="flex items-center justify-center w-8 h-8 text-[#ff483b] hover:text-white hover:bg-red-600 transition-colors">
           <X size={12} />
         </button>
       </div>

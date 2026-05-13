@@ -44,7 +44,7 @@ export default function ShapePanel() {
                 'flex items-center justify-center w-full h-8 rounded border transition-colors',
                 el?.shapeType === s.type
                   ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
-                  : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text'
+                  : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text'
               )}
             >
               {s.icon}
@@ -64,7 +64,7 @@ export default function ShapePanel() {
                   'px-2 py-1 text-2xs rounded border transition-colors',
                   el.fill === 'transparent'
                     ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
-                    : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text'
+                    : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text'
                 )}
                 title="Toggle transparent fill"
               >
@@ -99,7 +99,7 @@ export default function ShapePanel() {
       )}
 
       {!el && (
-        <p className="text-xs text-editor-muted px-3 py-3">
+        <p className="text-xs text-[#c1c1c1] px-3 py-3">
           Click a shape above, then click the canvas to place it.
         </p>
       )}

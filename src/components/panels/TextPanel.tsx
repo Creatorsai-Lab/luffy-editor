@@ -27,7 +27,7 @@ export default function TextPanel() {
 
       <div className="flex-1 overflow-y-auto">
         {!el && (
-          <p className="text-xs text-editor-muted px-3 py-3">
+          <p className="text-xs text-[#c1c1c1] px-3 py-3">
             Click <strong className="text-editor-secondary">Text</strong> in the menu then click the canvas to add a text block.
           </p>
         )}
@@ -198,7 +198,7 @@ export function Slider({ value, min, max, step, onChange, display }: {
         onChange={e => onChange(Number(e.target.value))}
         className="flex-1 accent-editor-accent h-1"
       />
-      <span className="text-xs text-editor-muted w-9 text-right tabular-nums">{display}</span>
+      <span className="text-xs text-[#c1c1c1] w-9 text-right tabular-nums">{display}</span>
     </div>
   )
 }
@@ -229,7 +229,7 @@ function ToggleBtn({ active, onClick, children }: {
       onClick={onClick}
       className={cn(
         'flex items-center justify-center w-7 h-7 rounded transition-colors',
-        active ? 'bg-editor-accent text-white' : 'bg-editor-elevated text-editor-muted hover:text-editor-text'
+        active ? 'bg-editor-accent text-white' : 'bg-editor-elevated text-[#c1c1c1] hover:text-editor-text'
       )}
     >
       {children}

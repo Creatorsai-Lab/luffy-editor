@@ -67,7 +67,7 @@ export default function TopBar() {
         <button
           onClick={() => project && setEditingName(true)}
           disabled={!project}
-          className="text-xs text-editor-text hover:text-white px-1.5 py-0.5 rounded hover:bg-editor-hover transition-colors max-w-[160px] truncate disabled:text-editor-muted disabled:cursor-default"
+          className="text-xs text-editor-text hover:text-white px-1.5 py-0.5 rounded hover:bg-editor-hover transition-colors max-w-[160px] truncate disabled:text-[#c1c1c1] disabled:cursor-default"
         >
           {project?.name ?? 'No project'}
         </button>
@@ -85,7 +85,7 @@ export default function TopBar() {
               'p-1 rounded transition-colors',
               canUndo
                 ? 'text-editor-text hover:text-white hover:bg-editor-hover'
-                : 'text-editor-muted cursor-not-allowed'
+                : 'text-[#c1c1c1] cursor-not-allowed'
             )}
           >
             <Undo2 size={14} />
@@ -100,7 +100,7 @@ export default function TopBar() {
               'p-1 rounded transition-colors',
               canRedo
                 ? 'text-editor-text hover:text-white hover:bg-editor-hover'
-                : 'text-editor-muted cursor-not-allowed'
+                : 'text-[#c1c1c1] cursor-not-allowed'
             )}
           >
             <Redo2 size={14} />
@@ -115,7 +115,7 @@ export default function TopBar() {
         <button
           disabled={!project}
           onClick={() => setSizeOpen(v => !v)}
-          className="flex items-center gap-1 text-xs text-editor-secondary hover:text-editor-text px-2 py-1 rounded hover:bg-editor-hover transition-colors disabled:text-editor-muted disabled:cursor-default"
+          className="flex items-center gap-1 text-xs text-editor-secondary hover:text-editor-text px-2 py-1 rounded hover:bg-editor-hover transition-colors disabled:text-[#c1c1c1] disabled:cursor-default"
         >
           <Monitor size={12} />
           <span>{sizeLabel}</span>
@@ -135,7 +135,7 @@ export default function TopBar() {
                 )}
               >
                 <span>{p.label}</span>
-                <span className="text-editor-muted">{p.width}×{p.height}</span>
+                <span className="text-[#c1c1c1]">{p.width}×{p.height}</span>
               </button>
             ))}
           </div>
@@ -146,7 +146,7 @@ export default function TopBar() {
       <button
         disabled={!project}
         onClick={() => setActivePanel('background')}
-        className="text-xs text-editor-secondary hover:text-editor-text px-2 py-1 rounded hover:bg-editor-hover transition-colors disabled:text-editor-muted disabled:cursor-default"
+        className="text-xs text-editor-secondary hover:text-editor-text px-2 py-1 rounded hover:bg-editor-hover transition-colors disabled:text-[#c1c1c1] disabled:cursor-default"
       >
         Background
       </button>

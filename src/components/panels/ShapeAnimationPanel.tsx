@@ -49,7 +49,7 @@ export default function ShapeAnimationPanel() {
 
       <div className="flex-1 overflow-y-auto">
         {!el && (
-          <p className="text-xs text-editor-muted px-3 py-3">
+          <p className="text-xs text-[#c1c1c1] px-3 py-3">
             Select a shape, arrow, or image to add animations.
           </p>
         )}
@@ -68,7 +68,7 @@ export default function ShapeAnimationPanel() {
 
             {/* Animation list */}
             {el.animations.length === 0 && (
-              <p className="text-xs text-editor-muted px-3 py-3">No animations yet.</p>
+              <p className="text-xs text-[#c1c1c1] px-3 py-3">No animations yet.</p>
             )}
 
             {el.animations.map((anim, i) => (
@@ -103,7 +103,7 @@ function AnimBlock({ anim, index, elId }: {
     <div className="border-b border-editor-border px-3 py-2 flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <span className="text-xs text-editor-secondary font-medium">Animation {index + 1}</span>
-        <button onClick={() => removeAnimation(elId, anim.id)} className="text-editor-muted hover:text-red-400">
+        <button onClick={() => removeAnimation(elId, anim.id)} className="text-[#c1c1c1] hover:text-red-400">
           <Trash2 size={11} />
         </button>
       </div>
@@ -119,7 +119,7 @@ function AnimBlock({ anim, index, elId }: {
                 'flex-1 text-xs px-2 py-1.5 rounded transition-colors',
                 anim.timing === t
                   ? 'bg-editor-accent text-white'
-                  : 'bg-editor-elevated text-editor-muted hover:text-editor-text'
+                  : 'bg-editor-elevated text-[#c1c1c1] hover:text-editor-text'
               )}
             >
               {t === 'onEnter' ? 'Enter' : t === 'onExit' ? 'Exit' : 'Loop'}

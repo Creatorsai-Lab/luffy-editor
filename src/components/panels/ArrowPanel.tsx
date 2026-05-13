@@ -45,7 +45,7 @@ export default function ArrowPanel() {
         >
           Draw Arrow
         </button>
-        <p className="text-xs text-editor-muted mt-1.5">Click-drag on canvas to draw.</p>
+        <p className="text-xs text-[#c1c1c1] mt-1.5">Click-drag on canvas to draw.</p>
       </div>
 
       {el && (
@@ -57,7 +57,7 @@ export default function ArrowPanel() {
                   className={cn('flex-1 py-1 text-xs rounded border transition-colors',
                     el.arrowHead === h.value
                       ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
-                      : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text'
+                      : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text'
                   )}>
                   {h.label}
                 </button>
@@ -99,7 +99,7 @@ export default function ArrowPanel() {
                   className={cn('flex-1 py-1 text-xs rounded border transition-colors',
                     el.dashed === dashed && el.dotted === dotted
                       ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
-                      : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text'
+                      : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text'
                   )}>
                   {label}
                 </button>
@@ -119,9 +119,9 @@ export default function ArrowPanel() {
                 onChange={e => applyAngle(Number(e.target.value))}
                 className="flex-1 bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
               />
-              <span className="text-xs text-editor-muted">°</span>
+              <span className="text-xs text-[#c1c1c1]">°</span>
               <button onClick={() => applyAngle(currentAngle + 90)}
-                className="text-xs px-2 py-1 bg-editor-elevated border border-editor-border rounded text-editor-muted hover:text-editor-text transition-colors">
+                className="text-xs px-2 py-1 bg-editor-elevated border border-editor-border rounded text-[#c1c1c1] hover:text-editor-text transition-colors">
                 +90°
               </button>
             </div>

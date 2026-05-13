@@ -19,7 +19,7 @@ export default function BackgroundPanel() {
 
   if (!scene) return (
     <div className="flex-1 flex items-center justify-center p-4">
-      <p className="text-xs text-editor-muted">No scene selected.</p>
+      <p className="text-xs text-[#c1c1c1]">No scene selected.</p>
     </div>
   )
 
@@ -55,7 +55,7 @@ export default function BackgroundPanel() {
                 'text-xs px-2 py-1 rounded border transition-colors',
                 bg.type === t.value
                   ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
-                  : 'bg-editor-elevated border-editor-border text-editor-muted hover:text-editor-text'
+                  : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text'
               )}
             >
               {t.label}
