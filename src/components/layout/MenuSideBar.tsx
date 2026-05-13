@@ -1,0 +1,201 @@
+import { useState, useEffect } from 'react'
+import {
+  Type, Square, ArrowRight, Code2, Table2, Image as ImageIcon,
+  Sparkles, Layers, Shuffle, Upload, Wand2, BarChart3, Music,
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, Settings
+} from 'lucide-react'
+import { useEditorStore } from '../../store/editorStore'
+import { useHistoryStore } from '../../store/historyStore'
+import { CANVAS_PRESETS } from '../../types/editor'
+import type { ActiveTool, ActivePanel } from '../../types/editor'
+import { cn } from '../../utils/cn'
+
+interface ToolItem {
+  icon: React.ReactNode
+  label: string
+  tool?: ActiveTool
+  panel: ActivePanel
+}
+
+const TOOLS: ToolItem[] = [
+  { icon: <Type size={16} />, label: 'Text', tool: 'text', panel: 'text' },
+  { icon: <Square size={16} />, label: 'Shapes', tool: 'shape-rect', panel: 'shapes' },
+  { icon: <ArrowRight size={16} />, label: 'Arrow', tool: 'arrow', panel: 'arrows' },
+  { icon: <Code2 size={16} />, label: 'Code', tool: 'code', panel: 'code' },
+  { icon: <Table2 size={16} />, label: 'Table', tool: 'table', panel: 'table' },
+  { icon: <BarChart3 size={16} />, label: 'Charts', tool: 'chart', panel: 'charts' },
+  { icon: <Upload size={16} />, label: 'Upload', tool: 'image', panel: 'upload' },
+  { icon: <Music size={16} />, label: 'Audio', panel: 'audio' },
+  { icon: <Type size={16} />, label: 'Text Anim', panel: 'textAnimations' },
+  { icon: <Sparkles size={16} />, label: 'Shape Anim', panel: 'shapeAnimations' },
+  { icon: <Wand2 size={16} />, label: 'Text Effects', panel: 'textEffects' },
+  { icon: <Shuffle size={16} />, label: 'Transitions', panel: 'transitions' },
+  { icon: <Layers size={16} />, label: 'Layers', panel: 'layers' },
+  { icon: <Settings size={16} />, label: 'Background', panel: 'background' },
+]
+
+export default function MenuSideBar() {
+  const {
+    project, activeTool, activePanel,
+    setActiveTool, setActivePanel,
+    setProjectName, setCanvasSize,
+    setPreviewOpen, setExportOpen,
+    undo, redo
+  } = useEditorStore()
+
+  const { canUndo, canRedo } = useHistoryStore()
+  const [editingName, setEditingName] = useState(false)
+  const [sizeOpen, setSizeOpen] = useState(false)
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        if (canUndo) undo()
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault()
+        if (canRedo) redo()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [canUndo, canRedo, undo, redo])
+
+  const disabled = !project
+  const preset = project ? CANVAS_PRESETS.find(p => p.width === project.width && p.height === project.height) : null
+  const sizeLabel = project ? (preset?.label ?? `${project.width}×${project.height}`) : '—'
+
+  return (
+    <aside className="w-56 flex-none bg-[#171717] flex flex-col h-full overflow-y-auto no-scrollbar border-r border-editor-border">
+      {/* Top Bar Actions */}
+      <div className="flex flex-col gap-2 p-3 border-b border-editor-border">
+        {/* Project Name */}
+        {project && editingName ? (
+          <input
+            autoFocus
+            className="bg-editor-elevated border border-editor-accent text-white text-[1.15rem] px-2 py-1 rounded w-full"
+            defaultValue={project.name}
+            onBlur={e => { setProjectName(e.target.value); setEditingName(false) }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { setProjectName(e.currentTarget.value); setEditingName(false) }
+              if (e.key === 'Escape') setEditingName(false)
+            }}
+          />
+        ) : (
+          <button
+            onClick={() => project && setEditingName(true)}
+            disabled={disabled}
+            className="text-[1.15rem] font-semibold text-white hover:text-purple-400 py-1 text-left truncate disabled:text-editor-muted w-full transition-colors"
+          >
+            {project?.name ?? 'No project'}
+          </button>
+        )}
+
+        {/* Canvas Size */}
+        <div className="relative">
+          <button
+            disabled={disabled}
+            onClick={() => setSizeOpen(v => !v)}
+            className="flex items-center justify-between w-full text-[1.15rem] text-white hover:text-purple-400 py-1.5 transition-colors disabled:text-editor-muted"
+          >
+            <div className="flex items-center gap-2">
+              <Monitor size={16} />
+              <span className="truncate">{sizeLabel}</span>
+            </div>
+            {project && <ChevronDown size={14} />}
+          </button>
+
+          {sizeOpen && project && (
+            <div className="absolute top-full left-0 mt-1 bg-editor-elevated border border-editor-border rounded shadow-lg z-50 w-full">
+              {CANVAS_PRESETS.map(p => (
+                <button
+                  key={p.label}
+                  onClick={() => { setCanvasSize(p.width, p.height); setSizeOpen(false) }}
+                  className={cn(
+                    'w-full text-left px-3 py-2 text-[1.15rem] hover:bg-editor-hover transition-colors flex items-center justify-between',
+                    p.width === project.width && p.height === project.height
+                      ? 'text-purple-400' : 'text-white'
+                  )}
+                >
+                  <span>{p.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Undo / Redo */}
+        <div className="flex items-center gap-2 mt-1">
+          <button
+            onClick={undo}
+            disabled={!canUndo}
+            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-white hover:text-purple-400 hover:bg-editor-hover disabled:text-editor-muted disabled:bg-transparent"
+            title="Undo"
+          >
+            <Undo2 size={16} />
+          </button>
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-white hover:text-purple-400 hover:bg-editor-hover disabled:text-editor-muted disabled:bg-transparent"
+            title="Redo"
+          >
+            <Redo2 size={16} />
+          </button>
+        </div>
+
+        {/* Preview / Export */}
+        <div className="grid grid-cols-2 gap-2 mt-1">
+          <button
+            disabled={disabled}
+            onClick={() => setPreviewOpen(true)}
+            className="flex flex-col items-center gap-1 text-[1.15rem] py-2 rounded transition-colors text-white hover:text-purple-400 hover:bg-editor-hover disabled:text-editor-muted disabled:bg-transparent"
+          >
+            <Play size={16} />
+            <span>Preview</span>
+          </button>
+          <button
+            disabled={disabled}
+            onClick={() => setExportOpen(true)}
+            className="flex flex-col items-center gap-1 text-[1.15rem] py-2 rounded transition-colors text-white hover:text-purple-400 hover:bg-editor-hover disabled:text-editor-muted disabled:bg-transparent"
+          >
+            <Download size={16} />
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Menu Bar Tools Grid (2 items per row) */}
+      <div className="p-3">
+        <div className="text-[0.75rem] text-editor-muted uppercase tracking-wider mb-3 px-1 font-semibold">Tools</div>
+        <div className="grid grid-cols-2 gap-2">
+          {TOOLS.map((item, i) => {
+            const isActive = activePanel === item.panel
+            return (
+              <button
+                key={i}
+                disabled={disabled}
+                onClick={() => {
+                  if (disabled) return
+                  if (item.tool) setActiveTool(item.tool)
+                  setActivePanel(activePanel === item.panel ? null : item.panel)
+                }}
+                className={cn(
+                  'flex flex-col items-center justify-center gap-1.5 p-2 rounded transition-all',
+                  disabled ? 'text-editor-muted cursor-not-allowed' :
+                    isActive ? 'bg-purple-900/30 text-purple-400' : 'text-white hover:text-purple-400 hover:bg-editor-hover'
+                )}
+              >
+                {item.icon}
+                <span className="text-[1.15rem] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">{item.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </aside>
+  )
+}

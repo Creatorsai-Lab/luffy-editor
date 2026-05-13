@@ -12,8 +12,9 @@ import BackgroundPanel from '../panels/BackgroundPanel'
 import LayersPanel from '../panels/LayersPanel'
 import TransitionPanel from '../panels/TransitionPanel'
 import UploadPanel from '../panels/UploadPanel'
+import AudioPanel from '../panels/AudioPanel'
 
-export default function LeftSidebar() {
+export default function OptionsSidebar() {
   const { project, activePanel, getSelectedEls } = useEditorStore()
 
   const selected = project ? getSelectedEls() : []
@@ -42,6 +43,7 @@ export default function LeftSidebar() {
       case 'table':           return <TablePanel />
       case 'charts':          return <ChartPanel />
       case 'upload':          return <UploadPanel />
+      case 'audio':           return <AudioPanel />
       case 'textAnimations':  return <TextAnimationPanel />
       case 'shapeAnimations': return <ShapeAnimationPanel />
       case 'textEffects':     return <TextEffectsPanel />

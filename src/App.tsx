@@ -2,9 +2,8 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { useEditorStore } from './store/editorStore'
 import { makeProject } from './utils/defaults'
 import Header from './components/layout/Header'
-import TopBar from './components/layout/TopBar'
-import MenuBar from './components/layout/MenuBar'
-import LeftSidebar from './components/layout/LeftSidebar'
+import MenuSideBar from './components/layout/MenuSideBar'
+import OptionsSidebar from './components/layout/OptionsSidebar'
 import EditorCanvas from './components/canvas/EditorCanvas'
 import Timeline from './components/layout/Timeline'
 import CodeEditorModal from './components/modals/CodeEditorModal'
@@ -81,22 +80,23 @@ export default function App() {
     <div className="h-screen w-screen flex flex-col bg-black overflow-hidden gap-1.5">
       <Header />
 
-      {/* TopBar + MenuBar combined in one bordered pill */}
-      <div className="mx-2 flex-none border border-editor-border rounded-lg overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-        <TopBar />
-        <MenuBar />
-      </div>
-
-      {/* Canvas area */}
+      {/* Main layout: MenuSideBar + Canvas + OptionsSidebar */}
       <div className="flex flex-1 min-h-0 overflow-hidden gap-1.5 px-2">
-        {/* Left sidebar bordered */}
+        {/* MenuSideBar on the left */}
         <div className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
-          <LeftSidebar />
+          <MenuSideBar />
         </div>
+
+        {/* Canvas in the middle */}
         <EditorCanvas />
+
+        {/* OptionsSidebar on the right */}
+        <div className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)] w-64">
+          <OptionsSidebar />
+        </div>
       </div>
 
-      {/* Timeline bordered */}
+      {/* Timeline at the bottom */}
       <div className="mx-2 mb-2 flex-none border border-editor-border rounded-lg overflow-hidden shadow-[0_-1px_6px_rgba(0,0,0,0.4)]">
         <Timeline />
       </div>

@@ -280,11 +280,14 @@ export default function EditorCanvas() {
           <Layer>
             {sortedEls.filter(el => el.visible).map(el => {
               const animProps = getAnimatedProps(el, localTime)
+              // Always apply animations: during playback OR when a playhead position is explicitly set
+              // (which happens during export frame rendering)
+              const shouldApplyAnim = isPlaying || playhead > 0
               return (
                 <CanvasElement
                   key={el.id}
                   element={el}
-                  animProps={isPlaying ? animProps : null}
+                  animProps={shouldApplyAnim ? animProps : null}
                   isSelected={selectedIds.includes(el.id)}
                   onSelect={multi => { if (!el.locked) selectElement(el.id, multi) }}
                   onDblClick={() => { if (el.type === 'code') openCodeModal(el.id) }}

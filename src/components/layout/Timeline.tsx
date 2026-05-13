@@ -339,10 +339,10 @@ export default function Timeline() {
         </Tooltip>
       </div>
 
-      {/* Scrollable track area */}
+      {/* Scrollable track area - now with vertical scroll support */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-x-auto overflow-y-hidden relative cursor-pointer"
+        className="flex-1 overflow-x-auto overflow-y-auto relative cursor-pointer"
         onMouseDown={handleRulerClick}
       >
         <div className="relative" style={{ width: Math.max(totalPx + 120, 600), height: '100%' }}>
@@ -474,7 +474,9 @@ export default function Timeline() {
             })}
           </div>
 
-          {/* Element animation tracks */}
+          {/* Element animation tracks - HIDDEN to reduce clutter */}
+          {/* Uncomment below if you want to show animation timelines again */}
+          {/* 
           {currentSc && currentSc.elements.map((el, ei) => {
             const scStart = sceneStarts[currentSc.id]
             return (
@@ -524,6 +526,7 @@ export default function Timeline() {
               </div>
             )
           })}
+          */}
 
           {/* Playhead */}
           <div

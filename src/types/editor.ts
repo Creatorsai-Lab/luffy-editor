@@ -16,7 +16,7 @@ export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'push
 export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated'
 export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
 export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'shape-pentagon' | 'shape-hexagon' | 'shape-octagon' | 'shape-diamond' | 'shape-oval' | 'shape-speechBubble' | 'shape-roundedSpeech' | 'shape-cone' | 'arrow' | 'code' | 'table' | 'image' | 'chart' | 'video'
-export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'textAnimations' | 'shapeAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | null
+export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'textAnimations' | 'shapeAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | null
 
 // ─── Animation ───────────────────────────────────────────────────────────────
 
@@ -241,8 +241,18 @@ export const CANVAS_PRESETS: CanvasPreset[] = [
 ]
 
 export const FONT_FAMILIES = [
-  'Segoe UI', 'Arial', 'Georgia', 'Courier New', 'Impact',
-  'Verdana', 'Trebuchet MS', 'Tahoma', 'Times New Roman', 'Consolas'
+  // Sans-serif
+  'Segoe UI', 'Arial', 'Verdana', 'Tahoma', 'Trebuchet MS',
+  'Poppins', 'Montserrat', 'Raleway', 'Inter', 'Roboto',
+  // Handwritten / display
+  'Comic Sans MS', 'Pacifico', 'Caveat', 'Indie Flower',
+  'Singlet', 'Handlee', 'Shadows Into Light', 'Fredoka', 'Quicksand',
+  // Serif
+  'Georgia', 'Times New Roman', 'Garamond',
+  // Monospace
+  'Courier New', 'Consolas', 'Monaco',
+  // Display
+  'Impact', 'Playfair Display', 'Bebas Neue'
 ]
 
 export const LANGUAGES = [

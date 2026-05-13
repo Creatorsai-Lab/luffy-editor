@@ -29,7 +29,7 @@ async function loadFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> {
 
   if (!ffmpegInstance) {
     ffmpegInstance = new FFmpeg()
-    
+
     ffmpegInstance.on('log', ({ message }) => {
       onLog?.(message)
       console.log('[FFmpeg]', message)
@@ -67,7 +67,7 @@ async function loadFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> {
         throw new Error(msg)
       }
     }
-    
+
     ffmpegLoaded = true
     onLog?.('FFmpeg loaded successfully')
   }
@@ -76,12 +76,12 @@ async function loadFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> {
 }
 
 export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<Blob> {
-  const { 
-    project, 
-    getStage, 
-    onProgress, 
-    onLog, 
-    renderFrame, 
+  const {
+    project,
+    getStage,
+    onProgress,
+    onLog,
+    renderFrame,
     renderSceneFrame,
     quality = 'high',
     format = 'mp4'
@@ -97,12 +97,12 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
   const ffmpeg = await loadFFmpeg(onLog)
 
   onProgress(5, 'Rendering frames...')
-  
+
   // Composite canvas (also used for transition rendering).
   const composite = document.createElement('canvas')
   composite.width = w
   composite.height = h
-  const compositeCtx = composite.getContext('2d', { 
+  const compositeCtx = composite.getContext('2d', {
     alpha: false,
     desynchronized: false,
     willReadFrequently: false
@@ -117,7 +117,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
     transitionStart: number  // When transition to next scene starts
     transitionDuration: number
   }
-  
+
   const sceneTimeline: SceneTimeInfo[] = []
   let elapsed = 0
   for (let i = 0; i < project.scenes.length; i++) {
@@ -125,7 +125,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
     const hasNext = i < project.scenes.length - 1
     // Transition belongs to THIS scene (from this scene -> next scene).
     const transitionDuration = hasNext ? (scene.transition?.duration ?? 0) : 0
-    
+
     sceneTimeline.push({
       sceneId: scene.id,
       sceneIndex: i,
@@ -134,10 +134,10 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
       transitionStart: elapsed + scene.duration - transitionDuration,
       transitionDuration
     })
-    
+
     elapsed += scene.duration
   }
-  
+
   const fromCanvas = document.createElement('canvas')
   fromCanvas.width = w
   fromCanvas.height = h
@@ -169,17 +169,17 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
 
   for (let i = 0; i < totalFrames; i++) {
     const time = i / fps
-    
+
     // Find current scene and check if we're in a transition
     let currentSceneInfo: SceneTimeInfo | null = null
     let nextSceneInfo: SceneTimeInfo | null = null
     let transitionProgress = 0
-    
+
     for (let j = 0; j < sceneTimeline.length; j++) {
       const info = sceneTimeline[j]
       if (time >= info.startTime && time < info.endTime) {
         currentSceneInfo = info
-        
+
         // Check if we're in transition period
         if (time >= info.transitionStart && info.transitionDuration > 0) {
           nextSceneInfo = sceneTimeline[j + 1] ?? null
@@ -188,12 +188,12 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
         break
       }
     }
-    
+
     if (!currentSceneInfo) {
       // Shouldn't happen, but fallback to last scene
       currentSceneInfo = sceneTimeline[sceneTimeline.length - 1]
     }
-    
+
     if (nextSceneInfo && currentSceneInfo.transitionDuration > 0) {
       if (!renderSceneFrame) {
         // Without scene-specific rendering, we can't reliably render both scenes.
@@ -237,10 +237,10 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
     const filename = `frame${String(i).padStart(6, '0')}.jpg`
     const bytes = await canvasToJpegBytes(composite, jpegQuality)
     await ffmpeg.writeFile(filename, bytes)
-    
+
     const frameProgress = Math.round((i / totalFrames) * 70)
     onProgress(5 + frameProgress, `Rendering frame ${i + 1}/${totalFrames} (${time.toFixed(2)}s${nextSceneInfo ? `, trans ${(transitionProgress * 100).toFixed(0)}%` : ''})`)
-    
+
     // Log progress every 30 frames
     if (i % 30 === 0) {
       onLog?.(`Rendered frame ${i + 1}/${totalFrames} at time ${time.toFixed(2)}s`)
@@ -252,7 +252,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
   // Determine encoding settings based on quality
   const crf = quality === 'ultra' ? '18' : '23' // Lower = better quality
   const preset = quality === 'ultra' ? 'slow' : 'medium'
-  const bitrate = quality === 'ultra' 
+  const bitrate = quality === 'ultra'
     ? Math.min(20_000_000, w * h * fps * 0.2)
     : Math.min(10_000_000, w * h * fps * 0.1)
 
@@ -297,8 +297,8 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
 
   // Read the output file (readFile returns FileData = Uint8Array | string; video is binary)
   const data = await ffmpeg.readFile(outputFile) as Uint8Array
-  const blob = new Blob([data.buffer], { 
-    type: format === 'mp4' ? 'video/mp4' : 'video/webm' 
+  const blob = new Blob([data.buffer], {
+    type: format === 'mp4' ? 'video/mp4' : 'video/webm'
   })
 
   onProgress(98, 'Cleaning up...')

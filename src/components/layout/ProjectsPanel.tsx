@@ -9,16 +9,16 @@ export default function ProjectsPanel() {
   const { currentProjectId, loadProject, closeProject } = useEditorStore()
   const [projects, setProjects] = useState<ProjectRecord[]>([])
   const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [renameVal, setRenameVal]   = useState('')
+  const [renameVal, setRenameVal] = useState('')
 
   useEffect(() => {
     window.api.projects.list().then(setProjects)
   }, [])
 
   async function createProject() {
-    const name   = `Project ${projects.length + 1}`
+    const name = `Project ${projects.length + 1}`
     const record = await window.api.projects.create(name)
-    const proj   = makeProject(record.id, record.name)
+    const proj = makeProject(record.id, record.name)
     await window.api.projects.save(record.id, JSON.stringify(proj))
     loadProject(proj)
     setProjects(await window.api.projects.list())
