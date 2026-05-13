@@ -9,8 +9,9 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
+    "paths": { 
+      "@/*": ["./src/*"] 
+    },
     "resolveJsonModule": true
   },
   "include": ["src/**/*"]

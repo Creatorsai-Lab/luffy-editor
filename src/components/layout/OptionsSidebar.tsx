@@ -13,6 +13,7 @@ import LayersPanel from '../panels/LayersPanel'
 import TransitionPanel from '../panels/TransitionPanel'
 import UploadPanel from '../panels/UploadPanel'
 import AudioPanel from '../panels/AudioPanel'
+import AudioPropertiesPanel from '../panels/AudioPropertiesPanel'
 
 export default function OptionsSidebar() {
   const { project, activePanel, getSelectedEls } = useEditorStore()
@@ -33,6 +34,7 @@ export default function OptionsSidebar() {
       if (firstEl.type === 'code')   return <CodePanel />
       if (firstEl.type === 'table')  return <TablePanel />
       if (firstEl.type === 'chart')  return <ChartPanel />
+      if (firstEl.type === 'audio')  return <AudioPropertiesPanel element={firstEl} />
     }
 
     switch (activePanel) {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Group, Rect, Image as KonvaImage } from 'react-konva'
 import type { VideoElement } from '../../../types/editor'
+import { toFileUrl } from '../../../utils/pathUtils'
 
 interface Props {
   el: VideoElement
@@ -13,7 +14,7 @@ export default function VideoKonva({ el, konvaProps }: Props) {
 
   useEffect(() => {
     const video = document.createElement('video')
-    video.src = el.src
+    video.src = toFileUrl(el.src)
     video.crossOrigin = 'anonymous'
     video.loop = el.loop
     video.muted = el.muted

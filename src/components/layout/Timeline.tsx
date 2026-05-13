@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect, useState } from 'react'
-import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Eye, EyeOff, ArrowRight, ArrowLeft, Activity, RotateCw, RefreshCw, ArrowUpDown } from 'lucide-react'
+import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Eye, EyeOff, ArrowRight, ArrowLeft, Activity, RotateCw, RefreshCw, ArrowUpDown, Music, Trash2 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { cn } from '../../utils/cn'
 import Tooltip from '../ui/Tooltip'
@@ -473,6 +473,88 @@ export default function Timeline() {
               )
             })}
           </div>
+
+          {/* Audio tracks */}
+          {currentSc && (
+            <div className="absolute left-0 right-0" style={{ top: RULER_HEIGHT + SCENE_HEIGHT, height: 'auto' }}>
+              {currentSc.elements
+                .filter(el => el.type === 'audio')
+                .map((audioEl, audioIdx) => {
+                  const scStart = sceneStarts[currentSc.id]
+                  const audioStartPx = (scStart + audioEl.x) * PX_PER_SEC
+                  const audioWidthPx = audioEl.duration * PX_PER_SEC
+                  
+                  return (
+                    <div
+                      key={audioEl.id}
+                      className="relative border-b border-editor-border/50 group"
+                      style={{ height: TRACK_HEIGHT }}
+                    >
+                      {/* Track label */}
+                      <div
+                        className="absolute left-0 flex items-center px-2 text-2xs text-white truncate bg-editor-border/40"
+                        style={{
+                          width: 100,
+                          height: TRACK_HEIGHT - 2,
+                          top: 1,
+                          zIndex: 1,
+                          fontWeight: 500
+                        }}
+                      >
+                        <Music size={10} className="mr-1 flex-none" />
+                        {audioEl.name}
+                      </div>
+
+                      {/* Audio bar */}
+                      <div
+                        className="absolute rounded-md cursor-move hover:ring-2 hover:ring-editor-accent group/bar transition-all"
+                        style={{
+                          left: audioStartPx + 105,
+                          width: Math.max(audioWidthPx, 40),
+                          top: 2,
+                          height: TRACK_HEIGHT - 4,
+                          background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                        }}
+                        title={`${audioEl.name} - ${audioEl.duration.toFixed(1)}s`}
+                      >
+                        {/* Fade in indicator */}
+                        {audioEl.fadeIn > 0 && (
+                          <div
+                            className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-yellow-500/40 to-transparent rounded-l-md"
+                            style={{ width: Math.max(audioEl.fadeIn * PX_PER_SEC, 2) }}
+                            title={`Fade in: ${audioEl.fadeIn.toFixed(1)}s`}
+                          />
+                        )}
+                        
+                        {/* Fade out indicator */}
+                        {audioEl.fadeOut > 0 && (
+                          <div
+                            className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-yellow-500/40 to-transparent rounded-r-md"
+                            style={{ width: Math.max(audioEl.fadeOut * PX_PER_SEC, 2) }}
+                            title={`Fade out: ${audioEl.fadeOut.toFixed(1)}s`}
+                          />
+                        )}
+
+                        {/* Audio info */}
+                        <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover/bar:opacity-100 transition-opacity text-2xs font-medium pointer-events-none">
+                          {audioEl.duration.toFixed(1)}s
+                        </div>
+                      </div>
+
+                      {/* Delete button */}
+                      <button
+                        onClick={() => useEditorStore.getState().removeElement(audioEl.id)}
+                        className="absolute -top-1 -right-1 p-0.5 rounded bg-red-500/80 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all z-10"
+                        title="Delete audio"
+                      >
+                        <Trash2 size={10} />
+                      </button>
+                    </div>
+                  )
+                })}
+            </div>
+          )}
 
           {/* Element animation tracks - HIDDEN to reduce clutter */}
           {/* Uncomment below if you want to show animation timelines again */}

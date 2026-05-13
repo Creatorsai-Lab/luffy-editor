@@ -1,11 +1,15 @@
-import { useState } from 'react'
-import { Music, Trash2, Plus } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Music, Trash2, Plus, Play, Pause, FileAudio } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
+import { toFileUrl } from '../../utils/pathUtils'
+import { makeAudio } from '../../utils/defaults'
 import type { AssetMeta } from '../../types/editor'
 
 export default function AudioPanel() {
-  const { project, addAsset, removeAsset } = useEditorStore()
+  const { project, addAsset, removeAsset, addElement } = useEditorStore()
   const [uploading, setUploading] = useState(false)
+  const [playingId, setPlayingId] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const audioAssets = (project?.assets ?? []).filter(a => a.type === 'audio')
 
@@ -39,6 +43,34 @@ export default function AudioPanel() {
     }
   }
 
+  function handlePlayAudio(asset: AssetMeta) {
+    if (playingId === asset.id) {
+      // Stop current
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+      setPlayingId(null)
+    } else {
+      // Play this audio
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+      
+      const audio = new Audio(toFileUrl(asset.path))
+      audio.onended = () => setPlayingId(null)
+      audio.onpause = () => setPlayingId(null)
+      audio.play().catch(e => console.error('Failed to play audio:', e))
+      
+      audioRef.current = audio
+      setPlayingId(asset.id)
+    }
+  }
+
+  function handleAddToTimeline(asset: AssetMeta) {
+    if (!project) return
+    addElement(makeAudio(asset.path, asset.id, 30))
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <PanelHeader icon={<Music size={12} />} title="Audio Manager" />
@@ -53,15 +85,41 @@ export default function AudioPanel() {
             {audioAssets.map(asset => (
               <div
                 key={asset.id}
-                className="flex items-center justify-between gap-2 bg-editor-elevated rounded p-2 border border-editor-border"
+                className="flex items-center justify-between gap-2 bg-editor-elevated rounded p-2 border border-editor-border hover:border-editor-accent transition-colors"
               >
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-editor-text truncate">{asset.name}</p>
-                  <p className="text-xs text-[#c1c1c1] truncate">{asset.filename}</p>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {/* Play button */}
+                  <button
+                    onClick={() => handlePlayAudio(asset)}
+                    className="flex-none p-1.5 rounded bg-editor-accent hover:bg-editor-accent-hover text-white transition-colors"
+                    title={playingId === asset.id ? 'Stop' : 'Play audio'}
+                  >
+                    {playingId === asset.id ? (
+                      <Pause size={12} />
+                    ) : (
+                      <Play size={12} />
+                    )}
+                  </button>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-white truncate">{asset.name}</p>
+                    <p className="text-2xs text-[#888888] truncate">{asset.filename}</p>
+                  </div>
                 </div>
+
+                {/* Add to timeline button */}
+                <button
+                  onClick={() => handleAddToTimeline(asset)}
+                  className="flex-none p-1.5 rounded bg-editor-accent-dim hover:bg-editor-accent text-editor-accent hover:text-white transition-colors"
+                  title="Add to timeline"
+                >
+                  <FileAudio size={12} />
+                </button>
+
+                {/* Delete button */}
                 <button
                   onClick={() => removeAsset(asset.id)}
-                  className="text-[#c1c1c1] hover:text-red-400 transition-colors flex-none"
+                  className="flex-none text-[#888888] hover:text-red-400 transition-colors"
                   title="Delete audio"
                 >
                   <Trash2 size={14} />
@@ -91,7 +149,7 @@ function PanelHeader({ icon, title }: { icon: React.ReactNode; title: string }) 
   return (
     <div className="flex items-center gap-2 px-3 py-2 border-b border-editor-border bg-editor-elevated/30">
       {icon}
-      <span className="text-xs font-semibold text-editor-text">{title}</span>
+      <span className="text-xs font-semibold text-white">{title}</span>
     </div>
   )
 }

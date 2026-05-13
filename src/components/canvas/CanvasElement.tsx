@@ -11,6 +11,7 @@ import ImageKonva  from './elements/ImageKonva'
 import TableKonva  from './elements/TableKonva'
 import ChartKonva  from './elements/ChartKonva'
 import VideoKonva  from './elements/VideoKonva'
+import AudioKonva  from './elements/AudioKonva'
 
 interface Props {
   element:    EditorElement
@@ -95,6 +96,7 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     case 'table':  return <TableKonva  el={element} konvaProps={props} />
     case 'chart':  return <ChartKonva  el={element} konvaProps={props} />
     case 'video':  return <VideoKonva  el={element} konvaProps={props} />
+    case 'audio':  return <AudioKonva  el={element} konvaProps={props} />
     default:       return null
   }
 }

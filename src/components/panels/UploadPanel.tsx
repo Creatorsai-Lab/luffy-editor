@@ -3,6 +3,7 @@ import { Upload, Image, Film, Music, Trash2, FileImage } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { makeImage, makeVideo, makeAudio } from '../../utils/defaults'
 import { cn } from '../../utils/cn'
+import { toFileUrl } from '../../utils/pathUtils'
 
 export default function UploadPanel() {
   const { project, addAsset, removeAsset, addElement } = useEditorStore()
@@ -143,17 +144,8 @@ export default function UploadPanel() {
 
       <div className="grid grid-cols-2 gap-2 p-2">
         {assets.map(a => {
-          // Convert path to file:// URL for display
-          let displayPath = a.path
-          if (!displayPath.startsWith('file://') && !displayPath.startsWith('http')) {
-            // Handle Windows paths
-            if (displayPath.match(/^[A-Za-z]:\\/)) {
-              displayPath = displayPath.replace(/\\/g, '/')
-              displayPath = `file:///${displayPath}`
-            } else {
-              displayPath = `file://${displayPath}`
-            }
-          }
+          // Use toFileUrl utility for proper conversion
+          const displayPath = toFileUrl(a.path)
           
           return (
             <div
@@ -179,7 +171,7 @@ export default function UploadPanel() {
                     alt={a.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.error('[UploadPanel] Failed to load thumbnail:', displayPath)
+                      console.error('[UploadPanel] Failed to load thumbnail:', displayPath, 'Original path:', a.path)
                       const target = e.currentTarget
                       target.style.display = 'none'
                       const parent = target.parentElement

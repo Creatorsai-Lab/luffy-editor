@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Image as KonvaImage, Rect, Group, Text } from 'react-konva'
 import type { ImageElement } from '../../../types/editor'
+import { toFileUrl } from '../../../utils/pathUtils'
 
 interface Props {
   el: ImageElement
@@ -31,29 +32,11 @@ export default function ImageKonva({ el, konvaProps }: Props) {
       setLoading(false)
     }
 
-    // Convert Windows path to file:// URL
-    let src = el.src
+    // Use toFileUrl utility for consistent path conversion
+    const imageUrl = toFileUrl(el.src)
+    image.src = imageUrl
     
-    // If it's already a data URL or http URL, use as-is
-    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
-      image.src = src
-    }
-    // If it's already a file:// URL, use as-is
-    else if (src.startsWith('file://')) {
-      image.src = src
-    }
-    // Otherwise, convert to file:// URL
-    else {
-      // Handle Windows paths (C:\path\to\file)
-      if (src.match(/^[A-Za-z]:\\/)) {
-        src = src.replace(/\\/g, '/')
-        image.src = `file:///${src}`
-      } else {
-        image.src = `file://${src}`
-      }
-    }
-    
-    console.log('[ImageKonva] Loading image from:', image.src)
+    console.log('[ImageKonva] Loading image from:', imageUrl)
 
     return () => {
       image.onload = null
