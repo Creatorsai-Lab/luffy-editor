@@ -6,8 +6,8 @@ import Tooltip from '../ui/Tooltip'
 import type { AnimationType } from '../../types/editor'
 
 const RULER_HEIGHT = 18
-const SCENE_HEIGHT = 32
-const TRACK_HEIGHT = 22
+const SCENE_HEIGHT = 36
+const TRACK_HEIGHT = 32
 const PX_PER_SEC_BASE = 60
 
 const SCENE_COLORS = ['#3b82f6', '#0ea5e9', '#6366f1', '#4169e1'] // blue, skyblue, indigo, royalblue
@@ -254,7 +254,7 @@ export default function Timeline() {
   const playheadPx = playhead * PX_PER_SEC
 
   return (
-    <div className="flex flex-col bg-[#171717] flex-none" style={{ height: 130 }}>
+    <div className="flex flex-col bg-[#171717] flex-none" style={{ height: 160 }}>
       {/* Controls row */}
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-editor-border flex-none">
         <Tooltip text="Stop (Home)">
@@ -483,6 +483,7 @@ export default function Timeline() {
                   const scStart = sceneStarts[currentSc.id]
                   const audioStartPx = (scStart + audioEl.x) * PX_PER_SEC
                   const audioWidthPx = audioEl.duration * PX_PER_SEC
+                  const fileName = audioEl.name.substring(0, 10)
                   
                   return (
                     <div
@@ -490,38 +491,47 @@ export default function Timeline() {
                       className="relative border-b border-editor-border/50 group"
                       style={{ height: TRACK_HEIGHT }}
                     >
-                      {/* Track label */}
+                      {/* Audio bar with waveform effect */}
                       <div
-                        className="absolute left-0 flex items-center px-2 text-2xs text-white truncate bg-editor-border/40"
+                        className="absolute rounded cursor-move hover:ring-2 hover:ring-editor-accent group/bar transition-all overflow-hidden"
                         style={{
-                          width: 100,
-                          height: TRACK_HEIGHT - 2,
-                          top: 1,
-                          zIndex: 1,
-                          fontWeight: 500
-                        }}
-                      >
-                        <Music size={10} className="mr-1 flex-none" />
-                        {audioEl.name}
-                      </div>
-
-                      {/* Audio bar */}
-                      <div
-                        className="absolute rounded-md cursor-move hover:ring-2 hover:ring-editor-accent group/bar transition-all"
-                        style={{
-                          left: audioStartPx + 105,
-                          width: Math.max(audioWidthPx, 40),
+                          left: audioStartPx,
+                          width: Math.max(audioWidthPx, 60),
                           top: 2,
                           height: TRACK_HEIGHT - 4,
-                          background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                           boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                         }}
                         title={`${audioEl.name} - ${audioEl.duration.toFixed(1)}s`}
                       >
+                        {/* Waveform visualization */}
+                        <svg
+                          className="absolute inset-0 w-full h-full"
+                          viewBox={`0 0 ${Math.max(audioWidthPx, 60)} ${TRACK_HEIGHT - 4}`}
+                          preserveAspectRatio="none"
+                          style={{ opacity: 0.6 }}
+                        >
+                          {Array.from({ length: Math.min(Math.max(Math.floor(audioWidthPx / 4), 10), 100) }, (_, i) => {
+                            const x = (i / Math.max(Math.floor(audioWidthPx / 4), 10)) * Math.max(audioWidthPx, 60)
+                            const height = Math.sin(i * 0.5 + audioIdx) * (TRACK_HEIGHT - 6) * 0.6 + (TRACK_HEIGHT - 6) * 0.5
+                            return (
+                              <rect
+                                key={i}
+                                x={x}
+                                y={(TRACK_HEIGHT - 4 - height) / 2}
+                                width="2"
+                                height={height}
+                                fill="#ffffff"
+                                opacity="0.7"
+                              />
+                            )
+                          })}
+                        </svg>
+
                         {/* Fade in indicator */}
                         {audioEl.fadeIn > 0 && (
                           <div
-                            className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-yellow-500/40 to-transparent rounded-l-md"
+                            className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-yellow-500/40 to-transparent rounded-l"
                             style={{ width: Math.max(audioEl.fadeIn * PX_PER_SEC, 2) }}
                             title={`Fade in: ${audioEl.fadeIn.toFixed(1)}s`}
                           />
@@ -530,15 +540,15 @@ export default function Timeline() {
                         {/* Fade out indicator */}
                         {audioEl.fadeOut > 0 && (
                           <div
-                            className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-yellow-500/40 to-transparent rounded-r-md"
+                            className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-yellow-500/40 to-transparent rounded-r"
                             style={{ width: Math.max(audioEl.fadeOut * PX_PER_SEC, 2) }}
                             title={`Fade out: ${audioEl.fadeOut.toFixed(1)}s`}
                           />
                         )}
 
-                        {/* Audio info */}
-                        <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover/bar:opacity-100 transition-opacity text-2xs font-medium pointer-events-none">
-                          {audioEl.duration.toFixed(1)}s
+                        {/* Audio filename and duration info */}
+                        <div className="absolute inset-0 flex items-center px-2 text-white text-2xs font-medium pointer-events-none overflow-hidden">
+                          <span className="truncate">{fileName} • {audioEl.duration.toFixed(1)}s</span>
                         </div>
                       </div>
 

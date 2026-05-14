@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useEditorStore } from './store/editorStore'
+import { useHistoryAutoSave } from './utils/useHistoryAutoSave'
 import { makeProject } from './utils/defaults'
 import Header from './components/layout/Header'
 import MenuSideBar from './components/layout/MenuSideBar'
@@ -20,6 +21,9 @@ export default function App() {
 
   const [ready, setReady] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Enable history auto-save
+  useHistoryAutoSave(500)
 
   useEffect(() => {
     async function boot() {

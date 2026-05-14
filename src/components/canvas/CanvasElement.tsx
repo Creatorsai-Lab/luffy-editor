@@ -96,7 +96,7 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     case 'table':  return <TableKonva  el={element} konvaProps={props} />
     case 'chart':  return <ChartKonva  el={element} konvaProps={props} />
     case 'video':  return <VideoKonva  el={element} konvaProps={props} />
-    case 'audio':  return <AudioKonva  el={element} konvaProps={props} />
+    case 'audio':  return null // Audio only appears in timeline, not on canvas
     default:       return null
   }
 }

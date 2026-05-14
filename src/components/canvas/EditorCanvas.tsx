@@ -32,7 +32,8 @@ export default function EditorCanvas() {
     project, currentSceneId, selectedIds,
     playhead, isPlaying, activeTool,
     addElement, selectElement, deselectAll,
-    removeElement, setActiveTool, openCodeModal
+    removeElement, setActiveTool, openCodeModal,
+    undo, redo
   } = useEditorStore()
 
   const currentScene = project?.scenes.find(s => s.id === currentSceneId) ?? null
@@ -106,6 +107,20 @@ export default function EditorCanvas() {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
       
+      // Undo: Ctrl+Z (Windows/Linux) or Cmd+Z (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        console.log('[EditorCanvas] Undo triggered')
+        undo()
+      }
+      
+      // Redo: Ctrl+Shift+Z (Windows/Linux) or Cmd+Shift+Z (Mac), or Ctrl+Y
+      if (((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) || ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
+        e.preventDefault()
+        console.log('[EditorCanvas] Redo triggered')
+        redo()
+      }
+      
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault() // Prevent browser back navigation
         console.log('[EditorCanvas] Delete key pressed, selectedIds:', selectedIds)
@@ -127,7 +142,7 @@ export default function EditorCanvas() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selectedIds, removeElement, deselectAll, setActiveTool])
+  }, [selectedIds, removeElement, deselectAll, setActiveTool, undo, redo])
 
   // ── Coordinate helper: client → project space ─────────────────────────────────
   // Uses the stage canvas DOM element's own bounding rect (handles CSS offset correctly)
@@ -165,7 +180,10 @@ export default function EditorCanvas() {
       case 'shape-oval':
       case 'shape-speechBubble':
       case 'shape-roundedSpeech':
-      case 'shape-cone': {
+      case 'shape-cone':
+      case 'shape-rect-hand':
+      case 'shape-circle-hand':
+      case 'shape-square-hand': {
         const t = activeTool.replace('shape-', '') as ShapeType
         addElement(makeShape(t, x - 60, y - 60))
         setActiveTool('select')
@@ -321,16 +339,16 @@ export default function EditorCanvas() {
               rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
               rotateAnchorCursor="grab"
               anchorStyleFunc={(anchor) => {
-                // Make rotation anchor more visible
+                // Custom styling for rotation anchor - make it look like a rotation icon
                 if (anchor.hasName('rotater')) {
-                  anchor.cornerRadius(12)
-                  anchor.fill('#10b981')
+                  anchor.cornerRadius(3)
+                  anchor.fill('#6366f1')
                   anchor.stroke('#fff')
-                  anchor.strokeWidth(2)
-                  anchor.width(24)
-                  anchor.height(24)
-                  anchor.offsetX(12)
-                  anchor.offsetY(12)
+                  anchor.strokeWidth(1.5)
+                  anchor.width(18)
+                  anchor.height(18)
+                  anchor.offsetX(9)
+                  anchor.offsetY(9)
                 }
               }}
             />

@@ -6,6 +6,12 @@ interface Props {
   konvaProps: Record<string, unknown>
 }
 
+// Helper function to add waviness to a point for hand-drawn effect
+function addWave(x: number, y: number, seed: number = 0): [number, number] {
+  const wave = Math.sin((x + seed) * 0.05) * 2 + Math.sin((y + seed) * 0.03) * 1.5
+  return [x + wave * (0.5 + (seed % 10) * 0.05), y + wave * (0.3 + (seed % 7) * 0.05)]
+}
+
 export default function ShapeKonva({ el, konvaProps }: Props) {
   const shared = {
     ...konvaProps,
@@ -18,7 +24,79 @@ export default function ShapeKonva({ el, konvaProps }: Props) {
   const w = el.width
   const h = el.height
   const radius = Math.min(w, h) / 2
+  const isHandDrawn = el.shapeType.includes('-hand')
 
+  // Hand-drawn versions use slightly irregular paths
+  if (isHandDrawn) {
+    switch (el.shapeType) {
+      case 'rect-hand': {
+        // Rectangle with wavy edges
+        const topLeft = addWave(0, 0, 1)
+        const topRight = addWave(w, 0, 2)
+        const bottomRight = addWave(w, h, 3)
+        const bottomLeft = addWave(0, h, 4)
+        return (
+          <Line
+            {...shared}
+            points={[
+              topLeft[0], topLeft[1],
+              topRight[0], topRight[1],
+              bottomRight[0], bottomRight[1],
+              bottomLeft[0], bottomLeft[1]
+            ]}
+            closed
+            lineCap="round"
+            lineJoin="round"
+          />
+        )
+      }
+      case 'circle-hand': {
+        // Circle with wavy edges - approximate with polygon
+        const sides = 32
+        const points: number[] = []
+        for (let i = 0; i < sides; i++) {
+          const angle = (i / sides) * Math.PI * 2
+          let x = radius + Math.cos(angle) * radius
+          let y = radius + Math.sin(angle) * radius
+          const waved = addWave(x, y, i)
+          points.push(waved[0] - radius, waved[1] - radius)
+        }
+        return (
+          <Line
+            {...shared}
+            points={points}
+            closed
+            lineCap="round"
+            lineJoin="round"
+          />
+        )
+      }
+      case 'square-hand': {
+        // Square (equal width/height) with wavy edges
+        const size = Math.min(w, h)
+        const topLeft = addWave(0, 0, 1)
+        const topRight = addWave(size, 0, 2)
+        const bottomRight = addWave(size, size, 3)
+        const bottomLeft = addWave(0, size, 4)
+        return (
+          <Line
+            {...shared}
+            points={[
+              topLeft[0], topLeft[1],
+              topRight[0], topRight[1],
+              bottomRight[0], bottomRight[1],
+              bottomLeft[0], bottomLeft[1]
+            ]}
+            closed
+            lineCap="round"
+            lineJoin="round"
+          />
+        )
+      }
+    }
+  }
+
+  // Original sharp shapes
   switch (el.shapeType) {
     case 'rect':
       return <Rect {...shared} width={w} height={h} cornerRadius={el.cornerRadius} />

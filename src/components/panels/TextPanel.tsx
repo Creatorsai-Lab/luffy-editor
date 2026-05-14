@@ -203,18 +203,20 @@ export function Slider({ value, min, max, step, onChange, display }: {
   )
 }
 
-export function ColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function ColorInput({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
   return (
     <div className="flex items-center gap-2">
       <input
         type="color" value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-8 h-6 rounded cursor-pointer border border-editor-border"
+        disabled={disabled}
+        className="w-8 h-6 rounded cursor-pointer border border-editor-border disabled:opacity-50 disabled:cursor-not-allowed"
       />
       <input
         type="text" value={value}
         onChange={e => onChange(e.target.value)}
-        className="flex-1 bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        disabled={disabled}
+        className="flex-1 bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag disabled:opacity-50 disabled:cursor-not-allowed"
         maxLength={9}
       />
     </div>

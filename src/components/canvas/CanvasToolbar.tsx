@@ -44,21 +44,6 @@ export default function CanvasToolbar() {
         </button>
       </Tooltip>
 
-      {/* Rulers toggle */}
-      <Tooltip text="Toggle Rulers (Ctrl+R)">
-        <button
-          onClick={() => setShowRulers(!showRulers)}
-          className={cn(
-            'p-1.5 rounded transition-colors',
-            showRulers
-              ? 'bg-editor-accent text-white'
-              : 'text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover'
-          )}
-        >
-          <Ruler size={14} className="rotate-90" />
-        </button>
-      </Tooltip>
-
       {/* Safe area toggle */}
       <Tooltip text="Toggle Safe Area">
         <button

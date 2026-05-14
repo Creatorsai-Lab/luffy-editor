@@ -79,7 +79,7 @@ interface CanvasActions {
 
 const DEFAULT_SETTINGS: CanvasSettings = {
   showGrid: false,
-  gridSize: 20,
+  gridSize: 40,
   gridColor: 'rgba(255, 255, 255, 0.1)',
   snapToGrid: false,
 

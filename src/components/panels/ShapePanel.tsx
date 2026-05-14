@@ -1,4 +1,4 @@
-import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, Ellipsis, MessageCircle, MessageSquare, Triangle as TriangleIcon } from 'lucide-react'
+import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, Ellipsis, MessageCircle, MessageSquare, Triangle as TriangleIcon, PenTool } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ShapeElement, ShapeType, ActiveTool } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
@@ -16,7 +16,10 @@ const SHAPES: { icon: React.ReactNode; type: ShapeType; label: string }[] = [
   { icon: <Circle size={14} />,        type: 'oval',          label: 'Oval' },
   { icon: <MessageSquare size={14} />, type: 'speechBubble',  label: 'Speech Box' },
   { icon: <MessageCircle size={14} />, type: 'roundedSpeech', label: 'Casual Speech' },
-  { icon: <TriangleIcon size={14} />,  type: 'cone',          label: 'Cone' }
+  { icon: <TriangleIcon size={14} />,  type: 'cone',          label: 'Cone' },
+  { icon: <PenTool size={14} />,       type: 'rect-hand',     label: 'Hand Rectangle' },
+  { icon: <PenTool size={14} />,       type: 'circle-hand',   label: 'Hand Circle' },
+  { icon: <PenTool size={14} />,       type: 'square-hand',   label: 'Hand Square' }
 ]
 
 export default function ShapePanel() {
@@ -57,7 +60,7 @@ export default function ShapePanel() {
         <div className="flex flex-col px-3 py-2 gap-0.5">
           <Row label="Fill">
             <div className="flex items-center gap-1">
-              <ColorInput value={el.fill} onChange={v => upd({ fill: v })} />
+              <ColorInput value={el.fill === 'transparent' ? '#6366f1' : el.fill} onChange={v => upd({ fill: v })} disabled={el.fill === 'transparent'} />
               <button
                 onClick={() => upd({ fill: el.fill === 'transparent' ? '#6366f1' : 'transparent' })}
                 className={cn(
@@ -68,7 +71,7 @@ export default function ShapePanel() {
                 )}
                 title="Toggle transparent fill"
               >
-                {el.fill === 'transparent' ? 'Solid' : 'Clear'}
+                {el.fill === 'transparent' ? 'No Fill' : 'Filled'}
               </button>
             </div>
           </Row>
