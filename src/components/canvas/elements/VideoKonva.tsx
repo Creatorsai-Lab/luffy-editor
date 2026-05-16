@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Group, Rect, Image as KonvaImage } from 'react-konva'
+import type Konva from 'konva'
+import { useEditorStore } from '../../../store/editorStore'
 import type { VideoElement } from '../../../types/editor'
 import { toFileUrl } from '../../../utils/pathUtils'
 
@@ -10,67 +12,85 @@ interface Props {
 
 export default function VideoKonva({ el, konvaProps }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
-  const [videoImage, setVideoImage] = useState<HTMLVideoElement | null>(null)
+  const imageRef = useRef<Konva.Image | null>(null)
+  const rafRef   = useRef<number>(0)
+  const [loaded, setLoaded] = useState(false)
 
+  const isPlaying = useEditorStore(s => s.isPlaying)
+
+  // Create video element and load source
   useEffect(() => {
     const video = document.createElement('video')
-    video.src = toFileUrl(el.src)
+    video.src         = toFileUrl(el.src)
     video.crossOrigin = 'anonymous'
-    video.loop = el.loop
-    video.muted = el.muted
-    video.volume = el.volume
-    video.playbackRate = el.playbackRate
-    
-    video.addEventListener('loadedmetadata', () => {
-      setVideoImage(video)
-    })
+    video.loop        = el.loop
+    video.muted       = el.muted
+    video.volume      = el.volume
+    video.playbackRate= el.playbackRate
+    video.preload     = 'auto'
 
-    videoRef.current = video
+    const onReady = () => { videoRef.current = video; setLoaded(true) }
+    video.addEventListener('loadeddata', onReady)
 
     return () => {
+      video.removeEventListener('loadeddata', onReady)
       video.pause()
       video.src = ''
       videoRef.current = null
+      cancelAnimationFrame(rafRef.current)
+      setLoaded(false)
     }
-  }, [el.src, el.loop, el.muted, el.volume, el.playbackRate])
+  }, [el.src])
 
-  // Update video properties when they change
+  // Sync mutable video properties without reloading
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.volume = el.volume
-      videoRef.current.playbackRate = el.playbackRate
-      videoRef.current.loop = el.loop
-      videoRef.current.muted = el.muted
-    }
+    const v = videoRef.current
+    if (!v) return
+    v.volume        = el.volume
+    v.playbackRate  = el.playbackRate
+    v.loop          = el.loop
+    v.muted         = el.muted
   }, [el.volume, el.playbackRate, el.loop, el.muted])
+
+  // Play/pause + drive per-frame canvas redraw
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v || !loaded) return
+
+    if (isPlaying) {
+      v.play().catch(() => {})
+      const tick = () => {
+        imageRef.current?.getLayer()?.batchDraw()
+        rafRef.current = requestAnimationFrame(tick)
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    } else {
+      v.pause()
+      cancelAnimationFrame(rafRef.current)
+      // Draw one final frame so the canvas shows current paused position
+      imageRef.current?.getLayer()?.batchDraw()
+    }
+
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [isPlaying, loaded])
 
   return (
     <Group {...konvaProps}>
-      {videoImage ? (
+      {loaded && videoRef.current ? (
         <KonvaImage
-          image={videoImage}
+          ref={imageRef}
+          image={videoRef.current}
           width={el.width}
           height={el.height}
           cornerRadius={el.cornerRadius}
         />
       ) : (
-        // Placeholder while video loads
-        <Group>
-          <Rect
-            width={el.width}
-            height={el.height}
-            fill="#1a1a2e"
-            cornerRadius={el.cornerRadius}
-          />
-          <Rect
-            x={el.width / 2 - 30}
-            y={el.height / 2 - 30}
-            width={60}
-            height={60}
-            fill="#6366f1"
-            cornerRadius={8}
-          />
-        </Group>
+        <Rect
+          width={el.width}
+          height={el.height}
+          fill="#1a1a2e"
+          cornerRadius={el.cornerRadius}
+        />
       )}
     </Group>
   )

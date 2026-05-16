@@ -22,18 +22,29 @@ const ANIM_COLORS: Record<string, string> = {
 }
 
 const ANIM_ICONS: Record<AnimationType, React.ReactNode> = {
-  fadeIn: <Eye size={10} />,
-  fadeOut: <EyeOff size={10} />,
-  slideIn: <ArrowRight size={10} />,
-  slideOut: <ArrowLeft size={10} />,
-  scaleIn: <ZoomIn size={9} />,
-  scaleOut: <ZoomOut size={9} />,
-  typewriter: <span style={{ fontSize: 8 }}>Aa</span>,
-  spin: <RotateCw size={10} />,
-  pulse: <Activity size={10} />,
-  bounceLoop: <ArrowUpDown size={10} />,
-  rotateLoop: <RefreshCw size={10} />,
-  drawPath: <span style={{ fontSize: 8 }}>~</span>
+  fadeIn:          <Eye size={10} />,
+  fadeOut:         <EyeOff size={10} />,
+  slideIn:         <ArrowRight size={10} />,
+  slideOut:        <ArrowLeft size={10} />,
+  scaleIn:         <ZoomIn size={9} />,
+  scaleOut:        <ZoomOut size={9} />,
+  typewriter:      <span style={{ fontSize: 8 }}>Aa</span>,
+  spin:            <RotateCw size={10} />,
+  pulse:           <Activity size={10} />,
+  bounceLoop:      <ArrowUpDown size={10} />,
+  rotateLoop:      <RefreshCw size={10} />,
+  drawPath:        <span style={{ fontSize: 8 }}>~</span>,
+  typewriterChars: <span style={{ fontSize: 8 }}>A|</span>,
+  typewriterWords: <span style={{ fontSize: 8 }}>W|</span>,
+  textFade:        <Eye size={10} />,
+  textBurst:       <span style={{ fontSize: 8 }}>✦</span>,
+  textBounce:      <ArrowUpDown size={10} />,
+  textBlock:       <span style={{ fontSize: 8 }}>▮</span>,
+  textSquiz:       <span style={{ fontSize: 8 }}>↔</span>,
+  textSpread:      <span style={{ fontSize: 8 }}>↔</span>,
+  textTwirl:       <RotateCw size={10} />,
+  textZoomIn:      <ZoomIn size={9} />,
+  textZoomOut:     <ZoomOut size={9} />,
 }
 
 const TRANS_COLORS: Record<string, string> = {
@@ -159,13 +170,16 @@ export default function Timeline() {
           break
 
         case 'Delete':
-        case 'Backspace':
-          // Delete current scene if more than one scene exists
-          if (currentSceneId && project && project.scenes.length > 1) {
+        case 'Backspace': {
+          // Only delete the scene when no canvas elements are selected.
+          // If elements ARE selected, EditorCanvas handles the delete.
+          const { selectedIds } = useEditorStore.getState()
+          if (selectedIds.length === 0 && currentSceneId && project && project.scenes.length > 1) {
             e.preventDefault()
             removeScene(currentSceneId)
           }
           break
+        }
       }
     }
 
@@ -220,6 +234,10 @@ export default function Timeline() {
 
       if (edge === 'end') {
         const newDuration = Math.max(0.5, startDuration + deltaTime)
+        updateScene(sceneId, { duration: snapTime(newDuration) })
+      } else {
+        // Shrink from the left: dragging right shrinks duration, left extends it
+        const newDuration = Math.max(0.5, startDuration - deltaTime)
         updateScene(sceneId, { duration: snapTime(newDuration) })
       }
     }

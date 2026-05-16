@@ -69,9 +69,13 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
         node.x(0); node.y(0); node.scaleX(1); node.scaleY(1); node.rotation(0)
         updateElement(element.id, { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y })
       } else {
-        const newWidth = Math.max(10, Math.abs(node.width() * scaleX))
-        const newHeight = Math.max(10, Math.abs(node.height() * scaleY))
-        
+        // node.width() returns 0 for custom Shape / Group nodes.
+        // Use the element's stored dimensions as the base instead.
+        const baseW = 'width'  in element ? (element as { width: number }).width  : node.width()
+        const baseH = 'height' in element ? (element as { height: number }).height : node.height()
+        const newWidth  = Math.max(10, Math.abs(baseW * scaleX))
+        const newHeight = Math.max(10, Math.abs(baseH * scaleY))
+
         updateElement(element.id, {
           x:        node.x(),
           y:        node.y(),
@@ -79,8 +83,7 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
           height:   newHeight,
           rotation: node.rotation()
         })
-        
-        // Reset scale to 1 after applying dimensions
+
         node.scaleX(1)
         node.scaleY(1)
       }
@@ -90,7 +93,7 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
   switch (element.type) {
     case 'text':   return <TextKonva   el={element} konvaProps={props} textProgress={animProps?.textProgress ?? 1} />
     case 'shape':  return <ShapeKonva  el={element} konvaProps={props} />
-    case 'arrow':  return <ArrowKonva  el={element} konvaProps={props} />
+    case 'arrow':  return <ArrowKonva  el={element} konvaProps={props} pathProgress={animProps?.textProgress ?? 1} />
     case 'code':   return <CodeKonva   el={element} konvaProps={props} />
     case 'image':  return <ImageKonva  el={element} konvaProps={props} />
     case 'table':  return <TableKonva  el={element} konvaProps={props} />

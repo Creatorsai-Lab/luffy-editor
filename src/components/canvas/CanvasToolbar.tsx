@@ -90,16 +90,6 @@ export default function CanvasToolbar() {
           <ZoomIn size={14} />
         </button>
       </Tooltip>
-
-      {/* Fit to screen */}
-      <Tooltip text="Fit to Screen (Ctrl+1)">
-        <button
-          onClick={resetZoom}
-          className="p-1.5 rounded text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover transition-colors"
-        >
-          <Maximize2 size={14} />
-        </button>
-      </Tooltip>
     </div>
   )
 }

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Type, Square, ArrowRight, Code2, Table2, Image as ImageIcon,
   Sparkles, Layers, Shuffle, Upload, Wand2, BarChart3, Music,
-  Play, Download, Monitor, ChevronDown, Undo2, Redo2, Settings
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, TypeOutline
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { useHistoryStore } from '../../store/historyStore'
@@ -16,9 +16,8 @@ interface ToolItem {
   tool?: ActiveTool
   panel: ActivePanel
 }
-
 const TOOLS: ToolItem[] = [
-    { icon: <Settings size={14} />, label: 'Background', panel: 'background' },
+    { icon: <PaintBucket size={14} />, label: 'Background', panel: 'background' },
   { icon: <Type size={14} />, label: 'Text', tool: 'text', panel: 'text' },
   { icon: <Square size={14} />, label: 'Shapes', tool: 'shape-rect', panel: 'shapes' },
   { icon: <ArrowRight size={14} />, label: 'Arrow', tool: 'arrow', panel: 'arrows' },
@@ -27,9 +26,9 @@ const TOOLS: ToolItem[] = [
   { icon: <BarChart3 size={14} />, label: 'Charts', tool: 'chart', panel: 'charts' },
   { icon: <Upload size={14} />, label: 'Upload', tool: 'image', panel: 'upload' },
   { icon: <Music size={14} />, label: 'Audio', panel: 'audio' },
-  { icon: <Type size={14} />, label: 'Text Anim', panel: 'textAnimations' },
+  { icon: <Sparkles size={14} />, label: 'Text Anim', panel: 'textAnimations' },
   { icon: <Sparkles size={14} />, label: 'Shape Anim', panel: 'shapeAnimations' },
-  { icon: <Wand2 size={14} />, label: 'Text Effects', panel: 'textEffects' },
+  { icon: <TypeOutline size={14} />, label: 'Text Effects', panel: 'textEffects' },
   { icon: <Shuffle size={14} />, label: 'Transitions', panel: 'transitions' },
   { icon: <Layers size={14} />, label: 'Layers', panel: 'layers' },
 ]
@@ -46,23 +45,6 @@ export default function MenuSideBar() {
   const { canUndo, canRedo } = useHistoryStore()
   const [editingName, setEditingName] = useState(false)
   const [sizeOpen, setSizeOpen] = useState(false)
-
-  // Keyboard shortcuts for undo/redo
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault()
-        if (canUndo) undo()
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault()
-        if (canRedo) redo()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [canUndo, canRedo, undo, redo])
 
   const disabled = !project
   const preset = project ? CANVAS_PRESETS.find(p => p.width === project.width && p.height === project.height) : null
@@ -95,7 +77,7 @@ export default function MenuSideBar() {
         )}
 
         {/* Canvas Size */}
-        <div className="relative">
+        <div className="relative bg-[#2a282b] p-1 rounded-sm">
           <button
             disabled={disabled}
             onClick={() => setSizeOpen(v => !v)}

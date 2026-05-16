@@ -45,7 +45,7 @@ export default function EditorCanvas() {
   useEffect(() => {
     registerStage(stageRef.current)
     return () => registerStage(null)
-  })
+  }, [])
 
   // ── Fit slide canvas to available space ────────────────────────────────────────
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function EditorCanvas() {
 
     const recalc = () => {
       if (!containerRef.current) return
-      const PAD   = 32
+      const PAD   = 15
       const cw    = containerRef.current.clientWidth  - PAD * 2
       const ch    = containerRef.current.clientHeight - PAD * 2
       const pw    = project.width
@@ -166,14 +166,23 @@ export default function EditorCanvas() {
   }
 
   // ── Stage event handlers ───────────────────────────────────────────────────────
-  function handleStageContextMenu(e: React.MouseEvent | Konva.KonvaEventObject<MouseEvent>) {
-    const evt = e instanceof React.MouseEvent ? e : (e as Konva.KonvaEventObject<MouseEvent>).evt
-    evt.preventDefault()
-    
-    // Check if right-clicking on a selected element
-    if (selectedIds.length > 0) {
-      setContextMenu({ x: evt.clientX, y: evt.clientY })
+  function handleStageContextMenu(e: Konva.KonvaEventObject<MouseEvent>) {
+    e.evt.preventDefault()
+
+    const target = e.target
+    // Ignore background clicks
+    if (target === target.getStage() || target.name() === 'bg') return
+
+    // Resolve element id — direct node or its parent Group
+    const id = target.id() || (target.getParent()?.id() ?? '')
+    if (!id) return
+
+    // Select the right-clicked element if not already in selection
+    if (!selectedIds.includes(id)) {
+      selectElement(id, false)
     }
+
+    setContextMenu({ x: e.evt.clientX, y: e.evt.clientY })
   }
   function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
     if (e.target === e.target.getStage() || e.target.name() === 'bg') {
@@ -282,7 +291,7 @@ export default function EditorCanvas() {
           top:  offsetY,
           width:  canvasW,
           height: canvasH,
-          boxShadow: '0 4px 32px rgba(0,0,0,0.6)',
+          boxShadow: '0 4px 12px rgba(46, 45, 45, 0.42)',
           borderRadius: 2
         }}
       >
@@ -361,11 +370,11 @@ export default function EditorCanvas() {
                 // Custom styling for rotation anchor - make it look like a rotation icon
                 if (anchor.hasName('rotater')) {
                   anchor.cornerRadius(10)
-                  anchor.fill('#6365f100')
-                  anchor.stroke('#fff')
+                  anchor.fill('#6c6d9473')
+                  anchor.stroke('#ebebeb')
                   anchor.strokeWidth(1.5)
-                  anchor.width(10)
-                  anchor.height(10)
+                  anchor.width(12)
+                  anchor.height(12)
                   anchor.offsetX(5) 
                   anchor.offsetY(0)
                 }

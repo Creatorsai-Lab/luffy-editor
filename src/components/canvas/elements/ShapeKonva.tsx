@@ -1,4 +1,5 @@
-import { Rect, Circle, RegularPolygon, Star, Group, Line, Ellipse, Path } from 'react-konva'
+import { Rect, Circle, RegularPolygon, Star, Line, Ellipse, Shape } from 'react-konva'
+import type Konva from 'konva'
 import type { ShapeElement } from '../../../types/editor'
 
 interface Props {
@@ -6,7 +7,6 @@ interface Props {
   konvaProps: Record<string, unknown>
 }
 
-// Helper function to add waviness to a point for hand-drawn effect
 function addWave(x: number, y: number, seed: number = 0): [number, number] {
   const wave = Math.sin((x + seed) * 0.05) * 2 + Math.sin((y + seed) * 0.03) * 1.5
   return [x + wave * (0.5 + (seed % 10) * 0.05), y + wave * (0.3 + (seed % 7) * 0.05)]
@@ -24,187 +24,135 @@ export default function ShapeKonva({ el, konvaProps }: Props) {
   const w = el.width
   const h = el.height
   const radius = Math.min(w, h) / 2
-  const isHandDrawn = el.shapeType.includes('-hand')
 
-  // Hand-drawn versions use slightly irregular paths
-  if (isHandDrawn) {
+  if (el.shapeType.includes('-hand')) {
     switch (el.shapeType) {
       case 'rect-hand': {
-        // Rectangle with wavy edges
-        const topLeft = addWave(0, 0, 1)
-        const topRight = addWave(w, 0, 2)
-        const bottomRight = addWave(w, h, 3)
-        const bottomLeft = addWave(0, h, 4)
+        const tl = addWave(0, 0, 1), tr = addWave(w, 0, 2)
+        const br = addWave(w, h, 3), bl = addWave(0, h, 4)
         return (
-          <Line
-            {...shared}
-            points={[
-              topLeft[0], topLeft[1],
-              topRight[0], topRight[1],
-              bottomRight[0], bottomRight[1],
-              bottomLeft[0], bottomLeft[1]
-            ]}
-            closed
-            lineCap="round"
-            lineJoin="round"
-          />
+          <Line {...shared} points={[tl[0],tl[1],tr[0],tr[1],br[0],br[1],bl[0],bl[1]]}
+            closed lineCap="round" lineJoin="round" />
         )
       }
       case 'circle-hand': {
-        // Circle with wavy edges - approximate with polygon
         const sides = 32
-        const points: number[] = []
+        const pts: number[] = []
         for (let i = 0; i < sides; i++) {
           const angle = (i / sides) * Math.PI * 2
-          let x = radius + Math.cos(angle) * radius
-          let y = radius + Math.sin(angle) * radius
-          const waved = addWave(x, y, i)
-          points.push(waved[0] - radius, waved[1] - radius)
+          const x = radius + Math.cos(angle) * radius
+          const y = radius + Math.sin(angle) * radius
+          const [wx, wy] = addWave(x, y, i)
+          pts.push(wx - radius, wy - radius)
         }
-        return (
-          <Line
-            {...shared}
-            points={points}
-            closed
-            lineCap="round"
-            lineJoin="round"
-          />
-        )
+        return <Line {...shared} points={pts} closed lineCap="round" lineJoin="round" />
       }
       case 'square-hand': {
-        // Square (equal width/height) with wavy edges
-        const size = Math.min(w, h)
-        const topLeft = addWave(0, 0, 1)
-        const topRight = addWave(size, 0, 2)
-        const bottomRight = addWave(size, size, 3)
-        const bottomLeft = addWave(0, size, 4)
+        const s = Math.min(w, h)
+        const tl = addWave(0, 0, 1), tr = addWave(s, 0, 2)
+        const br = addWave(s, s, 3), bl = addWave(0, s, 4)
         return (
-          <Line
-            {...shared}
-            points={[
-              topLeft[0], topLeft[1],
-              topRight[0], topRight[1],
-              bottomRight[0], bottomRight[1],
-              bottomLeft[0], bottomLeft[1]
-            ]}
-            closed
-            lineCap="round"
-            lineJoin="round"
-          />
+          <Line {...shared} points={[tl[0],tl[1],tr[0],tr[1],br[0],br[1],bl[0],bl[1]]}
+            closed lineCap="round" lineJoin="round" />
         )
       }
     }
   }
 
-  // Original sharp shapes
   switch (el.shapeType) {
     case 'rect':
       return <Rect {...shared} width={w} height={h} cornerRadius={el.cornerRadius} />
-    
+
     case 'circle':
-      return <Circle {...shared} radius={radius} offsetX={-w/2} offsetY={-h/2} />
-    
+      return <Circle {...shared} radius={radius} offsetX={-w / 2} offsetY={-h / 2} />
+
     case 'triangle':
-      return <RegularPolygon {...shared} sides={3} radius={radius} offsetX={-w/2} offsetY={-h/2} />
-    
+      return <RegularPolygon {...shared} sides={3} radius={radius} offsetX={-w / 2} offsetY={-h / 2} />
+
     case 'star':
-      return <Star {...shared} numPoints={5} innerRadius={radius*0.4} outerRadius={radius} offsetX={-w/2} offsetY={-h/2} />
-    
+      return <Star {...shared} numPoints={5} innerRadius={radius * 0.4} outerRadius={radius}
+        offsetX={-w / 2} offsetY={-h / 2} />
+
     case 'pentagon':
-      return <RegularPolygon {...shared} sides={5} radius={radius} offsetX={-w/2} offsetY={-h/2} />
-    
+      return <RegularPolygon {...shared} sides={5} radius={radius} offsetX={-w / 2} offsetY={-h / 2} />
+
     case 'hexagon':
-      return <RegularPolygon {...shared} sides={6} radius={radius} offsetX={-w/2} offsetY={-h/2} />
-    
+      return <RegularPolygon {...shared} sides={6} radius={radius} offsetX={-w / 2} offsetY={-h / 2} />
+
     case 'octagon':
-      return <RegularPolygon {...shared} sides={8} radius={radius} offsetX={-w/2} offsetY={-h/2} />
-    
+      return <RegularPolygon {...shared} sides={8} radius={radius} offsetX={-w / 2} offsetY={-h / 2} />
+
     case 'diamond':
-      return (
-        <Line
-          {...shared}
-          points={[w/2, 0, w, h/2, w/2, h, 0, h/2]}
-          closed
-        />
-      )
-    
+      return <Line {...shared} points={[w / 2, 0, w, h / 2, w / 2, h, 0, h / 2]} closed />
+
     case 'oval':
-      return <Ellipse {...shared} radiusX={w/2} radiusY={h/2} offsetX={-w/2} offsetY={-h/2} />
-    
-    case 'speechBubble':
-      // Rectangular speech bubble with tail
-      return (
-        <Group {...konvaProps}>
-          <Rect
-            fill={el.fill}
-            stroke={el.stroke}
-            strokeWidth={el.strokeWidth}
-            width={w}
-            height={h * 0.75}
-            cornerRadius={el.cornerRadius}
-            offsetX={-w / 2}
-            offsetY={-h * 0.375}
-          />
-          <Line
-            fill={el.fill}
-            stroke={el.stroke}
-            strokeWidth={el.strokeWidth}
-            points={[
-              w * 0.2, h * 0.375,
-              w * 0.1, h * 0.5,
-              w * 0.3, h * 0.375
-            ]}
-            closed
-            offsetX={-w / 2}
-            offsetY={-h * 0.375}
-          />
-        </Group>
-      )
-    
-    case 'roundedSpeech':
-      // Casual rounded speech bubble with tail dots
-      return (
-        <Group {...konvaProps}>
-          <Ellipse
-            fill={el.fill}
-            stroke={el.stroke}
-            strokeWidth={el.strokeWidth}
-            radiusX={w / 2}
-            radiusY={h * 0.35}
-            offsetX={-w / 2}
-            offsetY={-h * 0.35}
-          />
-          <Circle
-            fill={el.fill}
-            stroke={el.stroke}
-            strokeWidth={el.strokeWidth}
-            radius={w * 0.06}
-            x={w * 0.15 - w / 2}
-            y={h * 0.55 - h * 0.35}
-          />
-          <Circle
-            fill={el.fill}
-            stroke={el.stroke}
-            strokeWidth={el.strokeWidth}
-            radius={w * 0.04}
-            x={w * 0.08 - w / 2}
-            y={h * 0.7 - h * 0.35}
-          />
-        </Group>
-      )
-    
+      return <Ellipse {...shared} radiusX={w / 2} radiusY={h / 2} offsetX={-w / 2} offsetY={-h / 2} />
+
     case 'cone':
-      // Cone shape - isosceles triangle pointing up
+      // Simple isosceles triangle — no offset needed for Line
+      return <Line {...shared} points={[w / 2, 0, w, h, 0, h]} closed />
+
+    case 'speechBubble': {
+      // Rounded rectangle body + triangular tail drawn as a single canvas shape
+      const r = Math.min(el.cornerRadius || 8, w * 0.15, h * 0.15)
+      const bh = h * 0.78  // body height; remaining ~22% is the tail
       return (
-        <Line
+        <Shape
           {...shared}
-          points={[w / 2, 0, w, h, 0, h]}
-          closed
-          offsetX={-w / 2}
-          offsetY={-h / 2}
+          width={w}
+          height={h}
+          sceneFunc={(ctx: Konva.Context, shape: Konva.Shape) => {
+            ctx.beginPath()
+            ctx.moveTo(r, 0)
+            ctx.lineTo(w - r, 0)
+            ctx.quadraticCurveTo(w, 0, w, r)
+            ctx.lineTo(w, bh - r)
+            ctx.quadraticCurveTo(w, bh, w - r, bh)
+            // bottom-right → tail right base → tail tip → tail left base → bottom-left
+            ctx.lineTo(w * 0.38, bh)
+            ctx.lineTo(w * 0.22, h)     // tail tip
+            ctx.lineTo(w * 0.14, bh)
+            ctx.lineTo(r, bh)
+            ctx.quadraticCurveTo(0, bh, 0, bh - r)
+            ctx.lineTo(0, r)
+            ctx.quadraticCurveTo(0, 0, r, 0)
+            ctx.closePath()
+            ctx.fillStrokeShape(shape)
+          }}
         />
       )
-    
+    }
+
+    case 'roundedSpeech': {
+      // Oval bubble body + two thought-bubble dots, drawn as a single canvas shape
+      const dotR1 = Math.max(w * 0.07, 4)
+      const dotR2 = Math.max(w * 0.05, 3)
+      return (
+        <Shape
+          {...shared}
+          width={w}
+          height={h}
+          sceneFunc={(ctx: Konva.Context, shape: Konva.Shape) => {
+            // Main ellipse (top ~80% of height)
+            ctx.beginPath()
+            ctx.ellipse(w / 2, h * 0.40, w / 2, h * 0.40, 0, 0, Math.PI * 2)
+            ctx.closePath()
+            ctx.fillStrokeShape(shape)
+            // Dot 1
+            ctx.beginPath()
+            ctx.arc(w * 0.22, h * 0.76, dotR1, 0, Math.PI * 2)
+            ctx.closePath()
+            ctx.fillStrokeShape(shape)
+            // Dot 2 (smaller, further down)
+            ctx.beginPath()
+            ctx.arc(w * 0.12, h * 0.92, dotR2, 0, Math.PI * 2)
+            ctx.closePath()
+            ctx.fillStrokeShape(shape)
+          }}
+        />
+      )
+    }
+
     default:
       return null
   }

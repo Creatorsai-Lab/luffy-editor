@@ -5,7 +5,7 @@ import type {
   ElementAnimation, SceneTransition, ShapeType
 } from '../types/editor'
 
-export const DEFAULT_BG: Background = { type: 'solid', color: '#1a1a2e' }
+export const DEFAULT_BG: Background = { type: 'solid', color: '#fffaf7' }
 
 export const DEFAULT_TRANSITION: SceneTransition = { type: 'none', duration: 0.5 }
 
@@ -34,12 +34,12 @@ export function makeProject(id: string, name: string): Project {
 export function makeText(x: number, y: number): TextElement {
   return {
     id: uuid(), type: 'text', name: 'Text',
-    x, y, width: 300, height: 60,
+    x, y, width: 500, height: 60,
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     content: 'Double-click to edit',
-    fontSize: 32, fontFamily: 'Segoe UI', fontWeight: 'normal',
-    italic: false, color: '#ffffff', align: 'left',
+    fontSize: 45, fontFamily: 'Segoe UI', fontWeight: 'normal',
+    italic: false, color: '#333333', align: 'left',
     lineHeight: 1.4, letterSpacing: 0, underline: false,
     shadowColor: 'transparent',
     shadowBlur: 0,
@@ -59,7 +59,7 @@ export function makeShape(type: ShapeType, x: number, y: number): ShapeElement {
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     shapeType: type,
-    fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, cornerRadius: 8
+    fill: '#919191', stroke: 'transparent', strokeWidth: 0, cornerRadius: 8
   }
 }
 
@@ -71,10 +71,10 @@ export function makeArrow(x1: number, y1: number, x2: number, y2: number): Arrow
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     x1, y1, x2, y2,
-    stroke: '#e5e5e5', strokeWidth: 2, arrowHead: 'end', dashed: false,
+    stroke: '#202020', strokeWidth: 3, arrowHead: 'none', dashed: false,
     dotted: false,
     pointerLength: 12,
-    pointerWidth: 10,
+    pointerWidth: 13,
     arrowHeadColor: '',
     curve: 0,
   }
@@ -114,9 +114,9 @@ export function makeTable(x: number, y: number): TableElement {
       Array.from({ length: cols }, (_, c) => r === 0 ? `Header ${c + 1}` : '')
     ),
     cellWidth: 120, cellHeight: 40,
-    borderColor: '#2a2a2a', borderWidth: 1,
-    headerBg: '#1e1e2e', cellBg: '#141414',
-    textColor: '#e5e5e5', fontSize: 13, showHeader: true
+    borderColor: '#5c5c5c', borderWidth: 1,
+    headerBg: '#555555', cellBg: '#141414',
+    textColor: '#303030', fontSize: 13, showHeader: true
   }
 }
 

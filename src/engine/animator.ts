@@ -151,6 +151,13 @@ function applyAnim(
       out.textProgress = t
       break
 
+    case 'drawPath':
+      if (before) { out.opacity = 0; out.textProgress = 0; return }
+      if (after)  { out.textProgress = 1; return }
+      out.textProgress = t
+      out.opacity = lerp(0, el.opacity, Math.min(t * 3, 1))
+      break
+
     case 'spin':
       if (before || after) return
       out.rotation = el.rotation + lerp(0, 360, t)

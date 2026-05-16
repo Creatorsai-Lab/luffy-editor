@@ -4,11 +4,12 @@ import type { ArrowElement } from '../../../types/editor'
 interface Props {
   el: ArrowElement
   konvaProps: Record<string, unknown>
+  pathProgress?: number
 }
 
-export default function ArrowKonva({ el, konvaProps }: Props) {
+export default function ArrowKonva({ el, konvaProps, pathProgress = 1 }: Props) {
   const pointerAtBeginning = el.arrowHead === 'start' || el.arrowHead === 'both'
-  const pointerAtEnd       = el.arrowHead === 'end'   || el.arrowHead === 'both'
+  const pointerAtEnd       = (el.arrowHead === 'end' || el.arrowHead === 'both') && pathProgress >= 1
 
   const dash = el.dotted
     ? [el.strokeWidth, el.strokeWidth * 2.5]
@@ -17,14 +18,32 @@ export default function ArrowKonva({ el, konvaProps }: Props) {
     : undefined
 
   const points = (() => {
-    if (!el.curve) return [el.x1, el.y1, el.x2, el.y2]
-    const dx = el.x2 - el.x1, dy = el.y2 - el.y1
+    const { x1, y1, x2, y2 } = el
+
+    if (!el.curve) {
+      // Straight arrow — interpolate endpoint by progress
+      const ex = x1 + (x2 - x1) * pathProgress
+      const ey = y1 + (y2 - y1) * pathProgress
+      return [x1, y1, ex, ey]
+    }
+
+    // Curved arrow — compute full control point then partial De Casteljau
+    const dx = x2 - x1, dy = y2 - y1
     const len = Math.sqrt(dx * dx + dy * dy)
-    if (len < 1) return [el.x1, el.y1, el.x2, el.y2]
+    if (len < 1) return [x1, y1, x2, y2]
     const px = -dy / len, py = dx / len
-    const mx = (el.x1 + el.x2) / 2 + px * el.curve
-    const my = (el.y1 + el.y2) / 2 + py * el.curve
-    return [el.x1, el.y1, mx, my, el.x2, el.y2]
+    const mx = (x1 + x2) / 2 + px * el.curve
+    const my = (y1 + y2) / 2 + py * el.curve
+
+    if (pathProgress >= 1) return [x1, y1, mx, my, x2, y2]
+
+    // Partial quadratic bezier up to t=pathProgress
+    const t  = pathProgress
+    const qx = x1 + (mx - x1) * t   // lerp(P0, P1, t)
+    const qy = y1 + (my - y1) * t
+    const ex = qx + (mx + (x2 - mx) * t - qx) * t   // B(t)
+    const ey = qy + (my + (y2 - my) * t - qy) * t
+    return [x1, y1, qx, qy, ex, ey]
   })()
 
   return (

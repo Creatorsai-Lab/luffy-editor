@@ -286,9 +286,14 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         if (!s.project || !s.currentSceneId) return
         const sc = s.project.scenes.find(x => x.id === s.currentSceneId)
         if (!sc) return
-        const el = sc.elements.find(e => e.id === id)
-        if (!el) return
-        el.zIndex = sc.elements.length - 1
+        const sorted = [...sc.elements].sort((a, b) => a.zIndex - b.zIndex)
+        const idx = sorted.findIndex(e => e.id === id)
+        if (idx < 0) return
+        sorted.push(sorted.splice(idx, 1)[0])
+        sorted.forEach((e, i) => {
+          const el = sc.elements.find(x => x.id === e.id)
+          if (el) el.zIndex = i
+        })
         s.isDirty = true
       }),
 
@@ -296,9 +301,14 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         if (!s.project || !s.currentSceneId) return
         const sc = s.project.scenes.find(x => x.id === s.currentSceneId)
         if (!sc) return
-        const el = sc.elements.find(e => e.id === id)
-        if (!el) return
-        el.zIndex = 0
+        const sorted = [...sc.elements].sort((a, b) => a.zIndex - b.zIndex)
+        const idx = sorted.findIndex(e => e.id === id)
+        if (idx < 0) return
+        sorted.unshift(sorted.splice(idx, 1)[0])
+        sorted.forEach((e, i) => {
+          const el = sc.elements.find(x => x.id === e.id)
+          if (el) el.zIndex = i
+        })
         s.isDirty = true
       }),
 
@@ -373,20 +383,18 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       undo: () => {
         const previousState = useHistoryStore.getState().undo()
         if (previousState) {
-          set(s => {
-            s.project = previousState
-            s.isDirty = true
-          })
+          isUndoRedo = true
+          set(s => { s.project = previousState; s.isDirty = true })
+          isUndoRedo = false
         }
       },
 
       redo: () => {
         const nextState = useHistoryStore.getState().redo()
         if (nextState) {
-          set(s => {
-            s.project = nextState
-            s.isDirty = true
-          })
+          isUndoRedo = true
+          set(s => { s.project = nextState; s.isDirty = true })
+          isUndoRedo = false
         }
       },
 
@@ -428,44 +436,46 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         if (!project || project.scenes.length === 0) return null
         let elapsed = 0
         for (const scene of project.scenes) {
-          // Use <= for the last scene so t === totalDuration still returns it
-          const isLast = scene === project.scenes[project.scenes.length - 1]
-          if (t < elapsed + scene.duration || isLast) {
-            return { scene, localTime: Math.max(0, t - elapsed) }
+          if (t < elapsed + scene.duration) {
+            return { scene, localTime: t - elapsed }
           }
           elapsed += scene.duration
         }
-        return null
+        // Clamp to last scene's final frame (handles t === totalDuration exactly)
+        const last = project.scenes[project.scenes.length - 1]
+        return { scene: last, localTime: last.duration }
       }
     }))
   )
 )
 
-// ── Auto-save history on important actions ────────────────────────────────────
+// ── Single history-save mechanism (debounced project subscriber) ──────────────
+// isUndoRedo is set synchronously around undo()/redo() set() calls so the
+// subscriber can skip pushing a new history entry for those changes.
 let lastProject: Project | null = null
 let saveTimeout: NodeJS.Timeout | null = null
+let isUndoRedo = false
 
 useEditorStore.subscribe(
   (state) => state.project,
   (project) => {
+    if (isUndoRedo) {
+      // Undo/redo change — cancel any pending save and update baseline
+      if (saveTimeout) clearTimeout(saveTimeout)
+      lastProject = project
+      return
+    }
     if (!project || !lastProject) {
       lastProject = project
       return
     }
-
-    // Debounce history saves (wait 500ms after last change)
     if (saveTimeout) clearTimeout(saveTimeout)
-    
     saveTimeout = setTimeout(() => {
-      if (project && lastProject) {
-        // Check if there were actual changes
-        const currentStr = JSON.stringify(project)
-        const lastStr = JSON.stringify(lastProject)
-        
-        if (currentStr !== lastStr) {
-          useHistoryStore.getState().pushHistory(project, 'Edit')
-          lastProject = JSON.parse(currentStr)
-        }
+      if (!project || !lastProject) return
+      const currentStr = JSON.stringify(project)
+      if (currentStr !== JSON.stringify(lastProject)) {
+        useHistoryStore.getState().pushHistory(project, 'Edit')
+        lastProject = JSON.parse(currentStr)
       }
     }, 500)
   }
