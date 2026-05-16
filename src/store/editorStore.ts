@@ -48,9 +48,10 @@ interface EditorActions {
   setTransition:    (id: string, tr: SceneTransition) => void
 
   // Elements
-  addElement:       (el: EditorElement) => void
-  updateElement:    (id: string, patch: Partial<EditorElement>) => void
-  removeElement:    (id: string) => void
+  addElement:         (el: EditorElement) => void
+  addElementToScene:  (sceneId: string, el: EditorElement) => void
+  updateElement:      (id: string, patch: Partial<EditorElement>) => void
+  removeElement:      (id: string) => void
   duplicateElement: (id: string) => void
   bringForward:     (id: string) => void
   sendBackward:     (id: string) => void
@@ -220,29 +221,41 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         if (!s.project || !s.currentSceneId) return
         const sc = s.project.scenes.find(x => x.id === s.currentSceneId)
         if (!sc) return
-        // Spread into a new object so we never mutate the caller's object inside Immer
         const elem = { ...el, zIndex: sc.elements.length } as EditorElement
         sc.elements.push(elem)
-        // Audio elements live in the timeline only — don't canvas-select them
         if (el.type !== 'audio') s.selectedIds = [el.id]
         s.isDirty = true
       }),
 
-      updateElement: (id, patch) => set(s => {
-        if (!s.project || !s.currentSceneId) return
-        const sc = s.project.scenes.find(x => x.id === s.currentSceneId)
+      addElementToScene: (sceneId, el) => set(s => {
+        if (!s.project) return
+        const sc = s.project.scenes.find(x => x.id === sceneId)
         if (!sc) return
-        const el = sc.elements.find(e => e.id === id)
-        if (el) { Object.assign(el, patch); s.isDirty = true }
+        const elem = { ...el, zIndex: sc.elements.length } as EditorElement
+        sc.elements.push(elem)
+        s.isDirty = true
+      }),
+
+      // Search all scenes so audio ops work regardless of which scene is active
+      updateElement: (id, patch) => set(s => {
+        if (!s.project) return
+        for (const sc of s.project.scenes) {
+          const el = sc.elements.find(e => e.id === id)
+          if (el) { Object.assign(el, patch); s.isDirty = true; return }
+        }
       }),
 
       removeElement: (id) => set(s => {
-        if (!s.project || !s.currentSceneId) return
-        const sc = s.project.scenes.find(x => x.id === s.currentSceneId)
-        if (!sc) return
-        sc.elements = sc.elements.filter(e => e.id !== id)
-        s.selectedIds = s.selectedIds.filter(x => x !== id)
-        s.isDirty = true
+        if (!s.project) return
+        for (const sc of s.project.scenes) {
+          const idx = sc.elements.findIndex(e => e.id === id)
+          if (idx >= 0) {
+            sc.elements.splice(idx, 1)
+            s.selectedIds = s.selectedIds.filter(x => x !== id)
+            s.isDirty = true
+            return
+          }
+        }
       }),
 
       duplicateElement: (id) => set(s => {
