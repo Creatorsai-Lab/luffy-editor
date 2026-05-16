@@ -178,7 +178,7 @@ export interface AudioElement extends BaseElement {
   src: string
   assetId: string
   volume: number
-  speed: number      // Playback speed multiplier, default 1
+  speed?: number     // Playback speed multiplier, default 1
   fadeIn: number
   fadeOut: number
   startTime: number  // Trim start (seconds)
@@ -264,7 +264,7 @@ export const FONT_FAMILIES = [
   // Serif
   'Georgia', 'Times New Roman', 'Garamond',
   // Monospace
-  'Courier New', 'Consolas', 'Monaco',
+  'Courier New', 'Consolas', 'Monaco', 'monospace',
   // Display
   'Impact', 'Playfair Display', 'Bebas Neue'
 ]

@@ -191,6 +191,12 @@ export default function CodeKonva({ el, konvaProps }: Props) {
         width={el.width}
         height={el.height}
         sceneFunc={sceneFunc}
+        hitFunc={(ctx, shape) => {
+          ctx.beginPath()
+          ctx.rect(0, 0, el.width, el.height)
+          ctx.closePath()
+          ctx.fillStrokeShape(shape)
+        }}
         perfectDrawEnabled={false}
       />
     </Group>

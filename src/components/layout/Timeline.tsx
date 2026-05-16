@@ -11,45 +11,8 @@ const SCENE_HEIGHT = 36
 const TRACK_HEIGHT = 32
 const PX_PER_SEC_BASE = 60
 
-const SCENE_COLORS = ['#3b82f6', '#0ea5e9', '#6366f1', '#4169e1'] // blue, skyblue, indigo, royalblue
+const SCENE_COLORS = ['#3b82f6', '#0ea5e9', '#6366f1', '#4169e1'] 
 
-const ANIM_COLORS: Record<string, string> = {
-  fadeIn: '#6366f1', fadeOut: '#8b5cf6',
-  slideIn: '#06b6d4', slideOut: '#0891b2',
-  scaleIn: '#22c55e', scaleOut: '#16a34a',
-  typewriter: '#f59e0b', spin: '#f97316', drawPath: '#ec4899',
-  pulse: '#a78bfa', bounceLoop: '#34d399', rotateLoop: '#fb923c',
-  drawOff: '#be185d', flowLoop: '#0891b2', fadeLoop: '#7c3aed'
-}
-
-const ANIM_ICONS: Record<AnimationType, React.ReactNode> = {
-  fadeIn:          <Eye size={10} />,
-  fadeOut:         <EyeOff size={10} />,
-  slideIn:         <ArrowRight size={10} />,
-  slideOut:        <ArrowLeft size={10} />,
-  scaleIn:         <ZoomIn size={9} />,
-  scaleOut:        <ZoomOut size={9} />,
-  typewriter:      <span style={{ fontSize: 8 }}>Aa</span>,
-  spin:            <RotateCw size={10} />,
-  pulse:           <Activity size={10} />,
-  bounceLoop:      <ArrowUpDown size={10} />,
-  rotateLoop:      <RefreshCw size={10} />,
-  drawPath:        <span style={{ fontSize: 8 }}>~</span>,
-  typewriterChars: <span style={{ fontSize: 8 }}>A|</span>,
-  typewriterWords: <span style={{ fontSize: 8 }}>W|</span>,
-  textFade:        <Eye size={10} />,
-  textBurst:       <span style={{ fontSize: 8 }}>✦</span>,
-  textBounce:      <ArrowUpDown size={10} />,
-  textBlock:       <span style={{ fontSize: 8 }}>▮</span>,
-  textSquiz:       <span style={{ fontSize: 8 }}>↔</span>,
-  textSpread:      <span style={{ fontSize: 8 }}>↔</span>,
-  textTwirl:       <RotateCw size={10} />,
-  textZoomIn:      <ZoomIn size={9} />,
-  textZoomOut:     <ZoomOut size={9} />,
-  drawOff:         <span style={{ fontSize: 8 }}>~✕</span>,
-  flowLoop:        <span style={{ fontSize: 8 }}>→→</span>,
-  fadeLoop:        <Eye size={10} />,
-}
 
 const TRANS_COLORS: Record<string, string> = {
   fade: '#6366f1', slide: '#06b6d4', push: '#0891b2',
@@ -684,10 +647,11 @@ export default function Timeline() {
                 .filter(el => el.type === 'audio')
                 .map((audioEl, audioIdx) => {
                   const audio = audioEl as AudioElement
-                  const scStart = sceneStarts[currentSc.id]
-                  const audioStartPx = (scStart + audio.x) * PX_PER_SEC
-                  const audioWidthPx = audio.duration * PX_PER_SEC
-                  const fileName = audio.name.substring(0, 10)
+                  const scStart = sceneStarts[currentSc.id] ?? 0
+                  const audioDur = audio.duration ?? 30
+                  const audioStartPx = (scStart + (audio.x ?? 0)) * PX_PER_SEC
+                  const audioWidthPx = audioDur * PX_PER_SEC
+                  const fileName = (audio.name ?? 'Audio').substring(0, 10)
                   const isSelected = selectedAudioId === audio.id
 
                   return (
@@ -714,7 +678,7 @@ export default function Timeline() {
                             : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                           boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                         }}
-                        title={`${audio.name} — ${audio.duration.toFixed(1)}s — click to select`}
+                        title={`${audio.name ?? 'Audio'} — ${audioDur.toFixed(1)}s — click to select`}
                         onClick={e => {
                           e.stopPropagation()
                           setSelectedAudioId(isSelected ? null : audio.id)
@@ -728,7 +692,7 @@ export default function Timeline() {
                             x: e.clientX,
                             y: e.clientY,
                             audioId: audio.id,
-                            clickTimeInAudio: Math.max(0, Math.min(audio.duration, clickTimeInAudio)),
+                            clickTimeInAudio: Math.max(0, Math.min(audioDur, clickTimeInAudio)),
                           })
                           setSelectedAudioId(audio.id)
                         }}
@@ -778,7 +742,7 @@ export default function Timeline() {
                         {/* Audio filename and duration */}
                         <div className="absolute inset-0 flex items-center px-2 text-white text-2xs font-medium pointer-events-none overflow-hidden gap-1">
                           <Music size={8} />
-                          <span className="truncate">{fileName} • {audio.duration.toFixed(1)}s</span>
+                          <span className="truncate">{fileName} • {audioDur.toFixed(1)}s</span>
                           {(audio.speed ?? 1) !== 1 && (
                             <span className="flex-none opacity-80">{audio.speed}×</span>
                           )}

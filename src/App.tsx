@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, Component } from 'react'
+import type { ErrorInfo, ReactNode } from 'react'
 import { useEditorStore } from './store/editorStore'
 import { makeProject } from './utils/defaults'
 import Header from './components/layout/Header'
@@ -11,6 +12,32 @@ import PreviewModal from './components/modals/PreviewModal'
 import ExportModal from './components/modals/ExportModal'
 
 const AUTO_SAVE_DELAY = 2500
+
+// ── Error boundary ─────────────────────────────────────────────────────────────
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[ErrorBoundary] Uncaught render error:', error, info.componentStack)
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0f0f0f] gap-4">
+          <p className="text-red-400 text-sm font-medium">Something went wrong</p>
+          <p className="text-[#888] text-xs max-w-sm text-center">{this.state.error.message}</p>
+          <button
+            onClick={() => this.setState({ error: null })}
+            className="px-4 py-2 bg-editor-accent text-white text-xs rounded hover:bg-editor-accent-hover transition-colors"
+          >
+            Try again
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 export default function App() {
   const {
@@ -99,42 +126,44 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-black overflow-hidden gap-1.5">
-      <Header />
+    <ErrorBoundary>
+      <div className="h-screen w-screen flex flex-col bg-black overflow-hidden gap-1.5">
+        <Header />
 
-      {/* Main layout: MenuSideBar + Canvas + OptionsSidebar */}
-      <div className="flex flex-1 min-h-0 overflow-hidden gap-1.5 px-2">
-        {/* MenuSideBar on the left */}
-        <div className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
-          <MenuSideBar />
+        {/* Main layout: MenuSideBar + Canvas + OptionsSidebar */}
+        <div className="flex flex-1 min-h-0 overflow-hidden gap-1.5 px-2">
+          {/* MenuSideBar on the left */}
+          <div className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
+            <MenuSideBar />
+          </div>
+
+          {/* Canvas in the middle */}
+          <EditorCanvas />
+
+          {/* Drag handle for OptionsSidebar */}
+          <div
+            className="flex-none w-1 cursor-col-resize hover:bg-editor-accent/40 transition-colors rounded"
+            onMouseDown={handleDragStart}
+          />
+
+          {/* OptionsSidebar on the right */}
+          <div
+            className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)]"
+            style={{ width: optionsWidth }}
+          >
+            <OptionsSidebar />
+          </div>
         </div>
 
-        {/* Canvas in the middle */}
-        <EditorCanvas />
-
-        {/* Drag handle for OptionsSidebar */}
-        <div
-          className="flex-none w-1 cursor-col-resize hover:bg-editor-accent/40 transition-colors rounded"
-          onMouseDown={handleDragStart}
-        />
-
-        {/* OptionsSidebar on the right */}
-        <div
-          className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)]"
-          style={{ width: optionsWidth }}
-        >
-          <OptionsSidebar />
+        {/* Timeline at the bottom */}
+        <div className="mx-2 mb-2 flex-none border border-editor-border rounded-lg overflow-hidden shadow-[0_-1px_6px_rgba(0,0,0,0.4)]">
+          <Timeline />
         </div>
-      </div>
 
-      {/* Timeline at the bottom */}
-      <div className="mx-2 mb-2 flex-none border border-editor-border rounded-lg overflow-hidden shadow-[0_-1px_6px_rgba(0,0,0,0.4)]">
-        <Timeline />
+        {codeModalOpen && <CodeEditorModal />}
+        {previewOpen   && <PreviewModal />}
+        {exportOpen    && <ExportModal />}
       </div>
-
-      {codeModalOpen && <CodeEditorModal />}
-      {previewOpen   && <PreviewModal />}
-      {exportOpen    && <ExportModal />}
-    </div>
+    </ErrorBoundary>
   )
 }

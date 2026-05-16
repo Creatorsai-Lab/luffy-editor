@@ -220,9 +220,11 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         if (!s.project || !s.currentSceneId) return
         const sc = s.project.scenes.find(x => x.id === s.currentSceneId)
         if (!sc) return
-        el.zIndex = sc.elements.length
-        sc.elements.push(el as EditorElement)
-        s.selectedIds = [el.id]
+        // Spread into a new object so we never mutate the caller's object inside Immer
+        const elem = { ...el, zIndex: sc.elements.length } as EditorElement
+        sc.elements.push(elem)
+        // Audio elements live in the timeline only — don't canvas-select them
+        if (el.type !== 'audio') s.selectedIds = [el.id]
         s.isDirty = true
       }),
 

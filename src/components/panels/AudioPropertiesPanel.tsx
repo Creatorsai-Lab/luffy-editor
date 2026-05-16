@@ -21,10 +21,7 @@ export default function AudioPropertiesPanel({ element, onClose }: AudioProperti
   }
 
   const handleSpeedChange = (speed: number) => {
-    // Speed control - stored in animation-like property
-    // For now, we'll use playbackRate if supported
-    const newEl = { ...element }
-    updateElement(element.id, newEl)
+    updateElement(element.id, { speed: Math.max(0.25, Math.min(4, speed)) })
   }
 
   const handleTrimStart = (startTime: number) => {

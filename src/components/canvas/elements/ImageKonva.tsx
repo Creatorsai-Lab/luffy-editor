@@ -97,6 +97,12 @@ export default function ImageKonva({ el, konvaProps }: Props) {
       {...konvaProps}
       width={el.width}
       height={el.height}
+      hitFunc={(ctx, shape) => {
+        ctx.beginPath()
+        ctx.rect(0, 0, el.width, el.height)
+        ctx.closePath()
+        ctx.fillStrokeShape(shape)
+      }}
       sceneFunc={(ctx, shape) => {
         const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
 

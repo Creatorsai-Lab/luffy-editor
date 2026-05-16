@@ -38,7 +38,7 @@ export function makeText(x: number, y: number): TextElement {
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     content: 'Double-click to edit',
-    fontSize: 45, fontFamily: 'Segoe UI', fontWeight: 'normal',
+    fontSize: 50, fontFamily: 'Segoe UI', fontWeight: 'normal',
     italic: false, color: '#333333', align: 'left',
     lineHeight: 1.4, letterSpacing: 0, underline: false,
     shadowColor: 'transparent',
@@ -144,12 +144,12 @@ export function makeChart(x: number, y: number): ChartElement {
       datasets: [{
         label: 'Dataset 1',
         data: [12, 19, 3, 5, 2],
-        color: '#6366f1'
+        color: '#623af5'
       }]
     },
     showLegend: true,
     showGrid: true,
-    backgroundColor: '#1a1a2e'
+    backgroundColor: '#59595e'
   }
 }
 

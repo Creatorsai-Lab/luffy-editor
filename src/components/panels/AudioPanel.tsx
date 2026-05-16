@@ -14,6 +14,7 @@ export default function AudioPanel() {
   const audioAssets = (project?.assets ?? []).filter(a => a.type === 'audio')
 
   async function handleUpload() {
+    if (!project) return
     try {
       setUploading(true)
       const result = await window.api.dialog.openFile([
@@ -22,16 +23,16 @@ export default function AudioPanel() {
 
       if (!result) return
 
-      const filePath = result
-      const fileName = filePath.split(/[\\/]/).pop() || 'audio'
+      // Copy the file into the project's assets folder via the API
+      const uploaded = await window.api.assets.upload(project.id, result)
+      const originalName = result.split(/[\\/]/).pop() || 'audio'
 
-      // Create asset metadata
       const asset: AssetMeta = {
-        id: `audio-${Date.now()}`,
-        filename: fileName,
-        path: filePath,
+        id: uploaded.id,
+        filename: uploaded.filename,
+        path: uploaded.path,
         type: 'audio',
-        name: fileName.replace(/\.[^.]+$/, ''),
+        name: originalName.replace(/\.[^.]+$/, ''),
         duration: 0
       }
 
@@ -68,7 +69,9 @@ export default function AudioPanel() {
 
   function handleAddToTimeline(asset: AssetMeta) {
     if (!project) return
-    addElement(makeAudio(asset.path, asset.id, 30))
+    const el = makeAudio(asset.path, asset.id, asset.duration || 30)
+    el.name = asset.name || asset.filename
+    addElement(el)
   }
 
   return (
