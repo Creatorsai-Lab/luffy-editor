@@ -1,4 +1,4 @@
-import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, Ellipsis, MessageCircle, MessageSquare, Triangle as TriangleIcon, PenTool } from 'lucide-react'
+import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, MessageCircle, MessageSquare, Cone } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ShapeElement, ShapeType, ActiveTool } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
@@ -13,13 +13,9 @@ const SHAPES: { icon: React.ReactNode; type: ShapeType; label: string }[] = [
   { icon: <Hexagon size={14} />,       type: 'hexagon',       label: 'Hexagon' },
   { icon: <Octagon size={14} />,       type: 'octagon',       label: 'Octagon' },
   { icon: <Diamond size={14} />,       type: 'diamond',       label: 'Diamond' },
-  { icon: <Circle size={14} />,        type: 'oval',          label: 'Oval' },
   { icon: <MessageSquare size={14} />, type: 'speechBubble',  label: 'Speech Box' },
   { icon: <MessageCircle size={14} />, type: 'roundedSpeech', label: 'Casual Speech' },
-  { icon: <TriangleIcon size={14} />,  type: 'cone',          label: 'Cone' },
-  { icon: <PenTool size={14} />,       type: 'rect-hand',     label: 'Hand Rectangle' },
-  { icon: <PenTool size={14} />,       type: 'circle-hand',   label: 'Hand Circle' },
-  { icon: <PenTool size={14} />,       type: 'square-hand',   label: 'Hand Square' }
+  { icon: <Cone size={14} />,  type: 'cone',          label: 'Cone' },
 ]
 
 export default function ShapePanel() {

@@ -1,8 +1,9 @@
 import { useRef, useCallback, useEffect, useState } from 'react'
-import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Eye, EyeOff, ArrowRight, ArrowLeft, Activity, RotateCw, RefreshCw, ArrowUpDown, Music, Trash2 } from 'lucide-react'
+import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Eye, EyeOff, ArrowRight, ArrowLeft, Activity, RotateCw, RefreshCw, ArrowUpDown, Music, Trash2, Copy } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { cn } from '../../utils/cn'
 import Tooltip from '../ui/Tooltip'
+import ContextMenu from '../ui/ContextMenu'
 import type { AnimationType } from '../../types/editor'
 
 const RULER_HEIGHT = 18
@@ -45,7 +46,7 @@ export default function Timeline() {
     project, currentSceneId,
     playhead, isPlaying,
     timelineZoom, snapEnabled,
-    addScene, setCurrentScene, updateScene, reorderScenes, removeScene,
+    addScene, setCurrentScene, updateScene, reorderScenes, removeScene, duplicateScene,
     setPlayhead, play, pause, stop,
     getTotalDuration,
     setTimelineZoom, setSnapEnabled
@@ -56,6 +57,7 @@ export default function Timeline() {
   const [draggingPlayhead, setDraggingPlayhead] = useState(false)
   const [draggedSceneIndex, setDraggedSceneIndex] = useState<number | null>(null)
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; sceneId: string } | null>(null)
 
   const containerRef  = useRef<HTMLDivElement>(null)
   const rafRef        = useRef<number>(0)
@@ -399,6 +401,11 @@ export default function Timeline() {
                     setDropTargetIndex(null)
                   }}
                   onClick={e => { e.stopPropagation(); setCurrentScene(sc.id) }}
+                  onContextMenu={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setContextMenu({ x: e.clientX, y: e.clientY, sceneId: sc.id })
+                  }}
                   className={cn(
                     'absolute flex items-center px-3 cursor-pointer text-xs transition-all select-none rounded-md',
                     isDragging && 'opacity-50',
@@ -638,6 +645,37 @@ export default function Timeline() {
           </div>
         </div>
       </div>
+
+      {/* Context Menu for scenes */}
+      <ContextMenu
+        visible={contextMenu !== null}
+        x={contextMenu?.x ?? 0}
+        y={contextMenu?.y ?? 0}
+        items={[
+          {
+            label: 'Duplicate',
+            icon: <Copy size={14} />,
+            onClick: () => {
+              if (contextMenu?.sceneId) {
+                duplicateScene(contextMenu.sceneId)
+              }
+              setContextMenu(null)
+            }
+          },
+          {
+            label: 'Delete',
+            icon: <Trash2 size={14} />,
+            dangerous: true,
+            onClick: () => {
+              if (contextMenu?.sceneId) {
+                removeScene(contextMenu.sceneId)
+              }
+              setContextMenu(null)
+            }
+          }
+        ]}
+        onClose={() => setContextMenu(null)}
+      />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { Stage, Layer, Shape, Transformer, Circle, Path } from 'react-konva'
 import type Konva from 'konva'
+import { Copy, Trash2 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
 import { registerStage } from '../../engine/stageRegistry'
@@ -11,6 +12,7 @@ import CanvasGrid from './CanvasGrid'
 import CanvasGuides from './CanvasGuides'
 import CanvasSafeArea from './CanvasSafeArea'
 import CanvasToolbar from './CanvasToolbar'
+import ContextMenu from '../ui/ContextMenu'
 
 export default function EditorCanvas() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -27,13 +29,14 @@ export default function EditorCanvas() {
   const [offsetY,  setOffsetY]  = useState(0)
 
   const [drawingArrow, setDrawingArrow] = useState<{x1:number;y1:number;x2:number;y2:number}|null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
   const {
     project, currentSceneId, selectedIds,
     playhead, isPlaying, activeTool,
     addElement, selectElement, deselectAll,
     removeElement, setActiveTool, openCodeModal,
-    undo, redo
+    undo, redo, duplicateElement
   } = useEditorStore()
 
   const currentScene = project?.scenes.find(s => s.id === currentSceneId) ?? null
@@ -112,6 +115,7 @@ export default function EditorCanvas() {
         e.preventDefault()
         console.log('[EditorCanvas] Undo triggered')
         undo()
+        return // IMPORTANT: Return after undo to prevent other handlers
       }
       
       // Redo: Ctrl+Shift+Z (Windows/Linux) or Cmd+Shift+Z (Mac), or Ctrl+Y
@@ -119,14 +123,18 @@ export default function EditorCanvas() {
         e.preventDefault()
         console.log('[EditorCanvas] Redo triggered')
         redo()
+        return // IMPORTANT: Return after redo to prevent other handlers
       }
       
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault() // Prevent browser back navigation
         console.log('[EditorCanvas] Delete key pressed, selectedIds:', selectedIds)
         if (selectedIds.length > 0) {
-          console.log('[EditorCanvas] Deleting elements:', selectedIds)
-          selectedIds.forEach(id => {
+          console.log('[EditorCanvas] Deleting selected elements:', selectedIds)
+          // Create a copy to avoid mutation issues
+          const toDelete = [...selectedIds]
+          deselectAll() // Deselect first to avoid issues
+          toDelete.forEach(id => {
             console.log('[EditorCanvas] Removing element:', id)
             removeElement(id)
           })
@@ -138,6 +146,7 @@ export default function EditorCanvas() {
       if (e.key === 'Escape') {
         deselectAll()
         setActiveTool('select')
+        setContextMenu(null)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -157,6 +166,15 @@ export default function EditorCanvas() {
   }
 
   // ── Stage event handlers ───────────────────────────────────────────────────────
+  function handleStageContextMenu(e: React.MouseEvent | Konva.KonvaEventObject<MouseEvent>) {
+    const evt = e instanceof React.MouseEvent ? e : (e as Konva.KonvaEventObject<MouseEvent>).evt
+    evt.preventDefault()
+    
+    // Check if right-clicking on a selected element
+    if (selectedIds.length > 0) {
+      setContextMenu({ x: evt.clientX, y: evt.clientY })
+    }
+  }
   function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
     if (e.target === e.target.getStage() || e.target.name() === 'bg') {
       deselectAll()
@@ -278,6 +296,7 @@ export default function EditorCanvas() {
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
+          onContextMenu={handleStageContextMenu}
         >
           {/* Background */}
           <Layer>
@@ -327,28 +346,28 @@ export default function EditorCanvas() {
                 width:  Math.max(10, box.width),
                 height: Math.max(10, box.height)
               })}
-              anchorSize={10}
-              anchorFill="#6366f1"
+              anchorSize={7}
+              anchorFill="#5a5ba0"
               anchorStroke="#fff"
-              anchorStrokeWidth={2}
-              anchorCornerRadius={10}
-              borderStroke="#6366f1"
-              borderStrokeWidth={2}
-              rotateAnchorOffset={40}
+              anchorStrokeWidth={1}
+              anchorCornerRadius={3}
+              borderStroke="#f776d9"
+              borderStrokeWidth={1}
+              rotateAnchorOffset={25}
               rotateLineVisible={false}
               rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
               rotateAnchorCursor="grab"
               anchorStyleFunc={(anchor) => {
                 // Custom styling for rotation anchor - make it look like a rotation icon
                 if (anchor.hasName('rotater')) {
-                  anchor.cornerRadius(3)
-                  anchor.fill('#6366f1')
+                  anchor.cornerRadius(10)
+                  anchor.fill('#6365f100')
                   anchor.stroke('#fff')
                   anchor.strokeWidth(1.5)
-                  anchor.width(18)
-                  anchor.height(18)
-                  anchor.offsetX(9)
-                  anchor.offsetY(9)
+                  anchor.width(10)
+                  anchor.height(10)
+                  anchor.offsetX(5) 
+                  anchor.offsetY(0)
                 }
               }}
             />
@@ -381,6 +400,35 @@ export default function EditorCanvas() {
       <div className="absolute top-2 right-2">
         <CanvasToolbar />
       </div>
+
+      {/* Context Menu */}
+      <ContextMenu
+        visible={contextMenu !== null}
+        x={contextMenu?.x ?? 0}
+        y={contextMenu?.y ?? 0}
+        items={[
+          {
+            label: 'Duplicate',
+            icon: <Copy size={14} />,
+            onClick: () => {
+              selectedIds.forEach(id => duplicateElement(id))
+              setContextMenu(null)
+            }
+          },
+          {
+            label: 'Delete',
+            icon: <Trash2 size={14} />,
+            dangerous: true,
+            onClick: () => {
+              const toDelete = [...selectedIds]
+              deselectAll()
+              toDelete.forEach(id => removeElement(id))
+              setContextMenu(null)
+            }
+          }
+        ]}
+        onClose={() => setContextMenu(null)}
+      />
     </div>
   )
 }

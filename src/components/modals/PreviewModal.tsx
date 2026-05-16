@@ -15,7 +15,7 @@ export default function PreviewModal() {
   const lastRef = useRef<number>(0)
 
   // Fit preview into viewport, preserving aspect ratio
-  const maxW = Math.min(900, window.innerWidth  * 0.88)
+  const maxW = Math.min(950, window.innerWidth  * 0.88)
   const maxH = window.innerHeight * 0.72
   const aspect = project ? project.width / project.height : 16 / 9
   let pw = maxW, ph = maxW / aspect

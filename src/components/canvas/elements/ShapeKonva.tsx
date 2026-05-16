@@ -140,58 +140,68 @@ export default function ShapeKonva({ el, konvaProps }: Props) {
             stroke={el.stroke}
             strokeWidth={el.strokeWidth}
             width={w}
-            height={h * 0.8}
+            height={h * 0.75}
             cornerRadius={el.cornerRadius}
+            offsetX={-w / 2}
+            offsetY={-h * 0.375}
           />
           <Line
             fill={el.fill}
             stroke={el.stroke}
             strokeWidth={el.strokeWidth}
-            points={[w * 0.2, h * 0.8, w * 0.1, h, w * 0.3, h * 0.8]}
+            points={[
+              w * 0.2, h * 0.375,
+              w * 0.1, h * 0.5,
+              w * 0.3, h * 0.375
+            ]}
             closed
+            offsetX={-w / 2}
+            offsetY={-h * 0.375}
           />
         </Group>
       )
     
     case 'roundedSpeech':
-      // Casual rounded speech bubble
+      // Casual rounded speech bubble with tail dots
       return (
         <Group {...konvaProps}>
           <Ellipse
             fill={el.fill}
             stroke={el.stroke}
             strokeWidth={el.strokeWidth}
-            radiusX={w/2}
-            radiusY={h * 0.4}
-            offsetX={-w/2}
-            offsetY={-h * 0.4}
+            radiusX={w / 2}
+            radiusY={h * 0.35}
+            offsetX={-w / 2}
+            offsetY={-h * 0.35}
           />
           <Circle
             fill={el.fill}
             stroke={el.stroke}
             strokeWidth={el.strokeWidth}
-            radius={w * 0.08}
-            x={w * 0.15}
-            y={h * 0.7}
+            radius={w * 0.06}
+            x={w * 0.15 - w / 2}
+            y={h * 0.55 - h * 0.35}
           />
           <Circle
             fill={el.fill}
             stroke={el.stroke}
             strokeWidth={el.strokeWidth}
-            radius={w * 0.05}
-            x={w * 0.08}
-            y={h * 0.85}
+            radius={w * 0.04}
+            x={w * 0.08 - w / 2}
+            y={h * 0.7 - h * 0.35}
           />
         </Group>
       )
     
     case 'cone':
-      // Cone shape (triangle pointing up)
+      // Cone shape - isosceles triangle pointing up
       return (
         <Line
           {...shared}
-          points={[w/2, 0, w, h, 0, h]}
+          points={[w / 2, 0, w, h, 0, h]}
           closed
+          offsetX={-w / 2}
+          offsetY={-h / 2}
         />
       )
     

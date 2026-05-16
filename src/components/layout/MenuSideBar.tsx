@@ -18,6 +18,7 @@ interface ToolItem {
 }
 
 const TOOLS: ToolItem[] = [
+    { icon: <Settings size={14} />, label: 'Background', panel: 'background' },
   { icon: <Type size={14} />, label: 'Text', tool: 'text', panel: 'text' },
   { icon: <Square size={14} />, label: 'Shapes', tool: 'shape-rect', panel: 'shapes' },
   { icon: <ArrowRight size={14} />, label: 'Arrow', tool: 'arrow', panel: 'arrows' },
@@ -31,7 +32,6 @@ const TOOLS: ToolItem[] = [
   { icon: <Wand2 size={14} />, label: 'Text Effects', panel: 'textEffects' },
   { icon: <Shuffle size={14} />, label: 'Transitions', panel: 'transitions' },
   { icon: <Layers size={14} />, label: 'Layers', panel: 'layers' },
-  { icon: <Settings size={14} />, label: 'Background', panel: 'background' },
 ]
 
 export default function MenuSideBar() {
