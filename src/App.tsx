@@ -19,7 +19,29 @@ export default function App() {
   } = useEditorStore()
 
   const [ready, setReady] = useState(false)
+  const [optionsWidth, setOptionsWidth] = useState(256)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isDragging = useRef(false)
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDragging.current = true
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return
+      const newWidth = window.innerWidth - ev.clientX - 10
+      setOptionsWidth(Math.min(480, Math.max(180, newWidth)))
+    }
+
+    const onMouseUp = () => {
+      isDragging.current = false
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }, [])
 
   useEffect(() => {
     async function boot() {
@@ -90,8 +112,17 @@ export default function App() {
         {/* Canvas in the middle */}
         <EditorCanvas />
 
+        {/* Drag handle for OptionsSidebar */}
+        <div
+          className="flex-none w-1 cursor-col-resize hover:bg-editor-accent/40 transition-colors rounded"
+          onMouseDown={handleDragStart}
+        />
+
         {/* OptionsSidebar on the right */}
-        <div className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)] w-64">
+        <div
+          className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)]"
+          style={{ width: optionsWidth }}
+        >
           <OptionsSidebar />
         </div>
       </div>

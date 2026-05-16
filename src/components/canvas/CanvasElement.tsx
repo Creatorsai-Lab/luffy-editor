@@ -93,7 +93,7 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
   switch (element.type) {
     case 'text':   return <TextKonva   el={element} konvaProps={props} textProgress={animProps?.textProgress ?? 1} />
     case 'shape':  return <ShapeKonva  el={element} konvaProps={props} />
-    case 'arrow':  return <ArrowKonva  el={element} konvaProps={props} pathProgress={animProps?.textProgress ?? 1} />
+    case 'arrow':  return <ArrowKonva  el={element} konvaProps={props} pathProgress={animProps?.textProgress ?? 1} dashOffset={animProps?.dashOffset ?? 0} />
     case 'code':   return <CodeKonva   el={element} konvaProps={props} />
     case 'image':  return <ImageKonva  el={element} konvaProps={props} />
     case 'table':  return <TableKonva  el={element} konvaProps={props} />

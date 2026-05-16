@@ -7,6 +7,7 @@ import TablePanel from '../panels/TablePanel'
 import ChartPanel from '../panels/ChartPanel'
 import TextAnimationPanel from '../panels/TextAnimationPanel'
 import ShapeAnimationPanel from '../panels/ShapeAnimationPanel'
+import ArrowAnimationPanel from '../panels/ArrowAnimationPanel'
 import TextEffectsPanel from '../panels/TextEffectsPanel'
 import BackgroundPanel from '../panels/BackgroundPanel'
 import LayersPanel from '../panels/LayersPanel'
@@ -14,6 +15,7 @@ import TransitionPanel from '../panels/TransitionPanel'
 import UploadPanel from '../panels/UploadPanel'
 import AudioPanel from '../panels/AudioPanel'
 import AudioPropertiesPanel from '../panels/AudioPropertiesPanel'
+import ImagePanel from '../panels/ImagePanel'
 
 export default function OptionsSidebar() {
   const { project, activePanel, getSelectedEls } = useEditorStore()
@@ -34,6 +36,7 @@ export default function OptionsSidebar() {
       if (firstEl.type === 'code')   return <CodePanel />
       if (firstEl.type === 'table')  return <TablePanel />
       if (firstEl.type === 'chart')  return <ChartPanel />
+      if (firstEl.type === 'image')  return <ImagePanel />
       if (firstEl.type === 'audio')  return <AudioPropertiesPanel element={firstEl} />
     }
 
@@ -48,6 +51,7 @@ export default function OptionsSidebar() {
       case 'audio':           return <AudioPanel />
       case 'textAnimations':  return <TextAnimationPanel />
       case 'shapeAnimations': return <ShapeAnimationPanel />
+      case 'arrowAnimations': return <ArrowAnimationPanel />
       case 'textEffects':     return <TextEffectsPanel />
       case 'background':      return <BackgroundPanel />
       case 'layers':          return <LayersPanel />

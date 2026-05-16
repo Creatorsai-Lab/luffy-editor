@@ -2,9 +2,11 @@
 
 export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table' | 'chart' | 'video' | 'audio'
 export type ShapeType     = 'rect' | 'circle' | 'triangle' | 'star' | 'pentagon' | 'hexagon' | 'octagon' | 'diamond' | 'oval' | 'speechBubble' | 'roundedSpeech' | 'cone' | 'rect-hand' | 'circle-hand' | 'square-hand'
-export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'typewriter' | 'drawPath' | 'spin' | 'pulse' | 'bounceLoop' | 'rotateLoop' | 
+export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'typewriter' | 'drawPath' | 'spin' | 'pulse' | 'bounceLoop' | 'rotateLoop' |
   // Text-specific animations
-  'typewriterChars' | 'typewriterWords' | 'textFade' | 'textBurst' | 'textBounce' | 'textBlock' | 'textSquiz' | 'textSpread' | 'textTwirl' | 'textZoomIn' | 'textZoomOut'
+  'typewriterChars' | 'typewriterWords' | 'textFade' | 'textBurst' | 'textBounce' | 'textBlock' | 'textSquiz' | 'textSpread' | 'textTwirl' | 'textZoomIn' | 'textZoomOut' |
+  // Arrow-specific animations
+  'drawOff' | 'flowLoop' | 'fadeLoop'
 
 export type AnimationTiming = 'onEnter' | 'onExit' | 'loop'
 export type TextEffectType = 'shadow' | 'glow' | 'outline' | 'hollow' | 'glitch' | 'bubble'
@@ -16,7 +18,7 @@ export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'push
 export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated'
 export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
 export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'shape-pentagon' | 'shape-hexagon' | 'shape-octagon' | 'shape-diamond' | 'shape-oval' | 'shape-speechBubble' | 'shape-roundedSpeech' | 'shape-cone' | 'shape-rect-hand' | 'shape-circle-hand' | 'shape-square-hand' | 'arrow' | 'code' | 'table' | 'image' | 'chart' | 'video'
-export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'textAnimations' | 'shapeAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | null
+export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | null
 
 // ─── Animation ───────────────────────────────────────────────────────────────
 
@@ -109,6 +111,7 @@ export interface CodeElement extends BaseElement {
   language: string
   fontSize: number
   showLineNumbers: boolean
+  bgColor?: string
 }
 
 export interface ImageElement extends BaseElement {
@@ -116,6 +119,12 @@ export interface ImageElement extends BaseElement {
   src: string
   assetId: string
   cornerRadius: number
+  brightness?: number   // 0-200, default 100 (normal)
+  contrast?: number     // 0-200, default 100 (normal)
+  saturation?: number   // 0-200, default 100 (normal)
+  hueRotate?: number    // 0-360 degrees, default 0
+  blur?: number         // 0-20 px, default 0
+  glass?: boolean       // glassmorphism overlay
 }
 
 export interface TableElement extends BaseElement {
@@ -148,6 +157,9 @@ export interface ChartElement extends BaseElement {
   showLegend: boolean
   showGrid: boolean
   backgroundColor: string
+  fontSize?: number        // label font size, default 10
+  textColor?: string       // axis/label color, default '#999'
+  cornerRadius?: number    // chart background corner radius, default 4
 }
 
 export interface VideoElement extends BaseElement {
@@ -166,6 +178,7 @@ export interface AudioElement extends BaseElement {
   src: string
   assetId: string
   volume: number
+  speed: number      // Playback speed multiplier, default 1
   fadeIn: number
   fadeOut: number
   startTime: number  // Trim start (seconds)
@@ -183,7 +196,8 @@ export interface GradientBg  { type: 'gradient'; from: string; to: string; angle
 export interface GridBg      { type: 'grid';     bgColor: string; lineColor: string; cellSize: number }
 export interface DotsBg      { type: 'dots';     bgColor: string; dotColor: string; spacing: number; radius: number }
 export interface AnimatedBg  { type: 'animated'; variant: 'gradient-flow' | 'particles' | 'wave'; colors: string[]; speed: number }
-export type Background = SolidBg | GradientBg | GridBg | DotsBg | AnimatedBg
+export interface ImageBg     { type: 'image';    src: string; fit: 'cover' | 'fill' }
+export type Background = SolidBg | GradientBg | GridBg | DotsBg | AnimatedBg | ImageBg
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
 

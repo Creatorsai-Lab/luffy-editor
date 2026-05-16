@@ -175,6 +175,7 @@ export function makeAudio(src: string, assetId: string, duration: number): Audio
     animations: [],
     src, assetId,
     volume: 1,
+    speed: 1,
     fadeIn: 0,
     fadeOut: 0,
     startTime: 0,

@@ -6,7 +6,9 @@
       "Bash(npm run *)",
       "Bash(npx electron-vite *)",
       "Bash(npm install *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(node *)"
     ]
   }
 }

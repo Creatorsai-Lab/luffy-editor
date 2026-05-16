@@ -10,9 +10,11 @@ export default function ChartKonva({ el, konvaProps }: Props) {
   const { data, chartType, showLegend, showGrid, backgroundColor } = el
   const w = el.width
   const h = el.height
-  const padding = 40
+  const padding = 36
+  const labelFontSize = el.fontSize ?? 10
+  const labelColor = el.textColor ?? '#999999'
   const chartW = w - padding * 2
-  const chartH = h - padding * 2 - (showLegend ? 30 : 0)
+  const chartH = h - padding * 2 - (showLegend ? 28 : 0)
 
   // Calculate max value for scaling
   const allValues = data.datasets.flatMap(ds => ds.data)
@@ -49,8 +51,8 @@ export default function ChartKonva({ el, konvaProps }: Props) {
               x={padding + i * (groupWidth + spacing)}
               y={padding + chartH + 5}
               text={label}
-              fontSize={10}
-              fill="#999"
+              fontSize={labelFontSize}
+              fill={labelColor}
               width={groupWidth}
               align="center"
             />
@@ -100,8 +102,8 @@ export default function ChartKonva({ el, konvaProps }: Props) {
             x={padding + i * pointSpacing - 20}
             y={padding + chartH + 5}
             text={label}
-            fontSize={10}
-            fill="#999"
+            fontSize={labelFontSize}
+            fill={labelColor}
             width={40}
             align="center"
           />
@@ -251,8 +253,8 @@ export default function ChartKonva({ el, konvaProps }: Props) {
             x={padding + i * pointSpacing - 20}
             y={padding + chartH + 5}
             text={label}
-            fontSize={10}
-            fill="#999"
+            fontSize={labelFontSize}
+            fill={labelColor}
             width={40}
             align="center"
           />
@@ -270,7 +272,7 @@ export default function ChartKonva({ el, konvaProps }: Props) {
         width={w}
         height={h}
         fill={backgroundColor}
-        cornerRadius={4}
+        cornerRadius={el.cornerRadius ?? 4}
       />
 
       {/* Grid */}
@@ -297,23 +299,11 @@ export default function ChartKonva({ el, konvaProps }: Props) {
 
       {/* Legend */}
       {showLegend && (
-        <Group y={h - 25}>
+        <Group y={h - 22}>
           {data.datasets.map((dataset, i) => (
-            <Group key={i} x={padding + i * 100}>
-              <Rect
-                x={0}
-                y={0}
-                width={12}
-                height={12}
-                fill={dataset.color}
-              />
-              <Text
-                x={16}
-                y={0}
-                text={dataset.label}
-                fontSize={10}
-                fill="#999"
-              />
+            <Group key={i} x={padding + i * 90}>
+              <Rect x={0} y={1} width={10} height={10} fill={dataset.color} cornerRadius={2} />
+              <Text x={14} y={0} text={dataset.label} fontSize={labelFontSize} fill={labelColor} />
             </Group>
           ))}
         </Group>

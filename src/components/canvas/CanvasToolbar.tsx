@@ -1,4 +1,4 @@
-import { Grid3x3, Ruler, Eye, EyeOff, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
+import { Grid3x3, Eye, EyeOff, ZoomIn, ZoomOut } from 'lucide-react'
 import { useCanvasStore } from '../../store/canvasStore'
 import Tooltip from '../ui/Tooltip'
 import { cn } from '../../utils/cn'
@@ -6,8 +6,6 @@ import { cn } from '../../utils/cn'
 export default function CanvasToolbar() {
   const {
     showGrid, setShowGrid,
-    showGuides, setShowGuides,
-    showRulers, setShowRulers,
     showSafeArea, setShowSafeArea,
     canvasZoom, zoomIn, zoomOut, resetZoom
   } = useCanvasStore()
@@ -26,21 +24,6 @@ export default function CanvasToolbar() {
           )}
         >
           <Grid3x3 size={14} />
-        </button>
-      </Tooltip>
-
-      {/* Guides toggle */}
-      <Tooltip text="Toggle Guides (Ctrl+;)">
-        <button
-          onClick={() => setShowGuides(!showGuides)}
-          className={cn(
-            'p-1.5 rounded transition-colors',
-            showGuides
-              ? 'bg-editor-accent text-white'
-              : 'text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover'
-          )}
-        >
-          <Ruler size={14} />
         </button>
       </Tooltip>
 

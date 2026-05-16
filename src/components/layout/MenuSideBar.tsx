@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Type, Square, ArrowRight, Code2, Table2, Image as ImageIcon,
-  Sparkles, Layers, Shuffle, Upload, Wand2, BarChart3, Music,
+  Sparkles, Layers, Shuffle, Upload, ImagePlus, BarChart3, Music,
   Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, TypeOutline
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
@@ -24,10 +24,11 @@ const TOOLS: ToolItem[] = [
   { icon: <Code2 size={14} />, label: 'Code', tool: 'code', panel: 'code' },
   { icon: <Table2 size={14} />, label: 'Table', tool: 'table', panel: 'table' },
   { icon: <BarChart3 size={14} />, label: 'Charts', tool: 'chart', panel: 'charts' },
-  { icon: <Upload size={14} />, label: 'Upload', tool: 'image', panel: 'upload' },
+  { icon: <ImagePlus size={14} />, label: 'Upload', tool: 'image', panel: 'upload' },
   { icon: <Music size={14} />, label: 'Audio', panel: 'audio' },
   { icon: <Sparkles size={14} />, label: 'Text Anim', panel: 'textAnimations' },
   { icon: <Sparkles size={14} />, label: 'Shape Anim', panel: 'shapeAnimations' },
+  { icon: <Sparkles size={14} />, label: 'Arrow Anim', panel: 'arrowAnimations' },
   { icon: <TypeOutline size={14} />, label: 'Text Effects', panel: 'textEffects' },
   { icon: <Shuffle size={14} />, label: 'Transitions', panel: 'transitions' },
   { icon: <Layers size={14} />, label: 'Layers', panel: 'layers' },

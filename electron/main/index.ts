@@ -1,7 +1,13 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell, protocol } from 'electron'
 
 // Suppress GPU shader-cache permission errors on Windows
 app.commandLine.appendSwitch('disable-gpu-shader-cache')
+
+// Must be called before app.whenReady() — serves local assets through COEP
+protocol.registerSchemesAsPrivileged([{
+  scheme: 'localasset',
+  privileges: { secure: true, supportFetchAPI: true, corsEnabled: true, stream: true }
+}])
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { mkdir, readFile, writeFile, copyFile, readdir, rm } from 'fs/promises'
@@ -174,6 +180,31 @@ function createWindow(): void {
 app.whenReady().then(async () => {
   await ensureDir(PROJECTS_DIR)
   electronApp.setAppUserModelId('com.luffy.editor')
+
+  // Serve local assets with Cross-Origin-Resource-Policy: cross-origin so COEP allows them
+  protocol.handle('localasset', async (request) => {
+    const raw = decodeURIComponent(request.url.replace('localasset:///', ''))
+    // Strip leading slash on Windows paths like /C:/...
+    const filePath = raw.match(/^\/[A-Za-z]:/) ? raw.slice(1) : raw
+    try {
+      const data = await readFile(filePath)
+      const ext  = filePath.split('.').pop()?.toLowerCase() ?? ''
+      const mime: Record<string, string> = {
+        png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', gif:'image/gif',
+        webp:'image/webp', svg:'image/svg+xml', bmp:'image/bmp',
+        mp4:'video/mp4', webm:'video/webm', mov:'video/quicktime',
+        mp3:'audio/mpeg', wav:'audio/wav', ogg:'audio/ogg', m4a:'audio/mp4'
+      }
+      return new Response(data, {
+        headers: {
+          'Content-Type': mime[ext] ?? 'application/octet-stream',
+          'Cross-Origin-Resource-Policy': 'cross-origin'
+        }
+      })
+    } catch {
+      return new Response('Not found', { status: 404 })
+    }
+  })
   app.on('browser-window-created', (_, w) => optimizer.watchWindowShortcuts(w))
   createWindow()
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })

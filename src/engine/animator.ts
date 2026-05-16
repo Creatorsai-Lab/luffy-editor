@@ -29,6 +29,7 @@ export interface AnimatedProps {
   scaleX: number; scaleY: number
   rotation: number
   textProgress: number
+  dashOffset: number
 }
 
 export function getAnimatedProps(el: EditorElement, localTime: number): AnimatedProps {
@@ -37,13 +38,14 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
     opacity: el.opacity,
     scaleX: 1, scaleY: 1,
     rotation: el.rotation,
-    textProgress: 1
+    textProgress: 1,
+    dashOffset: 0
   }
 
   const entrances = el.animations.filter(a =>
-    ['fadeIn', 'slideIn', 'scaleIn', 'typewriter', 'typewriterChars', 'typewriterWords', 
-     'textFade', 'textBurst', 'textBounce', 'textBlock', 'textSquiz', 'textSpread', 
-     'textTwirl', 'textZoomIn'].includes(a.type)
+    ['fadeIn', 'slideIn', 'scaleIn', 'typewriter', 'typewriterChars', 'typewriterWords',
+     'textFade', 'textBurst', 'textBounce', 'textBlock', 'textSquiz', 'textSpread',
+     'textTwirl', 'textZoomIn', 'drawPath'].includes(a.type)
   )
   if (entrances.length > 0) {
     const firstStart = Math.min(...entrances.map(a => a.startTime + a.delay))
@@ -281,6 +283,31 @@ function applyAnim(
       const elapsed = localTime - (anim.startTime + anim.delay)
       const turns   = elapsed / anim.duration
       out.rotation  = el.rotation + (turns * 360) % 360
+      break
+    }
+
+    // ─── Arrow-specific animations ──────────────────────────────────────────
+    case 'drawOff':
+      if (before) { out.textProgress = 1; return }
+      if (after)  { out.textProgress = 0; out.opacity = 0; return }
+      out.textProgress = lerp(1, 0, t)
+      out.opacity = lerp(el.opacity, 0, Math.max(0, (t - 0.7) / 0.3))
+      break
+
+    case 'flowLoop': {
+      if (before) return
+      const elapsed = localTime - (anim.startTime + anim.delay)
+      // Animate dashOffset so dashes appear to flow forward
+      out.dashOffset = -(elapsed * 60) % 200
+      break
+    }
+
+    case 'fadeLoop': {
+      if (before) return
+      const elapsed = localTime - (anim.startTime + anim.delay)
+      const phase   = (elapsed % anim.duration) / anim.duration
+      const v       = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2)
+      out.opacity   = lerp(el.opacity * 0.1, el.opacity, v)
       break
     }
   }

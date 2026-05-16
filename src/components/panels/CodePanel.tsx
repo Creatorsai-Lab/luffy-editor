@@ -2,7 +2,7 @@ import { Code2 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { CodeElement } from '../../types/editor'
 import { LANGUAGES } from '../../types/editor'
-import { PanelHeader, Row, NumberInput, Slider } from './TextPanel'
+import { PanelHeader, Row, NumberInput, Slider, ColorInput } from './TextPanel'
 import { cn } from '../../utils/cn'
 
 export default function CodePanel() {
@@ -44,6 +44,13 @@ export default function CodePanel() {
 
           <Row label="Font Size">
             <NumberInput value={el.fontSize} min={8} max={32} onChange={v => upd({ fontSize: v })} />
+          </Row>
+
+          <Row label="Background">
+            <ColorInput
+              value={el.bgColor ?? '#0d1117'}
+              onChange={v => upd({ bgColor: v })}
+            />
           </Row>
 
           <Row label="Line Numbers">

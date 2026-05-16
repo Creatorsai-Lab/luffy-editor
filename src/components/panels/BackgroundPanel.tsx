@@ -44,6 +44,20 @@ export default function BackgroundPanel() {
     <div className="flex flex-col overflow-y-auto flex-1">
       <PanelHeader icon={<Settings2 size={12} />} title="Background" />
 
+      {bg.type === 'image' && (
+        <div className="px-3 py-2 border-b border-editor-border flex flex-col gap-2">
+          <p className="text-xs text-editor-accent">Image background active</p>
+          <p className="text-2xs text-[#c1c1c1]">Set via right-click → Set Background on an image element.</p>
+          <button
+            onClick={() => setBackground(scene.id, { type: 'solid', color: '#1a1a2e' })}
+            className="text-xs px-2 py-1 rounded bg-editor-elevated border border-editor-border text-[#c1c1c1] hover:text-editor-text transition-colors"
+          >
+            Reset to Solid
+          </button>
+        </div>
+      )}
+
+      {bg.type !== 'image' && (
       <div className="px-3 py-2 border-b border-editor-border">
         <span className="label block mb-1.5">Type</span>
         <div className="flex flex-wrap gap-1">
@@ -63,6 +77,7 @@ export default function BackgroundPanel() {
           ))}
         </div>
       </div>
+      )}
 
       <div className="flex flex-col px-3 py-2 gap-0.5">
         {bg.type === 'solid' && (

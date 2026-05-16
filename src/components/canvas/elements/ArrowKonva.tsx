@@ -5,15 +5,18 @@ interface Props {
   el: ArrowElement
   konvaProps: Record<string, unknown>
   pathProgress?: number
+  dashOffset?: number
 }
 
-export default function ArrowKonva({ el, konvaProps, pathProgress = 1 }: Props) {
+export default function ArrowKonva({ el, konvaProps, pathProgress = 1, dashOffset = 0 }: Props) {
   const pointerAtBeginning = el.arrowHead === 'start' || el.arrowHead === 'both'
   const pointerAtEnd       = (el.arrowHead === 'end' || el.arrowHead === 'both') && pathProgress >= 1
 
+  // flowLoop forces dashes even if the arrow wasn't manually set to dashed
+  const hasFlow = dashOffset !== 0
   const dash = el.dotted
     ? [el.strokeWidth, el.strokeWidth * 2.5]
-    : el.dashed
+    : (el.dashed || hasFlow)
     ? [el.strokeWidth * 4, el.strokeWidth * 3]
     : undefined
 
@@ -56,6 +59,7 @@ export default function ArrowKonva({ el, konvaProps, pathProgress = 1 }: Props) 
       strokeWidth={el.strokeWidth}
       fill={el.arrowHeadColor || el.stroke}
       dash={dash}
+      dashOffset={dashOffset}
       pointerAtBeginning={pointerAtBeginning}
       pointerAtEnd={pointerAtEnd}
       pointerLength={el.pointerLength ?? 12}

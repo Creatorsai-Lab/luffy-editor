@@ -1,9 +1,63 @@
 import { useState, useRef, useEffect } from 'react'
-import { Upload, Image, Film, Music, Trash2, FileImage } from 'lucide-react'
+import { Upload, Film, Music, Trash2, FileImage } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { makeImage, makeVideo, makeAudio } from '../../utils/defaults'
 import { cn } from '../../utils/cn'
 import { toFileUrl } from '../../utils/pathUtils'
+
+function VideoThumbnail({ src }: { src: string }) {
+  const [thumb, setThumb] = useState<string | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  useEffect(() => {
+    const video = document.createElement('video')
+    videoRef.current = video
+    video.crossOrigin = 'anonymous'
+    video.preload = 'metadata'
+    video.muted = true
+
+    const onLoaded = () => {
+      video.currentTime = 0.5
+    }
+
+    const onSeeked = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = video.videoWidth || 320
+        canvas.height = video.videoHeight || 180
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          setThumb(canvas.toDataURL('image/jpeg', 0.6))
+        }
+      } catch {
+        // cross-origin or decode error — fall back to icon
+      }
+    }
+
+    video.addEventListener('loadeddata', onLoaded)
+    video.addEventListener('seeked', onSeeked)
+    video.src = toFileUrl(src)
+
+    return () => {
+      video.removeEventListener('loadeddata', onLoaded)
+      video.removeEventListener('seeked', onSeeked)
+      video.src = ''
+      videoRef.current = null
+    }
+  }, [src])
+
+  if (thumb) {
+    return <img src={thumb} alt="video thumbnail" className="w-full h-full object-cover" />
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <Film size={32} className="text-[#c1c1c1]" />
+      <span className="text-2xs text-[#c1c1c1]">Video</span>
+    </div>
+  )
+}
 
 export default function UploadPanel() {
   const { project, addAsset, removeAsset, addElement } = useEditorStore()
@@ -14,7 +68,7 @@ export default function UploadPanel() {
   async function handleUpload() {
     if (!project) return
     const path = await window.api.dialog.openFile([
-      { name: 'Media Files', extensions: ['png','jpg','jpeg','gif','webp','mp4','webm','mov','mp3','wav','ogg','m4a'] }
+      { name: 'Media Files', extensions: ['png','jpg','jpeg','gif','webp','mp4','webm'] }
     ])
     if (!path) return
     await uploadFile(path)
@@ -161,10 +215,7 @@ export default function UploadPanel() {
                     <span className="text-2xs text-[#c1c1c1]">Audio</span>
                   </div>
                 ) : a.type === 'video' ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <Film size={32} className="text-[#c1c1c1]" />
-                    <span className="text-2xs text-[#c1c1c1]">Video</span>
-                  </div>
+                  <VideoThumbnail src={a.path} />
                 ) : (
                   <img
                     src={displayPath}

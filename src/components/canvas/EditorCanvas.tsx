@@ -1,12 +1,13 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { Stage, Layer, Shape, Transformer, Circle, Path } from 'react-konva'
 import type Konva from 'konva'
-import { Copy, Trash2 } from 'lucide-react'
+import { Copy, Trash2, ImageIcon } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
 import { registerStage } from '../../engine/stageRegistry'
 import { makeText, makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from '../../utils/defaults'
-import type { Background, ShapeType } from '../../types/editor'
+import type { Background, ImageBg, ImageElement, ShapeType } from '../../types/editor'
+import { toFileUrl } from '../../utils/pathUtils'
 import CanvasElement from './CanvasElement'
 import CanvasGrid from './CanvasGrid'
 import CanvasGuides from './CanvasGuides'
@@ -29,13 +30,13 @@ export default function EditorCanvas() {
   const [offsetY,  setOffsetY]  = useState(0)
 
   const [drawingArrow, setDrawingArrow] = useState<{x1:number;y1:number;x2:number;y2:number}|null>(null)
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; elementId: string } | null>(null)
 
   const {
     project, currentSceneId, selectedIds,
     playhead, isPlaying, activeTool,
     addElement, selectElement, deselectAll,
-    removeElement, setActiveTool, openCodeModal,
+    removeElement, updateScene, setActiveTool, openCodeModal,
     undo, redo, duplicateElement
   } = useEditorStore()
 
@@ -182,7 +183,7 @@ export default function EditorCanvas() {
       selectElement(id, false)
     }
 
-    setContextMenu({ x: e.evt.clientX, y: e.evt.clientY })
+    setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, elementId: id })
   }
   function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
     if (e.target === e.target.getStage() || e.target.name() === 'bg') {
@@ -411,33 +412,65 @@ export default function EditorCanvas() {
       </div>
 
       {/* Context Menu */}
-      <ContextMenu
-        visible={contextMenu !== null}
-        x={contextMenu?.x ?? 0}
-        y={contextMenu?.y ?? 0}
-        items={[
-          {
-            label: 'Duplicate',
-            icon: <Copy size={14} />,
-            onClick: () => {
-              selectedIds.forEach(id => duplicateElement(id))
-              setContextMenu(null)
-            }
-          },
-          {
-            label: 'Delete',
-            icon: <Trash2 size={14} />,
-            dangerous: true,
-            onClick: () => {
-              const toDelete = [...selectedIds]
-              deselectAll()
-              toDelete.forEach(id => removeElement(id))
-              setContextMenu(null)
-            }
-          }
-        ]}
-        onClose={() => setContextMenu(null)}
-      />
+      {(() => {
+        const ctxEl = contextMenu
+          ? currentScene?.elements.find(e => e.id === contextMenu.elementId) ?? null
+          : null
+        const isImage = ctxEl?.type === 'image'
+        return (
+          <ContextMenu
+            visible={contextMenu !== null}
+            x={contextMenu?.x ?? 0}
+            y={contextMenu?.y ?? 0}
+            items={[
+              {
+                label: 'Duplicate',
+                icon: <Copy size={14} />,
+                onClick: () => {
+                  selectedIds.forEach(id => duplicateElement(id))
+                  setContextMenu(null)
+                }
+              },
+              ...(isImage ? [
+                {
+                  label: 'Set Background (Cover)',
+                  icon: <ImageIcon size={14} />,
+                  onClick: () => {
+                    if (currentSceneId) {
+                      const imgEl = ctxEl as ImageElement
+                      updateScene(currentSceneId, { background: { type: 'image', src: imgEl.src, fit: 'cover' } as ImageBg })
+                    }
+                    setContextMenu(null)
+                  }
+                },
+                {
+                  label: 'Set Background (Fill)',
+                  icon: <ImageIcon size={14} />,
+                  onClick: () => {
+                    if (currentSceneId) {
+                      const imgEl = ctxEl as ImageElement
+                      updateScene(currentSceneId, { background: { type: 'image', src: imgEl.src, fit: 'fill' } as ImageBg })
+                    }
+                    setContextMenu(null)
+                  }
+                }
+              ] : []),
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                dangerous: true,
+                onClick: () => {
+                  const toDelete = [...selectedIds]
+                  deselectAll()
+                  toDelete.forEach(id => removeElement(id))
+                  setContextMenu(null)
+                }
+              }
+            ]}
+            onClose={() => setContextMenu(null)}
+          />
+        )
+      })()}
     </div>
   )
 }
@@ -447,6 +480,18 @@ export default function EditorCanvas() {
 const BackgroundShape = React.forwardRef<Konva.Shape, {
   bg: Background; w: number; h: number; time: number
 }>(function BackgroundShape({ bg, w, h, time }, ref) {
+  const [bgImage, setBgImage] = React.useState<HTMLImageElement | null>(null)
+  const bgSrc = bg.type === 'image' ? (bg as ImageBg).src : ''
+
+  React.useEffect(() => {
+    if (!bgSrc) { setBgImage(null); return }
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload  = () => setBgImage(img)
+    img.onerror = () => setBgImage(null)
+    img.src = toFileUrl(bgSrc)
+  }, [bgSrc])
+
   const sceneFunc = useCallback((ctx: Konva.Context, shape: Konva.Shape) => {
     const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
 
@@ -483,10 +528,24 @@ const BackgroundShape = React.forwardRef<Konva.Shape, {
         }
     } else if (bg.type === 'animated') {
       drawAnimatedBg(raw, time, w, h, bg.colors, bg.variant, bg.speed)
+    } else if (bg.type === 'image' && bgImage) {
+      if ((bg as ImageBg).fit === 'fill') {
+        raw.drawImage(bgImage, 0, 0, w, h)
+      } else {
+        // cover: scale to fill, centered
+        const s  = Math.max(w / bgImage.width, h / bgImage.height)
+        const sw = bgImage.width  * s
+        const sh = bgImage.height * s
+        raw.drawImage(bgImage, (w - sw) / 2, (h - sh) / 2, sw, sh)
+      }
+    } else if (bg.type === 'image') {
+      // Image not yet loaded — show placeholder
+      raw.fillStyle = '#1a1a1a'
+      raw.fillRect(0, 0, w, h)
     }
 
     ctx.fillStrokeShape(shape)
-  }, [bg, w, h, time])
+  }, [bg, w, h, time, bgImage])
 
   return (
     <Shape
