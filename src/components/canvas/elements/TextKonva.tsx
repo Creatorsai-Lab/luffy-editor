@@ -1,5 +1,8 @@
+import { useEffect, useRef } from 'react'
 import { Text } from 'react-konva'
+import type Konva from 'konva'
 import type { TextElement } from '../../../types/editor'
+import { loadFont } from '../../../utils/fontLoader'
 
 interface Props {
   el: TextElement
@@ -54,6 +57,16 @@ function resolveEffectProps(el: TextElement) {
 }
 
 export default function TextKonva({ el, konvaProps, textProgress }: Props) {
+  const nodeRef = useRef<Konva.Text | null>(null)
+
+  // When the font family changes, ensure it's loaded then force-redraw the node
+  useEffect(() => {
+    const weight = el.fontWeight === 'bold' ? '700' : el.fontWeight === 'semibold' ? '600' : el.fontWeight === 'medium' ? '500' : '400'
+    loadFont(el.fontFamily, weight).then(() => {
+      nodeRef.current?.getLayer()?.batchDraw()
+    }).catch(() => {})
+  }, [el.fontFamily, el.fontWeight])
+
   const content = textProgress < 1
     ? el.content.slice(0, Math.floor(el.content.length * textProgress))
     : el.content
@@ -62,6 +75,7 @@ export default function TextKonva({ el, konvaProps, textProgress }: Props) {
 
   return (
     <Text
+      ref={nodeRef}
       {...konvaProps}
       {...effectProps}
       text={content}

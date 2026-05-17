@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
+import { preloadFonts } from './utils/fontLoader'
 
 // Provide a no-op stub when running outside Electron (e.g. plain browser dev tab)
 if (typeof window !== 'undefined' && !window.api) {
@@ -23,6 +24,10 @@ if (typeof window !== 'undefined' && !window.api) {
     shell:   { openPath: async () => '' }
   }
 }
+
+// Start font preloading in the background immediately.
+// React mounts in parallel; fonts will be ready before the user can type.
+preloadFonts().catch(() => {})
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
