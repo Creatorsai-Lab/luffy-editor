@@ -5,14 +5,17 @@ import { X, Play, Pause, SkipBack } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
 import CanvasElement from '../canvas/CanvasElement'
-import type { Background, TransitionType, SlideDir } from '../../types/editor'
+import type { Background, TransitionType, SlideDir, AudioElement } from '../../types/editor'
+import { toFileUrl } from '../../utils/pathUtils'
 
 export default function PreviewModal() {
   const { project, setPreviewOpen } = useEditorStore()
   const [playhead, setPlayhead] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
-  const rafRef  = useRef<number>(0)
-  const lastRef = useRef<number>(0)
+  const rafRef        = useRef<number>(0)
+  const lastRef       = useRef<number>(0)
+  const playheadRef   = useRef(0)                                      // always-current value for RAF closures
+  const audioPlayersRef = useRef<Map<string, HTMLAudioElement>>(new Map())
 
   // Fit preview into viewport, preserving aspect ratio
   const maxW = Math.min(950, window.innerWidth  * 0.88)
@@ -46,13 +49,78 @@ export default function PreviewModal() {
       lastRef.current = now
       setPlayhead(t => {
         const next = t + delta
-        return next >= totalDur ? 0 : next
+        const val  = next >= totalDur ? 0 : next
+        playheadRef.current = val
+        return val
       })
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(rafRef.current)
   }, [isPlaying, totalDur])
+
+  // Audio sync RAF — mirrors Timeline.tsx logic
+  useEffect(() => {
+    if (!project) return
+    if (!isPlaying) {
+      audioPlayersRef.current.forEach(p => p.pause())
+      return
+    }
+
+    let rafId: number
+
+    function syncAudio() {
+      const ph = playheadRef.current
+      const activeIds = new Set<string>()
+      let elapsed = 0
+
+      for (const sc of project!.scenes) {
+        for (const el of sc.elements) {
+          if (el.type !== 'audio') continue
+          const audio    = el as AudioElement
+          const absStart = elapsed + (audio.x ?? 0)
+          const absEnd   = absStart + (audio.duration ?? 0)
+
+          if (ph >= absStart && ph < absEnd) {
+            activeIds.add(audio.id)
+            let player = audioPlayersRef.current.get(audio.id)
+            if (!player) {
+              player = new Audio(toFileUrl(audio.src))
+              audioPlayersRef.current.set(audio.id, player)
+            }
+            player.volume       = audio.volume ?? 1
+            player.playbackRate = audio.speed ?? 1
+
+            const expected = (audio.startTime ?? 0) + (ph - absStart) * (audio.speed ?? 1)
+            if (player.paused) {
+              player.currentTime = Math.max(0, expected)
+              player.play().catch(() => {})
+            } else if (Math.abs(player.currentTime - expected) > 0.3) {
+              player.currentTime = Math.max(0, expected)
+            }
+          }
+        }
+        elapsed += sc.duration
+      }
+
+      audioPlayersRef.current.forEach((player, id) => {
+        if (!activeIds.has(id) && !player.paused) player.pause()
+      })
+
+      rafId = requestAnimationFrame(syncAudio)
+    }
+
+    rafId = requestAnimationFrame(syncAudio)
+    return () => cancelAnimationFrame(rafId)
+  }, [isPlaying, project])
+
+  // Release audio players on unmount
+  useEffect(() => {
+    return () => {
+      audioPlayersRef.current.forEach(p => { p.pause(); p.src = '' })
+      audioPlayersRef.current.clear()
+    }
+  }, [])
 
   if (!project) return null
 
@@ -172,7 +240,7 @@ export default function PreviewModal() {
           <input
             type="range" min={0} max={totalDur} step={0.05}
             value={playhead}
-            onChange={e => setPlayhead(Number(e.target.value))}
+            onChange={e => { const v = Number(e.target.value); playheadRef.current = v; setPlayhead(v) }}
             className="w-52 accent-editor-accent"
           />
           <span className="text-xs text-[#c1c1c1] tabular-nums w-24">

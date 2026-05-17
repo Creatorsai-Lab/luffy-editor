@@ -88,7 +88,7 @@ export default function VideoKonva({ el, konvaProps }: Props) {
         <Rect
           width={el.width}
           height={el.height}
-          fill="#1a1a2e"
+          fill="#c5c5dd"
           cornerRadius={el.cornerRadius}
         />
       )}

@@ -1,12 +1,12 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { Stage, Layer, Shape, Transformer, Circle, Path } from 'react-konva'
 import type Konva from 'konva'
-import { Copy, Trash2, ImageIcon } from 'lucide-react'
+import { Clipboard, Copy, Trash2, ImageIcon } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
 import { registerStage } from '../../engine/stageRegistry'
 import { makeText, makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from '../../utils/defaults'
-import type { Background, ImageBg, ImageElement, ShapeType } from '../../types/editor'
+import type { Background, ImageBg, ImageElement, ShapeType, EditorElement } from '../../types/editor'
 import { toFileUrl } from '../../utils/pathUtils'
 import CanvasElement from './CanvasElement'
 import CanvasGrid from './CanvasGrid'
@@ -31,6 +31,7 @@ export default function EditorCanvas() {
 
   const [drawingArrow, setDrawingArrow] = useState<{x1:number;y1:number;x2:number;y2:number}|null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; elementId: string } | null>(null)
+  const clipboardRef  = useRef<EditorElement[]>([])
 
   const {
     project, currentSceneId, selectedIds,
@@ -127,6 +128,32 @@ export default function EditorCanvas() {
         return // IMPORTANT: Return after redo to prevent other handlers
       }
       
+      // Copy: Ctrl+C
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        const scene = project?.scenes.find(s => s.id === currentSceneId)
+        if (scene && selectedIds.length > 0) {
+          clipboardRef.current = selectedIds
+            .map(id => scene.elements.find(el => el.id === id))
+            .filter((el): el is EditorElement => el != null)
+            .map(el => JSON.parse(JSON.stringify(el)))
+        }
+        return
+      }
+
+      // Paste: Ctrl+V
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        if (clipboardRef.current.length > 0) {
+          e.preventDefault()
+          clipboardRef.current.forEach(el => {
+            const clone: EditorElement = { ...JSON.parse(JSON.stringify(el)), id: crypto.randomUUID() }
+            clone.x += 20
+            clone.y += 20
+            addElement(clone)
+          })
+        }
+        return
+      }
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault() // Prevent browser back navigation
         console.log('[EditorCanvas] Delete key pressed, selectedIds:', selectedIds)
@@ -423,6 +450,20 @@ export default function EditorCanvas() {
             x={contextMenu?.x ?? 0}
             y={contextMenu?.y ?? 0}
             items={[
+              {
+                label: 'Copy',
+                icon: <Clipboard size={14} />,
+                onClick: () => {
+                  const scene = currentScene
+                  if (scene && selectedIds.length > 0) {
+                    clipboardRef.current = selectedIds
+                      .map(id => scene.elements.find(el => el.id === id))
+                      .filter((el): el is EditorElement => el != null)
+                      .map(el => JSON.parse(JSON.stringify(el)))
+                  }
+                  setContextMenu(null)
+                }
+              },
               {
                 label: 'Duplicate',
                 icon: <Copy size={14} />,

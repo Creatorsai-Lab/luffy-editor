@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { cn } from '../../utils/cn'
 
 export interface ContextMenuItem {
@@ -18,6 +18,16 @@ interface ContextMenuProps {
 
 export default function ContextMenu({ visible, x, y, items, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+
+  useLayoutEffect(() => {
+    if (!visible || !menuRef.current) { setPos(null); return }
+    const rect = menuRef.current.getBoundingClientRect()
+    setPos({
+      top:  y + rect.height > window.innerHeight ? y - rect.height : y,
+      left: x + rect.width  > window.innerWidth  ? x - rect.width  : x,
+    })
+  }, [visible, x, y, items.length])
 
   useEffect(() => {
     if (!visible) return
@@ -50,9 +60,10 @@ export default function ContextMenu({ visible, x, y, items, onClose }: ContextMe
       ref={menuRef}
       className="fixed z-[9999] bg-editor-elevated border border-editor-border rounded shadow-lg overflow-hidden"
       style={{
-        left: `${x}px`,
-        top: `${y}px`,
-        minWidth: '140px'
+        left: `${pos?.left ?? x}px`,
+        top:  `${pos?.top  ?? y}px`,
+        minWidth: '140px',
+        visibility: pos ? 'visible' : 'hidden',
       }}
     >
       {items.map((item, idx) => (

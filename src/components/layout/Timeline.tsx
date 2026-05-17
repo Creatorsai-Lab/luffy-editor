@@ -43,6 +43,7 @@ export default function Timeline() {
 
   const [editDurId, setEditDurId] = useState<string | null>(null)
   const [resizingScene, setResizingScene] = useState<{ id: string; edge: 'start' | 'end' } | null>(null)
+  const [resizingAudio, setResizingAudio] = useState<{ id: string; edge: 'start' | 'end' } | null>(null)
   const [draggingPlayhead, setDraggingPlayhead] = useState(false)
   const [draggedSceneIndex, setDraggedSceneIndex] = useState<number | null>(null)
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null)
@@ -127,7 +128,7 @@ export default function Timeline() {
             player.playbackRate = audio.speed ?? 1
 
             if (player.paused) {
-              player.currentTime = Math.max(0, (audio.startTime ?? 0) + (ph - absStart))
+              player.currentTime = Math.max(0, (audio.startTime ?? 0) + (ph - absStart) * (audio.speed ?? 1))
               player.play().catch(() => {})
             }
           }
@@ -186,6 +187,12 @@ export default function Timeline() {
           if (e.ctrlKey || e.metaKey) { e.preventDefault(); setTimelineZoom(1) }
           break
         case 'Delete': case 'Backspace': {
+          if (selectedAudioId) {
+            e.preventDefault()
+            removeElement(selectedAudioId)
+            setSelectedAudioId(null)
+            break
+          }
           const { selectedIds } = useEditorStore.getState()
           if (selectedIds.length === 0 && currentSceneId && project && project.scenes.length > 1) {
             e.preventDefault(); removeScene(currentSceneId)
@@ -282,6 +289,44 @@ export default function Timeline() {
     document.addEventListener('mouseup', handleMouseUp)
   }
 
+  // Resize an audio clip from its left or right edge
+  function handleAudioResizeMouseDown(e: React.MouseEvent, audioEl: AudioElement, edge: 'start' | 'end') {
+    e.stopPropagation()
+    e.preventDefault()
+    setResizingAudio({ id: audioEl.id, edge })
+    setSelectedAudioId(audioEl.id)
+
+    const startMouseX   = e.clientX
+    const origX         = audioEl.x ?? 0
+    const origDuration  = audioEl.duration ?? 0
+    const origStartTime = audioEl.startTime ?? 0
+    const speed         = audioEl.speed ?? 1
+
+    const handleMouseMove = (mv: MouseEvent) => {
+      const delta = (mv.clientX - startMouseX) / PX_PER_SEC
+      if (edge === 'end') {
+        updateElement(audioEl.id, { duration: Math.max(0.1, origDuration + delta) })
+      } else {
+        const newX        = Math.max(0, origX + delta)
+        const actualDelta = newX - origX
+        updateElement(audioEl.id, {
+          x:         newX,
+          startTime: Math.max(0, origStartTime + actualDelta * speed),
+          duration:  Math.max(0.1, origDuration - actualDelta),
+        })
+      }
+    }
+
+    const handleMouseUp = () => {
+      setResizingAudio(null)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
+
   if (!project) return (
     <div className="flex flex-col bg-orange flex-none" style={{ height: 120 }}>
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-editor-border">
@@ -299,6 +344,18 @@ export default function Timeline() {
     sceneStarts[sc.id] = acc
     acc += sc.duration
   }
+
+  // Include audio clips that extend past the scene area in scroll width
+  const maxAudioRightPx = project.scenes.reduce((max, sc) => {
+    const scStart = sceneStarts[sc.id] ?? 0
+    for (const el of sc.elements) {
+      if (el.type !== 'audio') continue
+      const a = el as AudioElement
+      const rightPx = (scStart + (a.x ?? 0) + (a.duration ?? 0)) * PX_PER_SEC
+      if (rightPx > max) max = rightPx
+    }
+    return max
+  }, 0)
 
   const playheadPx = playhead * PX_PER_SEC
 
@@ -346,13 +403,28 @@ export default function Timeline() {
     })
   }
 
-  function trimAtContextPosition() {
+  function trimAfterAtContextPosition() {
     if (!audioContextMenu) return
     const { audioId, sceneId, clickTimeInAudio } = audioContextMenu
     const sc    = project.scenes.find(s => s.id === sceneId)
     const audio = sc?.elements.find(e => e.id === audioId) as AudioElement | undefined
     if (!audio || clickTimeInAudio <= 0.1) return
     updateElement(audioId, { duration: Math.max(0.1, clickTimeInAudio) })
+    setAudioContextMenu(null)
+  }
+
+  function trimBeforeAtContextPosition() {
+    if (!audioContextMenu) return
+    const { audioId, sceneId, clickTimeInAudio } = audioContextMenu
+    const sc    = project.scenes.find(s => s.id === sceneId)
+    const audio = sc?.elements.find(e => e.id === audioId) as AudioElement | undefined
+    if (!audio || clickTimeInAudio >= audio.duration - 0.1) return
+    const speed = audio.speed ?? 1
+    updateElement(audioId, {
+      x:         (audio.x ?? 0) + clickTimeInAudio,
+      startTime: (audio.startTime ?? 0) + clickTimeInAudio * speed,
+      duration:  audio.duration - clickTimeInAudio,
+    })
     setAudioContextMenu(null)
   }
 
@@ -461,7 +533,11 @@ export default function Timeline() {
 
             <select
               value={selectedAudio.speed ?? 1}
-              onChange={e => updateElement(selectedAudio!.id, { speed: parseFloat(e.target.value) })}
+              onChange={e => {
+                const newSpeed  = parseFloat(e.target.value)
+                const rawAudioS = selectedAudio!.duration * (selectedAudio!.speed ?? 1)
+                updateElement(selectedAudio!.id, { speed: newSpeed, duration: rawAudioS / newSpeed })
+              }}
               className="bg-editor-elevated border border-editor-border rounded text-[10px] text-editor-text px-1 py-0.5 flex-none"
               title="Playback speed"
             >
@@ -494,12 +570,12 @@ export default function Timeline() {
 
             <div className="w-px h-4 bg-editor-border mx-0.5 flex-none" />
 
-            <Tooltip text="Trim: cut after playhead">
+            <Tooltip text="Trim after playhead (cut end)">
               <button
                 onClick={trimAtPlayhead}
                 className="flex items-center gap-1 px-2 py-1 text-[10px] rounded bg-editor-elevated border border-editor-border text-[#c1c1c1] hover:text-editor-text hover:border-editor-text/40 transition-colors flex-none"
               >
-                <Scissors size={10} /> Trim
+                <Scissors size={10} /> Trim ▶
               </button>
             </Tooltip>
 
@@ -545,7 +621,7 @@ export default function Timeline() {
         className="flex-1 overflow-x-auto overflow-y-auto relative cursor-pointer"
         onMouseDown={handleRulerClick}
       >
-        <div className="relative" style={{ width: Math.max(totalPx + 120, 600), height: '100%' }}>
+        <div className="relative" style={{ width: Math.max(totalPx + 120, maxAudioRightPx + 120, 600), height: '100%' }}>
 
           {/* Time ruler */}
           <div className="absolute top-0 left-0 right-0" style={{ height: RULER_HEIGHT }}>
@@ -725,6 +801,19 @@ export default function Timeline() {
                       <span className="truncate">{fileName} • {audioDur.toFixed(1)}s</span>
                       {(audio.speed ?? 1) !== 1 && <span className="flex-none opacity-80">{audio.speed}×</span>}
                     </div>
+
+                    {/* Left resize handle */}
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/40 rounded-l z-10"
+                      onMouseDown={e => handleAudioResizeMouseDown(e, audio, 'start')}
+                      title="Drag to trim start"
+                    />
+                    {/* Right resize handle */}
+                    <div
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/40 rounded-r z-10"
+                      onMouseDown={e => handleAudioResizeMouseDown(e, audio, 'end')}
+                      title="Drag to trim end"
+                    />
                   </div>
                 </div>
               )
@@ -791,9 +880,14 @@ export default function Timeline() {
             }
           },
           {
-            label: `Trim here (${audioContextMenu ? audioContextMenu.clickTimeInAudio.toFixed(1) : 0}s)`,
+            label: `Trim after (${audioContextMenu ? audioContextMenu.clickTimeInAudio.toFixed(1) : 0}s)`,
             icon: <Scissors size={14} />,
-            onClick: trimAtContextPosition,
+            onClick: trimAfterAtContextPosition,
+          },
+          {
+            label: `Trim before (${audioContextMenu ? audioContextMenu.clickTimeInAudio.toFixed(1) : 0}s)`,
+            icon: <Scissors size={14} />,
+            onClick: trimBeforeAtContextPosition,
           },
           {
             label: `Split here (${audioContextMenu ? audioContextMenu.clickTimeInAudio.toFixed(1) : 0}s)`,

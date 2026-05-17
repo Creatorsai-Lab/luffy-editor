@@ -260,7 +260,7 @@ export const FONT_FAMILIES = [
   'Poppins', 'Montserrat', 'Raleway', 'Inter', 'Roboto',
   // Handwritten / display
   'Comic Sans MS', 'Pacifico', 'Caveat', 'Indie Flower',
-  'Singlet', 'Handlee', 'Shadows Into Light', 'Fredoka', 'Quicksand',
+  'Kalam', 'Handlee', 'Shadows Into Light', 'Fredoka', 'Quicksand',
   // Serif
   'Georgia', 'Times New Roman', 'Garamond',
   // Monospace

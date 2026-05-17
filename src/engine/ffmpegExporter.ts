@@ -1,8 +1,9 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
-import type { Project } from '../types/editor'
+import type { Project, AudioElement } from '../types/editor'
 import type Konva from 'konva'
 import { renderTransition } from './transitionRenderer'
+import { toFileUrl } from '../utils/pathUtils'
 
 export interface FFmpegExportOptions {
   project: Project
@@ -290,38 +291,157 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
 
   onLog?.(`FFmpeg command: ${ffmpegArgs.join(' ')}`)
 
-  // Execute FFmpeg
+  // Execute FFmpeg (video-only pass)
   await ffmpeg.exec(ffmpegArgs)
 
-  onProgress(95, 'Reading output file...')
+  // ── Audio mixing pass ────────────────────────────────────────────────────────
+  // Collect every audio element from every scene, with absolute timeline positions
+  const audioClips: {
+    src: string; absStart: number; startTime: number
+    duration: number; speed: number; volume: number
+    fadeIn: number; fadeOut: number
+  }[] = []
 
-  // Read the output file (readFile returns FileData = Uint8Array | string; video is binary)
+  let audioElapsed = 0
+  for (const scene of project.scenes) {
+    for (const el of scene.elements) {
+      if (el.type !== 'audio') continue
+      const a = el as AudioElement
+      audioClips.push({
+        src:       a.src,
+        absStart:  audioElapsed + (a.x ?? 0),
+        startTime: a.startTime ?? 0,
+        duration:  a.duration  ?? 0,
+        speed:     a.speed     ?? 1,
+        volume:    a.volume    ?? 1,
+        fadeIn:    a.fadeIn    ?? 0,
+        fadeOut:   a.fadeOut   ?? 0,
+      })
+    }
+    audioElapsed += scene.duration
+  }
+
+  let finalBlob: Blob | null = null
+
+  if (audioClips.length > 0) {
+    onProgress(86, 'Loading audio files...')
+
+    // Write audio files into FFmpeg FS
+    const writtenFiles: string[] = []
+    const validClips: typeof audioClips = []
+
+    for (let i = 0; i < audioClips.length; i++) {
+      const clip = audioClips[i]
+      const rawDur = clip.duration * clip.speed
+      if (rawDur <= 0) continue
+      const ext = clip.src.split('.').pop()?.split('?')[0]?.toLowerCase() ?? 'mp3'
+      const fname = `aud${i}.${ext}`
+      try {
+        const bytes = await fetchFile(toFileUrl(clip.src))
+        await ffmpeg.writeFile(fname, bytes)
+        writtenFiles.push(fname)
+        validClips.push(clip)
+      } catch (err) {
+        onLog?.(`Warning: skipped audio ${clip.src}: ${err}`)
+      }
+    }
+
+    if (validClips.length > 0) {
+      onProgress(90, 'Mixing audio...')
+
+      const filterSegments: string[] = []
+      const outLabels: string[] = []
+
+      for (let i = 0; i < validClips.length; i++) {
+        const clip    = validClips[i]
+        const rawDur  = clip.duration * clip.speed
+        const delayMs = Math.round(clip.absStart * 1000)
+        const label   = `[aout${i}]`
+
+        const filt: string[] = [
+          `atrim=start=${clip.startTime.toFixed(3)}:duration=${rawDur.toFixed(3)}`,
+          `asetpts=PTS-STARTPTS`,
+          ...buildAtempoFilters(clip.speed),
+        ]
+        if (clip.volume !== 1) filt.push(`volume=${clip.volume.toFixed(4)}`)
+        if (clip.fadeIn  > 0)  filt.push(`afade=t=in:st=0:d=${clip.fadeIn.toFixed(3)}`)
+        if (clip.fadeOut > 0 && clip.duration - clip.fadeOut > 0)
+          filt.push(`afade=t=out:st=${(clip.duration - clip.fadeOut).toFixed(3)}:d=${clip.fadeOut.toFixed(3)}`)
+        if (delayMs > 0) filt.push(`adelay=${delayMs}:all=1`)
+        filt.push(`apad=whole_dur=${totalDuration.toFixed(3)}`)
+
+        filterSegments.push(`[${i + 1}:a]${filt.join(',')}${label}`)
+        outLabels.push(label)
+      }
+
+      let audioMapLabel: string
+      if (outLabels.length === 1) {
+        audioMapLabel = outLabels[0]
+      } else {
+        audioMapLabel = '[afinal]'
+        filterSegments.push(`${outLabels.join('')}amix=inputs=${outLabels.length}:normalize=0[afinal]`)
+      }
+
+      const audioInArgs: string[] = []
+      for (const fn of writtenFiles) audioInArgs.push('-i', fn)
+
+      const finalFile = `with_audio_${outputFile}`
+      const muxArgs = [
+        '-i', outputFile,
+        ...audioInArgs,
+        '-filter_complex', filterSegments.join(';'),
+        '-map', '0:v',
+        '-map', audioMapLabel,
+        '-c:v', 'copy',
+        '-c:a', 'aac',
+        '-b:a', '192k',
+        finalFile,
+      ]
+      onLog?.(`Audio mux command: ${muxArgs.join(' ')}`)
+
+      try {
+        await ffmpeg.exec(muxArgs)
+        const finalData = await ffmpeg.readFile(finalFile) as Uint8Array
+        finalBlob = new Blob([finalData.buffer], {
+          type: format === 'mp4' ? 'video/mp4' : 'video/webm'
+        })
+        try { await ffmpeg.deleteFile(finalFile) } catch {}
+      } catch (err) {
+        onLog?.(`Audio mixing failed, exporting video without audio: ${err}`)
+      }
+
+      // Clean up audio files
+      for (const fn of writtenFiles) { try { await ffmpeg.deleteFile(fn) } catch {} }
+    }
+  }
+
+  // ── Fallback: video-only blob ─────────────────────────────────────────────────
+  onProgress(95, 'Reading output file...')
   const data = await ffmpeg.readFile(outputFile) as Uint8Array
-  const blob = new Blob([data.buffer], {
+  const blob = finalBlob ?? new Blob([data.buffer], {
     type: format === 'mp4' ? 'video/mp4' : 'video/webm'
   })
 
   onProgress(98, 'Cleaning up...')
 
-  // Clean up virtual filesystem
   for (let i = 0; i < totalFrames; i++) {
-    const filename = `frame${String(i).padStart(6, '0')}.jpg`
-    try {
-      await ffmpeg.deleteFile(filename)
-    } catch (e) {
-      // Ignore errors
-    }
+    try { await ffmpeg.deleteFile(`frame${String(i).padStart(6, '0')}.jpg`) } catch {}
   }
-
-  try {
-    await ffmpeg.deleteFile(outputFile)
-  } catch (e) {
-    // Ignore errors
-  }
+  try { await ffmpeg.deleteFile(outputFile) } catch {}
 
   onProgress(100, 'Export complete!')
-
   return blob
+}
+
+// Builds a chain of atempo filters that handles any speed (atempo range: 0.5–2.0)
+function buildAtempoFilters(speed: number): string[] {
+  if (speed === 1) return []
+  const filters: string[] = []
+  let s = speed
+  while (s > 2.0)  { filters.push('atempo=2.0'); s /= 2.0 }
+  while (s < 0.5)  { filters.push('atempo=0.5'); s /= 0.5 }
+  filters.push(`atempo=${s.toFixed(6)}`)
+  return filters
 }
 
 export async function isFFmpegAvailable(): Promise<boolean> {
