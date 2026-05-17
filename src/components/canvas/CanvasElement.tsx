@@ -25,17 +25,26 @@ interface Props {
 export default function CanvasElement({ element, animProps, isSelected, onSelect, onDblClick, stageScale }: Props) {
   const { updateElement } = useEditorStore()
 
+  // Animation-driven scale from center: adjust x/y so the element scales around its center,
+  // not the Konva default of top-left corner.
+  const animScaleX = animProps?.scaleX ?? 1
+  const animScaleY = animProps?.scaleY ?? 1
+  const elW = 'width'  in element ? (element as { width:  number }).width  : 0
+  const elH = 'height' in element ? (element as { height: number }).height : 0
+  const rawX = animProps?.x ?? element.x
+  const rawY = animProps?.y ?? element.y
+
   const props = {
     id:       element.id,
-    x:        animProps?.x        ?? element.x,
-    y:        animProps?.y        ?? element.y,
+    x:        rawX + (elW / 2) * (1 - animScaleX),
+    y:        rawY + (elH / 2) * (1 - animScaleY),
     opacity:  animProps?.opacity  ?? element.opacity,
     scaleX:   element.type === 'text'
-      ? (animProps?.scaleX ?? 1) * ((element as import('../../types/editor').TextElement).stretchX ?? 1)
-      : (animProps?.scaleX ?? 1),
+      ? animScaleX * ((element as import('../../types/editor').TextElement).stretchX ?? 1)
+      : animScaleX,
     scaleY:   element.type === 'text'
-      ? (animProps?.scaleY ?? 1) * ((element as import('../../types/editor').TextElement).stretchY ?? 1)
-      : (animProps?.scaleY ?? 1),
+      ? animScaleY * ((element as import('../../types/editor').TextElement).stretchY ?? 1)
+      : animScaleY,
     rotation: animProps?.rotation ?? element.rotation,
     draggable: !element.locked,
     listening: !element.locked,

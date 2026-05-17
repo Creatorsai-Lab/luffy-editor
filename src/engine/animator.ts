@@ -42,11 +42,8 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
     dashOffset: 0
   }
 
-  const entrances = el.animations.filter(a =>
-    ['fadeIn', 'slideIn', 'scaleIn', 'typewriter', 'typewriterChars', 'typewriterWords',
-     'textFade', 'textBurst', 'textBounce', 'textBlock', 'textSquiz', 'textSpread',
-     'textTwirl', 'textZoomIn', 'drawPath'].includes(a.type)
-  )
+  // Only entrance animations (onEnter timing) should hide the element before they start
+  const entrances = el.animations.filter(a => a.timing === 'onEnter')
   if (entrances.length > 0) {
     const firstStart = Math.min(...entrances.map(a => a.startTime + a.delay))
     if (localTime < firstStart) {
@@ -94,21 +91,22 @@ function applyAnim(
       break
 
     case 'slideIn': {
-      const dir = anim.params?.direction ?? 'left'
+      // Arrow label = direction of movement: ← Left means element moves left (enters from right)
+      const dir = anim.params?.direction ?? 'right'
       if (before) {
         out.opacity = 0
-        if (dir === 'left')  out.x = el.x - dist
-        if (dir === 'right') out.x = el.x + dist
-        if (dir === 'up')    out.y = el.y - dist
-        if (dir === 'down')  out.y = el.y + dist
+        if (dir === 'left')  out.x = el.x + dist   // enters from right, moves left
+        if (dir === 'right') out.x = el.x - dist   // enters from left, moves right
+        if (dir === 'up')    out.y = el.y + dist   // enters from below, moves up
+        if (dir === 'down')  out.y = el.y - dist   // enters from above, moves down
         return
       }
       if (after) { out.x = el.x; out.y = el.y; out.opacity = el.opacity; return }
       out.opacity = lerp(0, el.opacity, t)
-      if (dir === 'left')  out.x = lerp(el.x - dist, el.x, t)
-      if (dir === 'right') out.x = lerp(el.x + dist, el.x, t)
-      if (dir === 'up')    out.y = lerp(el.y - dist, el.y, t)
-      if (dir === 'down')  out.y = lerp(el.y + dist, el.y, t)
+      if (dir === 'left')  out.x = lerp(el.x + dist, el.x, t)
+      if (dir === 'right') out.x = lerp(el.x - dist, el.x, t)
+      if (dir === 'up')    out.y = lerp(el.y + dist, el.y, t)
+      if (dir === 'down')  out.y = lerp(el.y - dist, el.y, t)
       break
     }
 
@@ -179,9 +177,17 @@ function applyAnim(
       break
 
     case 'textFade':
-      if (before) { out.opacity = 0; return }
-      if (after)  { out.opacity = el.opacity; return }
-      out.opacity = lerp(0, el.opacity, t)
+      if (anim.timing === 'onExit') {
+        // Exit: fade from visible to invisible
+        if (after)  { out.opacity = 0; return }
+        if (before) return   // before exit starts: element is fully visible
+        out.opacity = lerp(el.opacity, 0, t)
+      } else {
+        // Enter: fade from invisible to visible
+        if (before) { out.opacity = 0; return }
+        if (after)  { out.opacity = el.opacity; return }
+        out.opacity = lerp(0, el.opacity, t)
+      }
       break
 
     case 'textBurst': {

@@ -404,7 +404,7 @@ export default function Timeline() {
   }
 
   function trimAfterAtContextPosition() {
-    if (!audioContextMenu) return
+    if (!audioContextMenu || !project) return
     const { audioId, sceneId, clickTimeInAudio } = audioContextMenu
     const sc    = project.scenes.find(s => s.id === sceneId)
     const audio = sc?.elements.find(e => e.id === audioId) as AudioElement | undefined
@@ -414,7 +414,7 @@ export default function Timeline() {
   }
 
   function trimBeforeAtContextPosition() {
-    if (!audioContextMenu) return
+    if (!audioContextMenu || !project) return
     const { audioId, sceneId, clickTimeInAudio } = audioContextMenu
     const sc    = project.scenes.find(s => s.id === sceneId)
     const audio = sc?.elements.find(e => e.id === audioId) as AudioElement | undefined
@@ -429,7 +429,7 @@ export default function Timeline() {
   }
 
   function splitAtContextPosition() {
-    if (!audioContextMenu) return
+    if (!audioContextMenu || !project) return
     const { audioId, sceneId, clickTimeInAudio } = audioContextMenu
     const sc    = project.scenes.find(s => s.id === sceneId)
     const audio = sc?.elements.find(e => e.id === audioId) as AudioElement | undefined
