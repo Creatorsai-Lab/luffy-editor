@@ -8,7 +8,8 @@
       "Bash(npm install *)",
       "Bash(npx tsc *)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(grep -E \"bangers|chewy|imperial|caveat-brush|caveat$\")"
     ]
   }
 }

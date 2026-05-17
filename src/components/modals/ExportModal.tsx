@@ -2,12 +2,10 @@ import { useState, useRef, useEffect } from 'react'
 import { X, Download, CheckCircle, AlertCircle, Loader2, Settings } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { exportToMP4WithFFmpeg, isFFmpegAvailable } from '../../engine/ffmpegExporter'
-import { exportToWebM } from '../../engine/exporter'
 import { getStage } from '../../engine/stageRegistry'
 
 type Phase = 'idle' | 'exporting' | 'done' | 'error'
-type Quality = 'high' | 'ultra'
-type Format = 'mp4' | 'webm'
+type Quality = '720p' | '1080p'
 
 export default function ExportModal() {
   const { project, setExportOpen, setPlayhead } = useEditorStore()
@@ -16,11 +14,9 @@ export default function ExportModal() {
   const [progress, setProgress] = useState(0)
   const [log,      setLog]      = useState('')
   const [savePath, setSavePath] = useState<string | null>(null)
-  const [quality,  setQuality]  = useState<Quality>('high')
-  const [format,   setFormat]   = useState<Format>('mp4')
-  const [useFFmpeg, setUseFFmpeg] = useState(true)
+  const [quality,  setQuality]  = useState<Quality>('1080p')
   const [ffmpegAvailable, setFFmpegAvailable] = useState(false)
-  
+
   const blobRef = useRef<Blob | null>(null)
   const cancelRef = useRef(false)
 
@@ -38,25 +34,17 @@ export default function ExportModal() {
   async function ensureFrameRendered(sceneId: string | null, globalTime: number) {
     if (cancelRef.current) throw new Error('Cancelled')
 
-    // Switch scene if needed
     if (sceneId && sceneId !== useEditorStore.getState().currentSceneId) {
       useEditorStore.getState().setCurrentScene(sceneId)
-      // Yield so React can mount the new scene's elements
       await new Promise(r => setTimeout(r, 0))
     }
 
     setPlayhead(globalTime)
-    // Yield for React state propagation
     await new Promise(r => setTimeout(r, 0))
-    // Wait for first animation frame (layout/paint)
     await new Promise(r => requestAnimationFrame(r))
-    // Wait for second animation frame (Konva internal draw cycle)
-    await new Promise(r => requestAnimationFrame(r))
-    // Force Konva to synchronously redraw all layers
     const stage = getStage()
     if (stage) stage.batchDraw()
-    // Small buffer for complex scenes to finish compositing
-    await new Promise(r => setTimeout(r, 16))
+    await new Promise(r => setTimeout(r, 4))
   }
 
   /** Find which scene contains global time t, return its id (or null). */
@@ -80,48 +68,26 @@ export default function ExportModal() {
     setLog('Initializing export...')
 
     try {
-      let blob: Blob
-
-      if (useFFmpeg && ffmpegAvailable) {
-        // Use FFmpeg for high-quality MP4 export
-        blob = await exportToMP4WithFFmpeg({
-          project,
-          getStage,
-          quality,
-          format,
-          onProgress: (pct, msg) => {
-            if (cancelRef.current) return
-            setProgress(pct)
-            setLog(msg)
-          },
-          onLog: (msg) => {
-            console.log('[Export]', msg)
-          },
-          renderSceneFrame: async (sceneId, globalTime) => {
-            await ensureFrameRendered(sceneId, globalTime)
-          },
-          renderFrame: async (t) => {
-            const sceneId = findSceneIdAtTime(t)
-            await ensureFrameRendered(sceneId, t)
-          }
-        })
-      } else {
-        // Fallback to MediaRecorder (WebM only)
-        blob = await exportToWebM({
-          project,
-          getStage,
-          onProgress: (pct) => {
-            if (cancelRef.current) return
-            setProgress(pct)
-            setLog(pct < 90 ? `Encoding frames… ${pct}%` : pct < 100 ? 'Muxing video…' : 'Done')
-          },
-          renderFrame: async (t) => {
-            // Scene switching — previously missing for WebM export!
-            const sceneId = findSceneIdAtTime(t)
-            await ensureFrameRendered(sceneId, t)
-          }
-        })
-      }
+      const blob = await exportToMP4WithFFmpeg({
+        project,
+        getStage,
+        quality,
+        onProgress: (pct, msg) => {
+          if (cancelRef.current) return
+          setProgress(pct)
+          setLog(msg)
+        },
+        onLog: (msg) => {
+          console.log('[Export]', msg)
+        },
+        renderSceneFrame: async (sceneId, globalTime) => {
+          await ensureFrameRendered(sceneId, globalTime)
+        },
+        renderFrame: async (t) => {
+          const sceneId = findSceneIdAtTime(t)
+          await ensureFrameRendered(sceneId, t)
+        }
+      })
 
       if (cancelRef.current) return
       blobRef.current = blob
@@ -137,8 +103,7 @@ export default function ExportModal() {
 
   async function handleSave() {
     if (!blobRef.current || !project) return
-    const ext = format === 'mp4' ? 'mp4' : 'webm'
-    const path = await window.api.dialog.saveVideo(`${project.name}.${ext}`)
+    const path = await window.api.dialog.saveVideo(`${project.name}.mp4`)
     if (!path) return
     
     setSavePath(path)
@@ -175,12 +140,9 @@ export default function ExportModal() {
   const total    = project.scenes.reduce((s, sc) => s + sc.duration, 0)
   const frames   = Math.ceil(total * fps)
 
-  // Calculate estimated file size
-  const estimatedSizeMB = useFFmpeg && ffmpegAvailable
-    ? quality === 'ultra' 
-      ? Math.round((project.width * project.height * fps * total * 0.15) / (1024 * 1024))
-      : Math.round((project.width * project.height * fps * total * 0.08) / (1024 * 1024))
-    : Math.round((project.width * project.height * fps * total * 0.05) / (1024 * 1024))
+  const exportW = quality === '720p' ? Math.round(project.width * 720 / project.height) : Math.min(project.width, 1920)
+  const exportH = quality === '720p' ? 720 : Math.min(project.height, 1080)
+  const estimatedSizeMB = Math.round((exportW * exportH * fps * total * 0.10) / (1024 * 1024))
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -222,76 +184,50 @@ export default function ExportModal() {
                 <span className="font-medium">Export Settings</span>
               </div>
 
-              {/* Format Selection */}
+              {/* Format label */}
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-editor-secondary">Format</span>
+                <span className="text-editor-text font-medium">MP4 (H.264)</span>
+              </div>
+
+              {/* Quality Selection */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-editor-secondary">Format</label>
+                <label className="text-xs text-editor-secondary">Quality</label>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setFormat('mp4')}
-                    disabled={!ffmpegAvailable}
+                    onClick={() => setQuality('720p')}
                     className={`flex-1 px-3 py-2 text-xs rounded transition-colors ${
-                      format === 'mp4'
-                        ? 'bg-editor-accent text-white'
-                        : ffmpegAvailable
-                        ? 'bg-editor-panel text-editor-text hover:bg-editor-hover'
-                        : 'bg-editor-panel text-[#c1c1c1] cursor-not-allowed'
-                    }`}
-                  >
-                    MP4 {!ffmpegAvailable && '(Loading...)'}
-                  </button>
-                  <button
-                    onClick={() => setFormat('webm')}
-                    className={`flex-1 px-3 py-2 text-xs rounded transition-colors ${
-                      format === 'webm'
+                      quality === '720p'
                         ? 'bg-editor-accent text-white'
                         : 'bg-editor-panel text-editor-text hover:bg-editor-hover'
                     }`}
                   >
-                    WebM
+                    <div className="font-medium">720p</div>
+                    <div className="text-2xs opacity-70">HD · CRF 18</div>
+                  </button>
+                  <button
+                    onClick={() => setQuality('1080p')}
+                    className={`flex-1 px-3 py-2 text-xs rounded transition-colors ${
+                      quality === '1080p'
+                        ? 'bg-editor-accent text-white'
+                        : 'bg-editor-panel text-editor-text hover:bg-editor-hover'
+                    }`}
+                  >
+                    <div className="font-medium">1080p</div>
+                    <div className="text-2xs opacity-70">Full HD · CRF 16</div>
                   </button>
                 </div>
               </div>
 
-              {/* Quality Selection */}
-              {ffmpegAvailable && format === 'mp4' && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-editor-secondary">Quality</label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setQuality('high')}
-                      className={`flex-1 px-3 py-2 text-xs rounded transition-colors ${
-                        quality === 'high'
-                          ? 'bg-editor-accent text-white'
-                          : 'bg-editor-panel text-editor-text hover:bg-editor-hover'
-                      }`}
-                    >
-                      <div className="font-medium">High</div>
-                      <div className="text-2xs opacity-70">CRF 23, Fast</div>
-                    </button>
-                    <button
-                      onClick={() => setQuality('ultra')}
-                      className={`flex-1 px-3 py-2 text-xs rounded transition-colors ${
-                        quality === 'ultra'
-                          ? 'bg-editor-accent text-white'
-                          : 'bg-editor-panel text-editor-text hover:bg-editor-hover'
-                      }`}
-                    >
-                      <div className="font-medium">Ultra</div>
-                      <div className="text-2xs opacity-70">CRF 18, Slow</div>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Estimated file size */}
+              {/* Estimated output info */}
               <div className="text-2xs text-[#c1c1c1]">
-                Estimated size: ~{estimatedSizeMB} MB
+                Output: {exportW} × {exportH} · ~{estimatedSizeMB} MB
               </div>
 
               {/* FFmpeg status */}
               {!ffmpegAvailable && (
                 <div className="text-2xs text-yellow-500 bg-yellow-900/20 rounded px-2 py-1.5">
-                  ⚠️ FFmpeg is loading... MP4 export will be available shortly.
+                  FFmpeg is loading... export will be available shortly.
                 </div>
               )}
             </div>
@@ -337,9 +273,10 @@ export default function ExportModal() {
               </button>
               <button
                 onClick={startExport}
-                className="flex items-center gap-1.5 text-xs px-4 py-1.5 rounded bg-editor-accent text-white hover:bg-editor-accent-hover transition-colors"
+                disabled={!ffmpegAvailable}
+                className="flex items-center gap-1.5 text-xs px-4 py-1.5 rounded bg-editor-accent text-white hover:bg-editor-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Download size={12} /> Start Export
+                <Download size={12} /> {ffmpegAvailable ? 'Start Export' : 'Loading...'}
               </button>
             </>
           )}

@@ -11,13 +11,8 @@ export interface FFmpegExportOptions {
   onProgress: (pct: number, message: string) => void
   onLog?: (msg: string) => void
   renderFrame: (t: number) => Promise<void>
-  /**
-   * Optional: render a specific scene at a specific global time.
-   * This is needed to export transitions correctly (we must render both from/to scenes).
-   */
   renderSceneFrame?: (sceneId: string, globalTime: number) => Promise<void>
-  quality?: 'high' | 'ultra'
-  format?: 'mp4' | 'webm'
+  quality?: '720p' | '1080p'
 }
 
 let ffmpegInstance: FFmpeg | null = null
@@ -84,8 +79,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
     onLog,
     renderFrame,
     renderSceneFrame,
-    quality = 'high',
-    format = 'mp4'
+    quality = '1080p',
   } = opts
 
   const fps = project.fps
@@ -154,7 +148,9 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
     if (!stage) throw new Error('Stage not available during export')
     stage.batchDraw()
     await new Promise(r => requestAnimationFrame(r))
-    const c = stage.toCanvas({ pixelRatio: 1 })
+    // pixelRatio = 1/scaleX captures at the project's native resolution (e.g. 1920×1080)
+    // regardless of how the stage is scaled to fit the screen
+    const c = stage.toCanvas({ pixelRatio: 1 / stage.scaleX() })
     ctx.clearRect(0, 0, w, h)
     ctx.drawImage(c, 0, 0, w, h)
   }
@@ -166,7 +162,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
     return new Uint8Array(await blob.arrayBuffer())
   }
 
-  const jpegQuality = quality === 'ultra' ? 0.96 : 0.92
+  const jpegQuality = quality === '1080p' ? 0.95 : 0.92
 
   for (let i = 0; i < totalFrames; i++) {
     const time = i / fps
@@ -250,37 +246,33 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
 
   onProgress(85, 'Encoding video...')
 
-  // Determine encoding settings based on quality
-  const crf = quality === 'ultra' ? '18' : '23' // Lower = better quality
-  const preset = quality === 'ultra' ? 'slow' : 'medium'
-  const bitrate = quality === 'ultra'
-    ? Math.min(20_000_000, w * h * fps * 0.2)
-    : Math.min(10_000_000, w * h * fps * 0.1)
-
-  const outputFile = format === 'mp4' ? 'output.mp4' : 'output.webm'
+  const outputFile = 'output.mp4'
+  const crf = quality === '1080p' ? '16' : '18'
 
   // Build FFmpeg command
   const ffmpegArgs = [
     '-framerate', String(fps),
     '-i', 'frame%06d.jpg',
-    '-c:v', format === 'mp4' ? 'libx264' : 'libvpx-vp9',
+    '-c:v', 'libx264',
     '-pix_fmt', 'yuv420p',
+    '-crf', crf,
+    '-preset', 'fast',
+    '-movflags', '+faststart',
+    '-profile:v', 'high',
+    '-level', '4.2',
+    // Proper color space tags eliminate the faded/washed-out look
+    '-color_range', '1',
+    '-colorspace', 'bt709',
+    '-color_primaries', 'bt709',
+    '-color_trc', 'bt709',
   ]
 
-  if (format === 'mp4') {
-    ffmpegArgs.push(
-      '-crf', crf,
-      '-preset', preset,
-      '-movflags', '+faststart', // Enable streaming
-      '-profile:v', 'high',
-      '-level', '4.2'
-    )
-  } else {
-    ffmpegArgs.push(
-      '-b:v', String(bitrate),
-      '-quality', 'good',
-      '-cpu-used', quality === 'ultra' ? '0' : '2'
-    )
+  // Scale to target resolution (720p or 1080p height, maintaining aspect ratio)
+  if (quality === '720p') {
+    ffmpegArgs.push('-vf', 'scale=-2:720,format=yuv420p')
+  } else if (h > 1080) {
+    // 4K project → clamp to 1080p
+    ffmpegArgs.push('-vf', 'scale=-2:1080,format=yuv420p')
   }
 
   ffmpegArgs.push(
@@ -385,7 +377,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
       const audioInArgs: string[] = []
       for (const fn of writtenFiles) audioInArgs.push('-i', fn)
 
-      const finalFile = `with_audio_${outputFile}`
+      const finalFile = 'with_audio_output.mp4'
       const muxArgs = [
         '-i', outputFile,
         ...audioInArgs,
@@ -403,7 +395,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
         await ffmpeg.exec(muxArgs)
         const finalData = await ffmpeg.readFile(finalFile) as Uint8Array
         finalBlob = new Blob([finalData.buffer], {
-          type: format === 'mp4' ? 'video/mp4' : 'video/webm'
+          type: 'video/mp4'
         })
         try { await ffmpeg.deleteFile(finalFile) } catch {}
       } catch (err) {
@@ -419,7 +411,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
   onProgress(95, 'Reading output file...')
   const data = await ffmpeg.readFile(outputFile) as Uint8Array
   const blob = finalBlob ?? new Blob([data.buffer], {
-    type: format === 'mp4' ? 'video/mp4' : 'video/webm'
+    type: 'video/mp4'
   })
 
   onProgress(98, 'Cleaning up...')

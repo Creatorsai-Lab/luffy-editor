@@ -255,18 +255,38 @@ export const CANVAS_PRESETS: CanvasPreset[] = [
 ]
 
 export const FONT_FAMILIES = [
-  // Sans-serif
-  'Segoe UI', 'Arial', 'Verdana', 'Tahoma', 'Trebuchet MS',
-  'Poppins', 'Montserrat', 'Raleway', 'Inter', 'Roboto',
-  // Handwritten / display
-  'Comic Sans MS', 'Pacifico', 'Caveat', 'Indie Flower',
-  'Kalam', 'Handlee', 'Shadows Into Light', 'Fredoka', 'Quicksand',
-  // Serif
-  'Georgia', 'Times New Roman', 'Garamond',
-  // Monospace
-  'Courier New', 'Consolas', 'Monaco', 'monospace',
-  // Display
-  'Impact', 'Playfair Display', 'Bebas Neue'
+  'Arial',
+  'Bangers',
+  'Bebas Neue',
+  'Caveat',
+  'Caveat Brush',
+  'Chewy',
+  'Comic Sans MS',
+  'Consolas',
+  'Courier New',
+  'Fredoka',
+  'Garamond',
+  'Georgia',
+  'Handlee',
+  'Impact',
+  'Imperial Script',
+  'Indie Flower',
+  'Inter',
+  'Kalam',
+  'Monaco',
+  'Montserrat',
+  'Pacifico',
+  'Playfair Display',
+  'Poppins',
+  'Quicksand',
+  'Raleway',
+  'Roboto',
+  'Segoe UI',
+  'Shadows Into Light',
+  'Tahoma',
+  'Times New Roman',
+  'Trebuchet MS',
+  'Verdana',
 ]
 
 export const LANGUAGES = [

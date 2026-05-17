@@ -12,48 +12,56 @@
 // ── Import @fontsource packages ───────────────────────────────────────────────
 // Only the weights we actually use (400 normal + 700 bold).  Importing the
 // specific weight CSS is optional but keeps the bundle smaller.
-import '@fontsource/poppins/400.css'
-import '@fontsource/poppins/700.css'
-import '@fontsource/montserrat/400.css'
-import '@fontsource/montserrat/700.css'
-import '@fontsource/raleway/400.css'
-import '@fontsource/raleway/700.css'
-import '@fontsource/inter/400.css'
-import '@fontsource/inter/700.css'
-import '@fontsource/roboto/400.css'
-import '@fontsource/roboto/700.css'
-import '@fontsource/pacifico/400.css'
+import '@fontsource/bangers/400.css'
+import '@fontsource/bebas-neue/400.css'
 import '@fontsource/caveat/400.css'
 import '@fontsource/caveat/700.css'
+import '@fontsource/caveat-brush/400.css'
+import '@fontsource/chewy/400.css'
+import '@fontsource/fredoka/400.css'
+import '@fontsource/handlee/400.css'
+import '@fontsource/imperial-script/400.css'
 import '@fontsource/indie-flower/400.css'
+import '@fontsource/inter/400.css'
+import '@fontsource/inter/700.css'
 import '@fontsource/kalam/400.css'
 import '@fontsource/kalam/700.css'
-import '@fontsource/handlee/400.css'
-import '@fontsource/shadows-into-light/400.css'
-import '@fontsource/fredoka/400.css'
-import '@fontsource/quicksand/400.css'
-import '@fontsource/quicksand/700.css'
+import '@fontsource/montserrat/400.css'
+import '@fontsource/montserrat/700.css'
+import '@fontsource/pacifico/400.css'
 import '@fontsource/playfair-display/400.css'
 import '@fontsource/playfair-display/700.css'
-import '@fontsource/bebas-neue/400.css'
+import '@fontsource/poppins/400.css'
+import '@fontsource/poppins/700.css'
+import '@fontsource/quicksand/400.css'
+import '@fontsource/quicksand/700.css'
+import '@fontsource/raleway/400.css'
+import '@fontsource/raleway/700.css'
+import '@fontsource/roboto/400.css'
+import '@fontsource/roboto/700.css'
+import '@fontsource/shadows-into-light/400.css'
 
 // ── Fonts that need explicit preloading (non-system only) ─────────────────────
 const CANVAS_FONTS: Array<{ family: string; weights: string[] }> = [
-  { family: 'Poppins',            weights: ['400', '700'] },
-  { family: 'Montserrat',         weights: ['400', '700'] },
-  { family: 'Raleway',            weights: ['400', '700'] },
-  { family: 'Inter',              weights: ['400', '700'] },
-  { family: 'Roboto',             weights: ['400', '700'] },
-  { family: 'Pacifico',           weights: ['400'] },
-  { family: 'Caveat',             weights: ['400', '700'] },
-  { family: 'Indie Flower',       weights: ['400'] },
-  { family: 'Kalam',              weights: ['400', '700'] },
-  { family: 'Handlee',            weights: ['400'] },
-  { family: 'Shadows Into Light', weights: ['400'] },
-  { family: 'Fredoka',            weights: ['400'] },
-  { family: 'Quicksand',          weights: ['400', '700'] },
-  { family: 'Playfair Display',   weights: ['400', '700'] },
+  { family: 'Bangers',            weights: ['400'] },
   { family: 'Bebas Neue',         weights: ['400'] },
+  { family: 'Caveat',             weights: ['400', '700'] },
+  { family: 'Caveat Brush',       weights: ['400'] },
+  { family: 'Chewy',              weights: ['400'] },
+  { family: 'Fredoka',            weights: ['400'] },
+  { family: 'Handlee',            weights: ['400'] },
+  { family: 'Imperial Script',    weights: ['400'] },
+  { family: 'Indie Flower',       weights: ['400'] },
+  { family: 'Inter',              weights: ['400', '700'] },
+  { family: 'Kalam',              weights: ['400', '700'] },
+  { family: 'Montserrat',         weights: ['400', '700'] },
+  { family: 'Pacifico',           weights: ['400'] },
+  { family: 'Playfair Display',   weights: ['400', '700'] },
+  { family: 'Poppins',            weights: ['400', '700'] },
+  { family: 'Quicksand',          weights: ['400', '700'] },
+  { family: 'Raleway',            weights: ['400', '700'] },
+  { family: 'Roboto',             weights: ['400', '700'] },
+  { family: 'Shadows Into Light', weights: ['400'] },
 ]
 
 let preloadPromise: Promise<void> | null = null
