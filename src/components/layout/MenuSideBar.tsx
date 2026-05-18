@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   Type, Square, ArrowRight, Code2, Table2, Image as ImageIcon,
   Sparkles, Layers, Shuffle, Upload, ImagePlus, BarChart3, Music,
-  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, TypeOutline
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, TypeOutline, Shapes
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { useHistoryStore } from '../../store/historyStore'
@@ -24,6 +24,7 @@ const TOOLS: ToolItem[] = [
   { icon: <Code2 size={14} />, label: 'Code', tool: 'code', panel: 'code' },
   { icon: <Table2 size={14} />, label: 'Table', tool: 'table', panel: 'table' },
   { icon: <BarChart3 size={14} />, label: 'Charts', tool: 'chart', panel: 'charts' },
+  { icon: <Shapes size={14} />, label: 'Icons', panel: 'icons' },
   { icon: <ImagePlus size={14} />, label: 'Upload', tool: 'image', panel: 'upload' },
   { icon: <Music size={14} />, label: 'Audio', panel: 'audio' },
   { icon: <Sparkles size={14} />, label: 'Text Anim', panel: 'textAnimations' },

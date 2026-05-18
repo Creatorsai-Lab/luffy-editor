@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid'
 import type {
   Project, Scene, EditorElement, ElementAnimation,
   Background, SceneTransition, AssetMeta,
-  ActiveTool, ActivePanel
+  ActiveTool, ActivePanel, TimeMarker
 } from '../types/editor'
 import { makeScene, makeProject } from '../utils/defaults'
 import { useHistoryStore } from './historyStore'
@@ -90,6 +90,10 @@ interface EditorActions {
   removeAsset:      (id: string) => void
   markDirty:        () => void
   markClean:        () => void
+
+  // Time markers
+  addTimeMarker:    (time: number) => void
+  removeTimeMarker: (id: string) => void
 
   // History
   undo:             () => void
@@ -422,6 +426,19 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       removeAsset: (id) => set(s => {
         if (!s.project) return
         s.project.assets = s.project.assets.filter(a => a.id !== id)
+        s.isDirty = true
+      }),
+
+      // ── Time Markers ──────────────────────────────────────────────────────
+      addTimeMarker: (time) => set(s => {
+        if (!s.project) return
+        if (!s.project.timeMarkers) s.project.timeMarkers = []
+        s.project.timeMarkers.push({ id: uuid(), time })
+        s.isDirty = true
+      }),
+      removeTimeMarker: (id) => set(s => {
+        if (!s.project) return
+        s.project.timeMarkers = (s.project.timeMarkers ?? []).filter(m => m.id !== id)
         s.isDirty = true
       }),
 

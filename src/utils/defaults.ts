@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid'
 import type {
   Project, Scene, Background, TextElement, ShapeElement,
   ArrowElement, CodeElement, ImageElement, TableElement, ChartElement, VideoElement, AudioElement,
-  ElementAnimation, SceneTransition, ShapeType
+  IconElement, ElementAnimation, SceneTransition, ShapeType
 } from '../types/editor'
 
 export const DEFAULT_BG: Background = { type: 'solid', color: '#fffaf7' }
@@ -26,6 +26,7 @@ export function makeProject(id: string, name: string): Project {
     width: 1920, height: 1080, fps: 30,
     scenes: [makeScene(1)],
     assets: [],
+    timeMarkers: [],
     createdAt: Date.now(),
     updatedAt: Date.now()
   }
@@ -117,6 +118,18 @@ export function makeTable(x: number, y: number): TableElement {
     borderColor: '#5c5c5c', borderWidth: 1,
     headerBg: '#555555', cellBg: '#141414',
     textColor: '#303030', fontSize: 13, showHeader: true
+  }
+}
+
+export function makeIcon(iconName: string, x: number, y: number): IconElement {
+  return {
+    id: uuid(), type: 'icon', name: iconName,
+    x, y, width: 120, height: 120,
+    rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
+    animations: [],
+    iconName,
+    color: '#ffffff',
+    strokeWidth: 2,
   }
 }
 

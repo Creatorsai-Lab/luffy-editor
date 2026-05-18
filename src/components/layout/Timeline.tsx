@@ -1,8 +1,10 @@
-import { useRef, useCallback, useEffect, useState } from 'react'
-import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Music, Trash2, Copy, Scissors, Split, X, Volume2 } from 'lucide-react'
+import { useRef, useCallback, useEffect, useState, useMemo } from 'react'
+import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Music, Trash2, Copy, Scissors, Split, X, Volume2, Bookmark } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { cn } from '../../utils/cn'
 import { toFileUrl } from '../../utils/pathUtils'
+import { getWaveform } from '../../utils/waveform'
+import type { WaveformData } from '../../utils/waveform'
 import Tooltip from '../ui/Tooltip'
 import ContextMenu from '../ui/ContextMenu'
 import type { AudioElement } from '../../types/editor'
@@ -29,6 +31,8 @@ const SPEED_OPTIONS = [
   { label: '2×',    value: 2    },
 ]
 
+const MARKER_COLOR = '#c084fc'
+
 export default function Timeline() {
   const {
     project, currentSceneId,
@@ -39,6 +43,7 @@ export default function Timeline() {
     getTotalDuration,
     setTimelineZoom, setSnapEnabled,
     updateElement, removeElement, addElementToScene,
+    addTimeMarker, removeTimeMarker,
   } = useEditorStore()
 
   const [editDurId, setEditDurId] = useState<string | null>(null)
@@ -50,8 +55,9 @@ export default function Timeline() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; sceneId: string } | null>(null)
   const [selectedAudioId, setSelectedAudioId] = useState<string | null>(null)
   const [audioContextMenu, setAudioContextMenu] = useState<{
-    x: number; y: number; audioId: string; clickTimeInAudio: number; sceneId: string
+    x: number; y: number; audioId: string; clickTimeInAudio: number; sceneId: string; absoluteTime: number
   } | null>(null)
+  const [timelineContextMenu, setTimelineContextMenu] = useState<{ x: number; y: number; time: number } | null>(null)
 
   const containerRef    = useRef<HTMLDivElement>(null)
   const rafRef          = useRef<number>(0)
@@ -92,7 +98,7 @@ export default function Timeline() {
     return () => cancelAnimationFrame(rafRef.current)
   }, [isPlaying])
 
-  // Audio sync RAF — starts/stops HTMLAudioElements to match the playhead
+  // Audio sync RAF
   useEffect(() => {
     if (!isPlaying) {
       audioPlayersRef.current.forEach(p => p.pause())
@@ -136,7 +142,6 @@ export default function Timeline() {
         elapsed += sc.duration
       }
 
-      // Pause clips no longer in the active window
       audioPlayersRef.current.forEach((player, id) => {
         if (!activeIds.has(id) && !player.paused) player.pause()
       })
@@ -148,7 +153,6 @@ export default function Timeline() {
     return () => cancelAnimationFrame(rafId)
   }, [isPlaying])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       audioPlayersRef.current.forEach(p => { p.pause(); p.src = '' })
@@ -207,11 +211,21 @@ export default function Timeline() {
   }, [isPlaying, playhead, timelineZoom, currentSceneId, project, pause, play, setPlayhead, getTotalDuration, setTimelineZoom, removeScene])
 
   const handleRulerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return  // left click only
     if (!containerRef.current || draggingPlayhead) return
     const rect = containerRef.current.getBoundingClientRect()
     const x    = e.clientX - rect.left + containerRef.current.scrollLeft
     setPlayhead(snapTime(Math.max(0, Math.min(getTotalDuration(), x / PX_PER_SEC))))
   }, [setPlayhead, getTotalDuration, PX_PER_SEC, snapTime, draggingPlayhead])
+
+  const handleContainerContextMenu = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left + containerRef.current.scrollLeft
+    const time = snapTime(Math.max(0, Math.min(getTotalDuration(), x / PX_PER_SEC)))
+    setTimelineContextMenu({ x: e.clientX, y: e.clientY, time })
+  }, [PX_PER_SEC, getTotalDuration, snapTime])
 
   const handlePlayheadMouseDown = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -261,7 +275,6 @@ export default function Timeline() {
     document.addEventListener('mouseup', handleMouseUp)
   }, [project, updateScene, PX_PER_SEC, snapTime])
 
-  // Drag an audio clip to reposition it
   function handleAudioMouseDown(e: React.MouseEvent, audioId: string, audioX: number) {
     e.stopPropagation()
 
@@ -289,7 +302,6 @@ export default function Timeline() {
     document.addEventListener('mouseup', handleMouseUp)
   }
 
-  // Resize an audio clip from its left or right edge
   function handleAudioResizeMouseDown(e: React.MouseEvent, audioEl: AudioElement, edge: 'start' | 'end') {
     e.stopPropagation()
     e.preventDefault()
@@ -345,7 +357,6 @@ export default function Timeline() {
     acc += sc.duration
   }
 
-  // Include audio clips that extend past the scene area in scroll width
   const maxAudioRightPx = project.scenes.reduce((max, sc) => {
     const scStart = sceneStarts[sc.id] ?? 0
     for (const el of sc.elements) {
@@ -359,7 +370,6 @@ export default function Timeline() {
 
   const playheadPx = playhead * PX_PER_SEC
 
-  // Find selected audio across ALL scenes
   let selectedAudio: AudioElement | undefined
   if (selectedAudioId) {
     for (const sc of project.scenes) {
@@ -446,13 +456,14 @@ export default function Timeline() {
     setAudioContextMenu(null)
   }
 
-  // Collect all audio clips across every scene for rendering
   const allAudioClips = project.scenes.flatMap(sc => {
     const scStart = sceneStarts[sc.id] ?? 0
     return sc.elements
       .filter(el => el.type === 'audio')
       .map((el, idx) => ({ audio: el as AudioElement, sc, scStart, idx }))
   })
+
+  const timeMarkers = project.timeMarkers ?? []
 
   return (
     <div className="flex flex-col bg-[#171717] flex-none" style={{ height: 160 }}>
@@ -599,7 +610,7 @@ export default function Timeline() {
         ) : (
           <>
             <div className="flex-1" />
-            <span className="text-2xs text-[#c1c1c1]">Drag scene edges • Drag playhead • Space to play</span>
+            <span className="text-2xs text-[#c1c1c1]">Drag scene edges • Drag playhead • Right-click to add marker</span>
           </>
         )}
 
@@ -620,6 +631,7 @@ export default function Timeline() {
         ref={containerRef}
         className="flex-1 overflow-x-auto overflow-y-auto relative cursor-pointer"
         onMouseDown={handleRulerClick}
+        onContextMenu={handleContainerContextMenu}
       >
         <div className="relative" style={{ width: Math.max(totalPx + 120, maxAudioRightPx + 120, 600), height: '100%' }}>
 
@@ -720,9 +732,9 @@ export default function Timeline() {
             })}
           </div>
 
-          {/* Audio tracks — rendered for ALL scenes so they stay visible when switching scenes */}
+          {/* Audio tracks */}
           <div className="absolute left-0 right-0" style={{ top: RULER_HEIGHT + SCENE_HEIGHT, height: 'auto' }}>
-            {allAudioClips.map(({ audio, sc, scStart, idx }) => {
+            {allAudioClips.map(({ audio, sc, scStart }) => {
               const audioDur     = audio.duration ?? 30
               const audioStartPx = (scStart + (audio.x ?? 0)) * PX_PER_SEC
               const audioWidthPx = audioDur * PX_PER_SEC
@@ -749,7 +761,7 @@ export default function Timeline() {
                       height: TRACK_HEIGHT - 4,
                       background: isSelected
                         ? 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
-                        : 'linear-gradient(135deg, #064732 0%, #059669 100%)',
+                        : 'linear-gradient(135deg, #064e3b 0%, #065f46 100%)',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                     }}
                     title={`${audio.name ?? 'Audio'} — ${audioDur.toFixed(1)}s — drag to reposition`}
@@ -758,39 +770,38 @@ export default function Timeline() {
                       e.preventDefault(); e.stopPropagation()
                       const barRect = e.currentTarget.getBoundingClientRect()
                       const clickTimeInAudio = (e.clientX - barRect.left) / PX_PER_SEC
+                      const clipped = Math.max(0, Math.min(audioDur, clickTimeInAudio))
+                      const absoluteTime = scStart + (audio.x ?? 0) + clipped
                       setAudioContextMenu({
                         x: e.clientX, y: e.clientY,
                         audioId: audio.id,
                         sceneId: sc.id,
-                        clickTimeInAudio: Math.max(0, Math.min(audioDur, clickTimeInAudio)),
+                        clickTimeInAudio: clipped,
+                        absoluteTime,
                       })
                       setSelectedAudioId(audio.id)
                     }}
                   >
-                    {/* Waveform visualization */}
-                    <svg
-                      className="absolute inset-0 w-full h-full"
-                      viewBox={`0 0 ${Math.max(audioWidthPx, 60)} ${TRACK_HEIGHT - 4}`}
-                      preserveAspectRatio="none"
-                      style={{ opacity: 0.6 }}
-                    >
-                      {Array.from({ length: Math.min(Math.max(Math.floor(audioWidthPx / 4), 10), 100) }, (_, i) => {
-                        const x = (i / Math.max(Math.floor(audioWidthPx / 4), 10)) * Math.max(audioWidthPx, 60)
-                        const h = Math.sin(i * 0.5 + idx) * (TRACK_HEIGHT - 6) * 0.6 + (TRACK_HEIGHT - 6) * 0.5
-                        return <rect key={i} x={x} y={(TRACK_HEIGHT - 4 - h) / 2} width="2" height={h} fill="#ffffff" opacity="0.7" />
-                      })}
-                    </svg>
+                    {/* Real waveform */}
+                    <AudioWaveformView
+                      url={toFileUrl(audio.src)}
+                      startTime={audio.startTime ?? 0}
+                      clipDuration={audioDur}
+                      speed={audio.speed ?? 1}
+                      clipWidthPx={Math.max(audioWidthPx, 60)}
+                      trackH={TRACK_HEIGHT - 4}
+                    />
 
                     {audio.fadeIn > 0 && (
                       <div
-                        className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-yellow-400/50 to-transparent rounded-l"
+                        className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-yellow-400/40 to-transparent rounded-l pointer-events-none"
                         style={{ width: Math.max(audio.fadeIn * PX_PER_SEC, 2) }}
                         title={`Fade in: ${audio.fadeIn.toFixed(1)}s`}
                       />
                     )}
                     {audio.fadeOut > 0 && (
                       <div
-                        className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-yellow-400/50 to-transparent rounded-r"
+                        className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-yellow-400/40 to-transparent rounded-r pointer-events-none"
                         style={{ width: Math.max(audio.fadeOut * PX_PER_SEC, 2) }}
                         title={`Fade out: ${audio.fadeOut.toFixed(1)}s`}
                       />
@@ -802,13 +813,11 @@ export default function Timeline() {
                       {(audio.speed ?? 1) !== 1 && <span className="flex-none opacity-80">{audio.speed}×</span>}
                     </div>
 
-                    {/* Left resize handle */}
                     <div
                       className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/40 rounded-l z-10"
                       onMouseDown={e => handleAudioResizeMouseDown(e, audio, 'start')}
                       title="Drag to trim start"
                     />
-                    {/* Right resize handle */}
                     <div
                       className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/40 rounded-r z-10"
                       onMouseDown={e => handleAudioResizeMouseDown(e, audio, 'end')}
@@ -820,9 +829,38 @@ export default function Timeline() {
             })}
           </div>
 
+          {/* Time markers */}
+          {timeMarkers.map(marker => {
+            const markerPx = marker.time * PX_PER_SEC
+            return (
+              <div
+                key={marker.id}
+                className="absolute top-0 bottom-0 z-20 pointer-events-none"
+                style={{ left: markerPx }}
+              >
+                {/* Vertical line */}
+                <div
+                  className="absolute inset-0"
+                  style={{ width: 1, background: MARKER_COLOR, opacity: 0.85 }}
+                />
+                {/* Clickable triangle indicator at top */}
+                <div
+                  className="absolute pointer-events-auto cursor-pointer group"
+                  style={{ top: 0, left: -5, width: 11, height: 10 }}
+                  onClick={e => { e.stopPropagation(); removeTimeMarker(marker.id) }}
+                  title={`${fmtTime(marker.time)} — click to remove`}
+                >
+                  <svg width="11" height="10" viewBox="0 0 11 10" className="group-hover:opacity-70 transition-opacity">
+                    <polygon points="5.5,1 10,9 1,9" fill={MARKER_COLOR} />
+                  </svg>
+                </div>
+              </div>
+            )
+          })}
+
           {/* Playhead */}
           <div
-            className="absolute top-0 bottom-0 z-10"
+            className="absolute top-0 bottom-0 z-30"
             style={{ left: playheadPx, width: 1, background: '#f59e0b', cursor: draggingPlayhead ? 'grabbing' : 'grab' }}
             onMouseDown={handlePlayheadMouseDown}
           >
@@ -895,6 +933,14 @@ export default function Timeline() {
             onClick: splitAtContextPosition,
           },
           {
+            label: `Add time mark at ${audioContextMenu ? fmtTime(audioContextMenu.absoluteTime) : '0:00.0'}`,
+            icon: <Bookmark size={14} />,
+            onClick: () => {
+              if (audioContextMenu) addTimeMarker(audioContextMenu.absoluteTime)
+              setAudioContextMenu(null)
+            }
+          },
+          {
             label: 'Delete',
             icon: <Trash2 size={14} />,
             dangerous: true,
@@ -909,7 +955,102 @@ export default function Timeline() {
         ]}
         onClose={() => setAudioContextMenu(null)}
       />
+
+      {/* Context Menu — timeline (ruler / empty track area) */}
+      <ContextMenu
+        visible={timelineContextMenu !== null}
+        x={timelineContextMenu?.x ?? 0}
+        y={timelineContextMenu?.y ?? 0}
+        items={[
+          {
+            label: `Add time mark at ${timelineContextMenu ? fmtTime(timelineContextMenu.time) : '0:00.0'}`,
+            icon: <Bookmark size={14} />,
+            onClick: () => {
+              if (timelineContextMenu) addTimeMarker(timelineContextMenu.time)
+              setTimelineContextMenu(null)
+            }
+          },
+          ...(timeMarkers.length > 0 ? [{
+            label: 'Clear all markers',
+            icon: <Trash2 size={14} />,
+            dangerous: true,
+            onClick: () => {
+              timeMarkers.forEach(m => removeTimeMarker(m.id))
+              setTimelineContextMenu(null)
+            }
+          }] : [])
+        ]}
+        onClose={() => setTimelineContextMenu(null)}
+      />
     </div>
+  )
+}
+
+// ── Real audio waveform component ──────────────────────────────────────────────
+
+function AudioWaveformView({ url, startTime, clipDuration, speed, clipWidthPx, trackH }: {
+  url: string
+  startTime: number
+  clipDuration: number
+  speed: number
+  clipWidthPx: number
+  trackH: number
+}) {
+  const [waveData, setWaveData] = useState<WaveformData | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getWaveform(url).then(data => { if (!cancelled) setWaveData(data) })
+    return () => { cancelled = true }
+  }, [url])
+
+  const svgW     = Math.max(clipWidthPx, 60)
+  const barCount = Math.max(5, Math.floor(svgW / 3))
+  const centerY  = trackH / 2
+
+  const bars = useMemo(() => {
+    if (!waveData) {
+      // Fallback: subtle sine placeholder until decode finishes
+      return Array.from({ length: barCount }, (_, i) => {
+        const amp = Math.sin(i * 0.6) * 0.25 + 0.35
+        return Math.max(2, amp * (trackH - 6))
+      })
+    }
+
+    const { samples, duration } = waveData
+    // Map the trim window into sample indices
+    const normStart = Math.min(1, Math.max(0, startTime / duration))
+    const normEnd   = Math.min(1, Math.max(0, (startTime + clipDuration * speed) / duration))
+    const startIdx  = Math.floor(normStart * samples.length)
+    const endIdx    = Math.ceil(normEnd * samples.length)
+    const sliceLen  = Math.max(1, endIdx - startIdx)
+
+    return Array.from({ length: barCount }, (_, i) => {
+      const pos  = (i / barCount) * sliceLen
+      const idx  = startIdx + Math.min(Math.floor(pos), sliceLen - 1)
+      const amp  = samples[idx] ?? 0
+      return Math.max(2, amp * (trackH - 6))
+    })
+  }, [waveData, barCount, startTime, clipDuration, speed, trackH])
+
+  return (
+    <svg
+      className="absolute inset-0 pointer-events-none"
+      width={svgW}
+      height={trackH}
+      style={{ opacity: waveData ? 0.75 : 0.3 }}
+    >
+      {bars.map((barH, i) => (
+        <rect
+          key={i}
+          x={i * (svgW / barCount)}
+          y={centerY - barH / 2}
+          width={2}
+          height={barH}
+          fill="white"
+        />
+      ))}
+    </svg>
   )
 }
 

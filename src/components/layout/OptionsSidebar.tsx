@@ -16,6 +16,7 @@ import UploadPanel from '../panels/UploadPanel'
 import AudioPanel from '../panels/AudioPanel'
 import AudioPropertiesPanel from '../panels/AudioPropertiesPanel'
 import ImagePanel from '../panels/ImagePanel'
+import IconPanel from '../panels/IconPanel'
 
 export default function OptionsSidebar() {
   const { project, activePanel, getSelectedEls } = useEditorStore()
@@ -37,6 +38,7 @@ export default function OptionsSidebar() {
       if (firstEl.type === 'table')  return <TablePanel />
       if (firstEl.type === 'chart')  return <ChartPanel />
       if (firstEl.type === 'image')  return <ImagePanel />
+      if (firstEl.type === 'icon')   return <IconPanel />
       if (firstEl.type === 'audio')  return <AudioPropertiesPanel element={firstEl} />
     }
 
@@ -49,6 +51,7 @@ export default function OptionsSidebar() {
       case 'charts':          return <ChartPanel />
       case 'upload':          return <UploadPanel />
       case 'audio':           return <AudioPanel />
+      case 'icons':           return <IconPanel />
       case 'textAnimations':  return <TextAnimationPanel />
       case 'shapeAnimations': return <ShapeAnimationPanel />
       case 'arrowAnimations': return <ArrowAnimationPanel />
