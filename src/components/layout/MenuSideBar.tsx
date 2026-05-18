@@ -29,7 +29,6 @@ const TOOLS: ToolItem[] = [
   { icon: <Music size={14} />, label: 'Audio', panel: 'audio' },
   { icon: <Sparkles size={14} />, label: 'Text Anim', panel: 'textAnimations' },
   { icon: <Sparkles size={14} />, label: 'Shape Anim', panel: 'shapeAnimations' },
-  { icon: <Sparkles size={14} />, label: 'Arrow Anim', panel: 'arrowAnimations' },
   { icon: <TypeOutline size={14} />, label: 'Text Effects', panel: 'textEffects' },
   { icon: <Shuffle size={14} />, label: 'Transitions', panel: 'transitions' },
   { icon: <Layers size={14} />, label: 'Layers', panel: 'layers' },

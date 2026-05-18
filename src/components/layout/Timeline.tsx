@@ -527,17 +527,17 @@ export default function Timeline() {
         {selectedAudio ? (
           <>
             <div className="w-px h-4 bg-editor-border mx-1 flex-none" />
-            <Music size={11} className="text-emerald-400 flex-none" />
+            <Music size={13} className="text-[#79443e] flex-none" />
 
             <div className="flex items-center gap-1 flex-none">
-              <Volume2 size={10} className="text-[#c1c1c1]" />
+              <Volume2 size={13} className="text-[#c1c1c1]" />
               <input
                 type="range" min={0} max={1} step={0.01}
                 value={selectedAudio.volume ?? 1}
                 onChange={e => updateElement(selectedAudio!.id, { volume: parseFloat(e.target.value) })}
-                className="w-16 accent-emerald-400"
+                className="w-20 accent-[#79443e]"
               />
-              <span className="text-[10px] text-[#c1c1c1] w-7 flex-none">
+              <span className="text-[10px] text-[#c1c1c1] w-10 flex-none">
                 {Math.round((selectedAudio.volume ?? 1) * 100)}%
               </span>
             </div>

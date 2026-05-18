@@ -7,7 +7,6 @@ import TablePanel from '../panels/TablePanel'
 import ChartPanel from '../panels/ChartPanel'
 import TextAnimationPanel from '../panels/TextAnimationPanel'
 import ShapeAnimationPanel from '../panels/ShapeAnimationPanel'
-import ArrowAnimationPanel from '../panels/ArrowAnimationPanel'
 import TextEffectsPanel from '../panels/TextEffectsPanel'
 import BackgroundPanel from '../panels/BackgroundPanel'
 import LayersPanel from '../panels/LayersPanel'
@@ -54,7 +53,7 @@ export default function OptionsSidebar() {
       case 'icons':           return <IconPanel />
       case 'textAnimations':  return <TextAnimationPanel />
       case 'shapeAnimations': return <ShapeAnimationPanel />
-      case 'arrowAnimations': return <ArrowAnimationPanel />
+      case 'arrowAnimations': return <ArrowPanel />
       case 'textEffects':     return <TextEffectsPanel />
       case 'background':      return <BackgroundPanel />
       case 'layers':          return <LayersPanel />

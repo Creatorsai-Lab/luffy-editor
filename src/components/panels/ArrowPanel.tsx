@@ -1,7 +1,8 @@
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Plus, Trash2, Zap } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import type { ArrowElement, ArrowHeadType } from '../../types/editor'
+import type { ArrowElement, ArrowHeadType, AnimationType, EasingType, SlideDir, AnimationTiming, ElementAnimation } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
+import { makeAnimation } from '../../utils/defaults'
 import { cn } from '../../utils/cn'
 
 const HEADS: { label: string; value: ArrowHeadType }[] = [
@@ -11,8 +12,49 @@ const HEADS: { label: string; value: ArrowHeadType }[] = [
   { label: '↔',    value: 'both' }
 ]
 
+const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
+  { label: 'Draw On',    value: 'drawPath' },
+  { label: 'Slide In',   value: 'slideIn' },
+  { label: 'Fade In',    value: 'fadeIn' },
+  { label: 'Zoom In',    value: 'scaleIn' },
+]
+
+const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
+  { label: 'Pulse',       value: 'pulse' },
+  { label: 'Flow',        value: 'flowLoop' },
+  { label: 'Fade Loop',   value: 'fadeLoop' },
+]
+
+const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
+  { label: 'Draw Off',   value: 'drawOff' },
+  { label: 'Slide Out',  value: 'slideOut' },
+  { label: 'Fade Out',   value: 'fadeOut' },
+  { label: 'Zoom Out',   value: 'scaleOut' },
+]
+
+const EASINGS: { label: string; value: EasingType }[] = [
+  { label: 'Linear',    value: 'linear' },
+  { label: 'Ease In',   value: 'easeIn' },
+  { label: 'Ease Out',  value: 'easeOut' },
+  { label: 'Ease InOut',value: 'easeInOut' },
+  { label: 'Bounce',    value: 'bounce' }
+]
+
+const DIRECTIONS: { label: string; value: SlideDir }[] = [
+  { label: '← Left',  value: 'left' },
+  { label: '→ Right', value: 'right' },
+  { label: '↑ Up',    value: 'up' },
+  { label: '↓ Down',  value: 'down' }
+]
+
+function animsByTiming(timing: AnimationTiming) {
+  if (timing === 'onEnter') return ENTER_ANIMS
+  if (timing === 'loop')    return LOOP_ANIMS
+  return EXIT_ANIMS
+}
+
 export default function ArrowPanel() {
-  const { getSelectedEls, updateElement, setActiveTool } = useEditorStore()
+  const { getSelectedEls, updateElement, addAnimation, setActiveTool } = useEditorStore()
   const el = getSelectedEls().find(e => e.type === 'arrow') as ArrowElement | undefined
 
   function upd(patch: Partial<ArrowElement>) {
@@ -38,6 +80,7 @@ export default function ArrowPanel() {
     <div className="flex flex-col overflow-y-auto flex-1">
       <PanelHeader icon={<ArrowRight size={12} />} title="Arrow / Line" />
 
+      {/* Draw button */}
       <div className="px-3 py-2 border-b border-editor-border">
         <button
           onClick={() => setActiveTool('arrow')}
@@ -48,6 +91,7 @@ export default function ArrowPanel() {
         <p className="text-xs text-[#c1c1c1] mt-1.5">Click-drag on canvas to draw.</p>
       </div>
 
+      {/* Properties */}
       {el && (
         <div className="flex flex-col px-3 py-2 gap-0.5">
           <Row label="Arrowhead">
@@ -132,6 +176,147 @@ export default function ArrowPanel() {
               onChange={v => upd({ opacity: v })} display={`${Math.round(el.opacity * 100)}%`} />
           </Row>
         </div>
+      )}
+
+      {/* ── Animations section ─────────────────────────────────────────────── */}
+      {el && (
+        <div className="border-t border-editor-border mt-1">
+          <div className="px-3 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Zap size={11} className="text-editor-accent" />
+              <span className="text-[10px] font-semibold text-[#c1c1c1] uppercase tracking-wider">Animations</span>
+            </div>
+            <button
+              onClick={() => addAnimation(el.id, { ...makeAnimation(), type: 'drawPath', timing: 'onEnter' })}
+              className="flex items-center gap-1 text-[10px] px-2 py-1 bg-editor-accent-dim text-editor-accent border border-editor-accent rounded hover:bg-editor-accent hover:text-white transition-colors"
+            >
+              <Plus size={9} /> Add
+            </button>
+          </div>
+
+          {el.animations.length === 0 && (
+            <p className="text-[10px] text-[#c1c1c1] px-3 pb-3">No animations — click Add to create one.</p>
+          )}
+
+          {el.animations.map((anim, i) => (
+            <AnimBlock key={anim.id} anim={anim} index={i} elId={el.id} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AnimBlock({ anim, index, elId }: {
+  anim: ElementAnimation; index: number; elId: string
+}) {
+  const { updateAnimation, removeAnimation } = useEditorStore()
+
+  function upd(patch: Partial<ElementAnimation>) {
+    updateAnimation(elId, anim.id, patch)
+  }
+
+  const isLoop = anim.timing === 'loop'
+  const hasDir = anim.type === 'slideIn' || anim.type === 'slideOut'
+
+  return (
+    <div className="border-b border-editor-border px-3 py-2 flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-editor-secondary font-medium">Animation {index + 1}</span>
+        <button onClick={() => removeAnimation(elId, anim.id)} className="text-[#c1c1c1] hover:text-red-400 transition-colors">
+          <Trash2 size={10} />
+        </button>
+      </div>
+
+      <Row label="Timing">
+        <div className="flex gap-1">
+          {(['onEnter', 'loop', 'onExit'] as AnimationTiming[]).map(t => (
+            <button
+              key={t}
+              onClick={() => {
+                const newType = animsByTiming(t)[0].value
+                upd({ timing: t, type: newType })
+              }}
+              className={cn(
+                'flex-1 text-[10px] px-1.5 py-1 rounded transition-colors',
+                anim.timing === t
+                  ? 'bg-editor-accent text-white'
+                  : 'bg-editor-elevated text-[#c1c1c1] hover:text-editor-text'
+              )}
+            >
+              {t === 'onEnter' ? 'Enter' : t === 'onExit' ? 'Exit' : 'Loop'}
+            </button>
+          ))}
+        </div>
+      </Row>
+
+      <Row label="Type">
+        <select
+          value={anim.type}
+          onChange={e => upd({ type: e.target.value as AnimationType })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+        >
+          {animsByTiming(anim.timing).map(t =>
+            <option key={t.value} value={t.value}>{t.label}</option>
+          )}
+        </select>
+      </Row>
+
+      {isLoop && (
+        <div className="text-[10px] text-editor-accent bg-editor-accent-dim rounded px-2 py-0.5 w-fit">
+          ∞ Loops continuously
+        </div>
+      )}
+
+      {hasDir && (
+        <Row label="Direction">
+          <select
+            value={anim.params?.direction ?? 'left'}
+            onChange={e => upd({ params: { ...anim.params, direction: e.target.value as SlideDir } })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+          >
+            {DIRECTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+          </select>
+        </Row>
+      )}
+
+      <Row label="Start (s)">
+        <input
+          type="number" min={0} max={60} step={0.1}
+          value={anim.startTime}
+          onChange={e => upd({ startTime: Number(e.target.value) })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        />
+      </Row>
+
+      <Row label={isLoop ? 'Period (s)' : 'Duration (s)'}>
+        <input
+          type="number" min={0.1} max={30} step={0.1}
+          value={anim.duration}
+          onChange={e => upd({ duration: Number(e.target.value) })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        />
+      </Row>
+
+      <Row label="Delay (s)">
+        <input
+          type="number" min={0} max={30} step={0.1}
+          value={anim.delay}
+          onChange={e => upd({ delay: Number(e.target.value) })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        />
+      </Row>
+
+      {!isLoop && (
+        <Row label="Easing">
+          <select
+            value={anim.easing}
+            onChange={e => upd({ easing: e.target.value as EasingType })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+          >
+            {EASINGS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+          </select>
+        </Row>
       )}
     </div>
   )
