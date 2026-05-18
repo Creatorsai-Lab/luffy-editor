@@ -31,7 +31,7 @@ const SPEED_OPTIONS = [
   { label: '2×',    value: 2    },
 ]
 
-const MARKER_COLOR = '#c084fc'
+const MARKER_COLOR = '#33dd08'
 
 export default function Timeline() {
   const {
@@ -749,7 +749,7 @@ export default function Timeline() {
                 >
                   <div
                     className={cn(
-                      'absolute rounded overflow-hidden transition-shadow select-none cursor-grab',
+                      'absolute rounded overflow-hidden transition-shadow select-none cursor-grab group',
                       isSelected
                         ? 'ring-2 ring-white shadow-lg shadow-emerald-500/20'
                         : 'hover:ring-2 hover:ring-emerald-400/60'
@@ -760,9 +760,10 @@ export default function Timeline() {
                       top: 2,
                       height: TRACK_HEIGHT - 4,
                       background: isSelected
-                        ? 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
-                        : 'linear-gradient(135deg, #064e3b 0%, #065f46 100%)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                        ? 'linear-gradient(135deg, #79443e 0%, #883a31 100%)'
+                        : 'linear-gradient(135deg, #8a7e7c 0%, #8f7978 100%)',
+                      boxShadow: '0 2px 8px rgba(3, 3, 3, 0.3)',
+                      color: 'black'
                     }}
                     title={`${audio.name ?? 'Audio'} — ${audioDur.toFixed(1)}s — drag to reposition`}
                     onMouseDown={e => handleAudioMouseDown(e, audio.id, audio.x ?? 0)}
@@ -807,9 +808,11 @@ export default function Timeline() {
                       />
                     )}
 
-                    <div className="absolute inset-0 flex items-center px-2 text-white text-2xs font-medium pointer-events-none overflow-hidden gap-1">
-                      <Music size={8} />
-                      <span className="truncate">{fileName} • {audioDur.toFixed(1)}s</span>
+                    <div
+                      className="absolute inset-0 flex items-center px-2 text-white text-2xs font-medium pointer-events-none overflow-hidden gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                      
+                    >
+                      <span className="truncate bg-gray-500/60 p-1">{fileName} • {audioDur.toFixed(1)}s</span>
                       {(audio.speed ?? 1) !== 1 && <span className="flex-none opacity-80">{audio.speed}×</span>}
                     </div>
 
@@ -829,35 +832,46 @@ export default function Timeline() {
             })}
           </div>
 
-          {/* Time markers */}
-          {timeMarkers.map(marker => {
-            const markerPx = marker.time * PX_PER_SEC
-            return (
-              <div
-                key={marker.id}
-                className="absolute top-0 bottom-0 z-20 pointer-events-none"
-                style={{ left: markerPx }}
-              >
-                {/* Vertical line */}
-                <div
-                  className="absolute inset-0"
-                  style={{ width: 1, background: MARKER_COLOR, opacity: 0.85 }}
-                />
-                {/* Clickable triangle indicator at top */}
-                <div
-                  className="absolute pointer-events-auto cursor-pointer group"
-                  style={{ top: 0, left: -5, width: 11, height: 10 }}
-                  onClick={e => { e.stopPropagation(); removeTimeMarker(marker.id) }}
-                  title={`${fmtTime(marker.time)} — click to remove`}
-                >
-                  <svg width="11" height="10" viewBox="0 0 11 10" className="group-hover:opacity-70 transition-opacity">
-                    <polygon points="5.5,1 10,9 1,9" fill={MARKER_COLOR} />
-                  </svg>
-                </div>
-              </div>
-            )
-          })}
-
+          {/* Time markers — confined to the audio track area only */}
+{timeMarkers.map(marker => {
+  const markerPx = marker.time * PX_PER_SEC
+  return (
+    <div
+      key={marker.id}
+      className="absolute z-20 pointer-events-none"
+      style={{
+        left: markerPx,
+        top: RULER_HEIGHT + SCENE_HEIGHT,
+        bottom: 0,
+      }}
+    >
+      {/* Dense Dotted vertical line (2px line, 2px gap) */}
+      <div
+        className="absolute"
+        style={{
+          top: 0, bottom: 0, left: 0, width: 1.5,
+          background: `repeating-linear-gradient(to bottom, ${MARKER_COLOR} 0px, ${MARKER_COLOR} 2px, transparent 2px, transparent 4px)`,
+          opacity: 0.9,
+        }}
+      />
+      
+      {/* Clickable circular caret at top of audio area */}
+      <div
+        className="absolute pointer-events-auto cursor-pointer group flex items-center justify-center rounded-full"
+        style={{ 
+          top: -2.2, 
+          left: -1.1,
+          width: 5, 
+          height: 5,
+          backgroundColor: MARKER_COLOR
+        }}
+        onClick={e => { e.stopPropagation(); removeTimeMarker(marker.id) }}
+        title={`${fmtTime(marker.time)} — click to remove`}
+      >
+      </div>
+    </div>
+  )
+})}
           {/* Playhead */}
           <div
             className="absolute top-0 bottom-0 z-30"
@@ -1045,9 +1059,9 @@ function AudioWaveformView({ url, startTime, clipDuration, speed, clipWidthPx, t
           key={i}
           x={i * (svgW / barCount)}
           y={centerY - barH / 2}
-          width={2}
+          width={1.5}
           height={barH}
-          fill="white"
+          fill="#eba9a4"
         />
       ))}
     </svg>
