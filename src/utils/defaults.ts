@@ -72,7 +72,7 @@ export function makeArrow(x1: number, y1: number, x2: number, y2: number): Arrow
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     x1, y1, x2, y2,
-    stroke: '#202020', strokeWidth: 3, arrowHead: 'none', dashed: false,
+    stroke: '#202020', strokeWidth: 5, arrowHead: 'none', dashed: false,
     dotted: false,
     pointerLength: 12,
     pointerWidth: 13,
@@ -139,7 +139,7 @@ export function makeAnimation(): ElementAnimation {
     type: 'fadeIn',
     timing: 'onEnter',
     startTime: 0,
-    duration: 0.6,
+    duration: 0.8,
     delay: 0,
     easing: 'easeOut'
   }

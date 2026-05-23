@@ -42,17 +42,25 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
     dashOffset: 0
   }
 
-  // Only entrance animations (onEnter timing) should hide the element before they start
+  // Determine whether the element is still hidden before its first enter animation.
+  // Loop animations must still run during this phase so their internal timers
+  // (dashOffset, phase, etc.) accumulate correctly — they are just invisible.
   const entrances = el.animations.filter(a => a.timing === 'onEnter')
-  if (entrances.length > 0) {
-    const firstStart = Math.min(...entrances.map(a => a.startTime + a.delay))
-    if (localTime < firstStart) {
-      props.opacity = 0
-      return props
-    }
-  }
+  const hiddenBeforeEnter = entrances.length > 0 &&
+    localTime < Math.min(...entrances.map(a => a.startTime + a.delay))
 
-  for (const anim of el.animations) {
+  // Process loops first so enter/exit animations always take final precedence
+  // for shared props (opacity, scale, etc.). Order within each group is preserved.
+  const sortedAnims = [
+    ...el.animations.filter(a => a.timing === 'loop'),
+    ...el.animations.filter(a => a.timing !== 'loop'),
+  ]
+
+  for (const anim of sortedAnims) {
+    // During the pre-enter hidden phase, skip enter/exit animations but still
+    // run loops so they accumulate state (dashOffset, rotation, scale, etc.)
+    if (hiddenBeforeEnter && anim.timing !== 'loop') continue
+
     const start  = anim.startTime + anim.delay
     const end    = start + anim.duration
     const raw    = (localTime - start) / anim.duration
@@ -61,6 +69,12 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
     const after  = localTime >= end
 
     applyAnim(anim, t, before, after, el, props, localTime)
+  }
+
+  // Force the element invisible if we are still before the enter animation.
+  // This overrides anything a loop animation may have written to opacity.
+  if (hiddenBeforeEnter) {
+    props.opacity = 0
   }
 
   return props
@@ -153,9 +167,9 @@ function applyAnim(
 
     case 'drawPath':
       if (before) { out.opacity = 0; out.textProgress = 0; return }
-      if (after)  { out.textProgress = 1; return }
+      if (after)  { out.opacity = el.opacity; out.textProgress = 1; return }
       out.textProgress = t
-      out.opacity = lerp(0, el.opacity, Math.min(t * 3, 1))
+      out.opacity = lerp(0, el.opacity, t)
       break
 
     case 'spin':
