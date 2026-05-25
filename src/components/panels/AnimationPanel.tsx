@@ -1,6 +1,6 @@
 import { Plus, Trash2, Sparkles } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import type { AnimationType, EasingType, SlideDir, ElementAnimation } from '../../types/editor'
+import type { AnimationType, AnimationTiming, EasingType, SlideDir, ElementAnimation } from '../../types/editor'
 import { makeAnimation } from '../../utils/defaults'
 import { PanelHeader, Row, Slider } from './TextPanel'
 import { cn } from '../../utils/cn'
@@ -92,7 +92,7 @@ function AnimBlock({ anim, index, elId, elType }: {
 
   const hasDir  = anim.type === 'slideIn' || anim.type === 'slideOut'
   const textOnly = anim.type === 'typewriter'
-  const isLoop  = anim.type === 'pulse' || anim.type === 'bounceLoop' || anim.type === 'rotateLoop'
+  const isLoop  = anim.timing === 'loop'
   const hasDist = anim.type === 'bounceLoop'
 
   if (textOnly && elType !== 'text') return null
@@ -109,7 +109,15 @@ function AnimBlock({ anim, index, elId, elType }: {
       {/* Type */}
       <select
         value={anim.type}
-        onChange={e => upd({ type: e.target.value as AnimationType })}
+        onChange={e => {
+          const newType = e.target.value as AnimationType
+          const group   = ANIM_TYPES.find(t => t.value === newType)?.group
+          const timing: AnimationTiming =
+            group === 'Loop'  ? 'loop'    :
+            group === 'Exit'  ? 'onExit'  :
+            'onEnter'
+          upd({ type: newType, timing })
+        }}
         className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
       >
         {['Entrance', 'Exit', 'One-shot', 'Loop'].map(group => (

@@ -39,42 +39,95 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
     scaleX: 1, scaleY: 1,
     rotation: el.rotation,
     textProgress: 1,
-    dashOffset: 0
+    dashOffset: 0,
   }
 
-  // Determine whether the element is still hidden before its first enter animation.
-  // Loop animations must still run during this phase so their internal timers
-  // (dashOffset, phase, etc.) accumulate correctly — they are just invisible.
-  const entrances = el.animations.filter(a => a.timing === 'onEnter')
-  const hiddenBeforeEnter = entrances.length > 0 &&
-    localTime < Math.min(...entrances.map(a => a.startTime + a.delay))
+  const anims = el.animations
+  if (anims.length === 0) return props
 
-  // Process loops first so enter/exit animations always take final precedence
-  // for shared props (opacity, scale, etc.). Order within each group is preserved.
-  const sortedAnims = [
-    ...el.animations.filter(a => a.timing === 'loop'),
-    ...el.animations.filter(a => a.timing !== 'loop'),
-  ]
+  // Loop animations are identified by type (canonical) OR by timing field.
+  // This guards against old saved projects where loop-type animations were
+  // incorrectly stored with timing='onEnter'.
+  const LOOP_TYPES = new Set(['pulse', 'bounceLoop', 'rotateLoop', 'flowLoop', 'fadeLoop'])
+  const isLoop = (a: ElementAnimation) => LOOP_TYPES.has(a.type) || a.timing === 'loop'
 
-  for (const anim of sortedAnims) {
-    // During the pre-enter hidden phase, skip enter/exit animations but still
-    // run loops so they accumulate state (dashOffset, rotation, scale, etc.)
-    if (hiddenBeforeEnter && anim.timing !== 'loop') continue
+  const enters = anims.filter(a => !isLoop(a) && a.timing === 'onEnter')
+  const exits  = anims.filter(a => !isLoop(a) && a.timing === 'onExit')
+  const loops  = anims.filter(a => isLoop(a))
 
-    const start  = anim.startTime + anim.delay
-    const end    = start + anim.duration
-    const raw    = (localTime - start) / anim.duration
-    const t      = ease(Math.max(0, Math.min(1, raw)), anim.easing)
+  // Guard against NaN from undefined/missing fields on older saved animations
+  const safe = (v: number | undefined) => (v != null && isFinite(v) ? v : 0)
+
+  // ── Visibility window ──────────────────────────────────────────────────────
+  // firstEnterStart: when the EARLIEST enter animation begins
+  // lastEnterEnd:    when ALL enter animations have finished
+  // firstExitStart:  when the EARLIEST exit animation begins
+  // lastExitEnd:     when ALL exit animations have finished
+  const firstEnterStart = enters.length > 0
+    ? Math.min(...enters.map(a => safe(a.startTime) + safe(a.delay)))
+    : -Infinity
+
+  const lastEnterEnd = enters.length > 0
+    ? Math.max(...enters.map(a => safe(a.startTime) + safe(a.delay) + safe(a.duration)))
+    : 0
+
+  const firstExitStart = exits.length > 0
+    ? Math.min(...exits.map(a => safe(a.startTime) + safe(a.delay)))
+    : Infinity
+
+  const lastExitEnd = exits.length > 0
+    ? Math.max(...exits.map(a => safe(a.startTime) + safe(a.delay) + safe(a.duration)))
+    : Infinity
+
+  // Before first enter: element is invisible — return early, no animations run
+  if (enters.length > 0 && localTime < firstEnterStart) {
+    props.opacity     = 0
+    props.textProgress = 0
+    return props
+  }
+
+  // After last exit: element is invisible — return early
+  if (exits.length > 0 && localTime >= lastExitEnd) {
+    props.opacity = 0
+    return props
+  }
+
+  // ── Enter animations ───────────────────────────────────────────────────────
+  for (const anim of enters) {
+    const start  = safe(anim.startTime) + safe(anim.delay)
+    const end    = start + safe(anim.duration)
     const before = localTime < start
     const after  = localTime >= end
-
+    const raw    = (localTime - start) / anim.duration
+    const t      = ease(Math.max(0, Math.min(1, raw)), anim.easing)
     applyAnim(anim, t, before, after, el, props, localTime)
   }
 
-  // Force the element invisible if we are still before the enter animation.
-  // This overrides anything a loop animation may have written to opacity.
-  if (hiddenBeforeEnter) {
-    props.opacity = 0
+  // ── Exit animations ────────────────────────────────────────────────────────
+  for (const anim of exits) {
+    const start  = safe(anim.startTime) + safe(anim.delay)
+    const end    = start + safe(anim.duration)
+    const before = localTime < start
+    const after  = localTime >= end
+    const raw    = (localTime - start) / anim.duration
+    const t      = ease(Math.max(0, Math.min(1, raw)), anim.easing)
+    applyAnim(anim, t, before, after, el, props, localTime)
+  }
+
+  // ── Loop animations ────────────────────────────────────────────────────────
+  // Loops run ONLY during the element's stable visible phase:
+  //   • After ALL enter animations have completed (loopWindowStart)
+  //   • Before ANY exit animation begins (loopWindowEnd)
+  // If there are no enter animations, loops start from their own configured time.
+  const loopWindowStart = enters.length > 0 ? lastEnterEnd : 0
+  const loopWindowEnd   = firstExitStart
+
+  for (const anim of loops) {
+    const animStart      = safe(anim.startTime) + safe(anim.delay)
+    const effectiveStart = Math.max(animStart, loopWindowStart)
+    if (localTime < effectiveStart) continue
+    if (localTime >= loopWindowEnd)  continue
+    applyAnim(anim, 0, false, false, el, props, localTime, effectiveStart)
   }
 
   return props
@@ -87,7 +140,8 @@ function applyAnim(
   after: boolean,
   el: EditorElement,
   out: AnimatedProps,
-  localTime: number
+  localTime: number,
+  loopStart?: number
 ) {
   const dist = anim.params?.distance ?? 80
 
@@ -277,12 +331,14 @@ function applyAnim(
     }
 
     // ─── Loop animations ────────────────────────────────────────────────────
+    // loopStart is the effectiveStart passed from the loop dispatch section;
+    // it is always >= anim.startTime+anim.delay so elapsed is always >= 0.
     case 'pulse': {
       if (before) return
-      const elapsed = localTime - (anim.startTime + anim.delay)
+      const elapsed = localTime - (loopStart ?? (anim.startTime + anim.delay))
       const phase   = (elapsed % anim.duration) / anim.duration
       const v       = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2)
-      out.scaleX    = 0.88 + 0.24 * v   // oscillates 0.88 → 1.12
+      out.scaleX    = 0.88 + 0.24 * v
       out.scaleY    = out.scaleX
       out.opacity   = lerp(el.opacity * 0.65, el.opacity, v)
       break
@@ -290,9 +346,9 @@ function applyAnim(
 
     case 'bounceLoop': {
       if (before) return
-      const elapsed = localTime - (anim.startTime + anim.delay)
-      const phase   = (elapsed % anim.duration) / anim.duration
-      const v       = Math.sin(phase * Math.PI * 2)
+      const elapsed  = localTime - (loopStart ?? (anim.startTime + anim.delay))
+      const phase    = (elapsed % anim.duration) / anim.duration
+      const v        = Math.sin(phase * Math.PI * 2)
       const loopDist = anim.params?.distance ?? 24
       out.y = el.y + v * loopDist
       break
@@ -300,9 +356,9 @@ function applyAnim(
 
     case 'rotateLoop': {
       if (before) return
-      const elapsed = localTime - (anim.startTime + anim.delay)
+      const elapsed = localTime - (loopStart ?? (anim.startTime + anim.delay))
       const turns   = elapsed / anim.duration
-      out.rotation  = el.rotation + (turns * 360) % 360
+      out.rotation  = el.rotation + turns * 360
       break
     }
 
@@ -316,15 +372,14 @@ function applyAnim(
 
     case 'flowLoop': {
       if (before) return
-      const elapsed = localTime - (anim.startTime + anim.delay)
-      // Animate dashOffset so dashes appear to flow forward
+      const elapsed = localTime - (loopStart ?? (anim.startTime + anim.delay))
       out.dashOffset = -(elapsed * 60) % 200
       break
     }
 
     case 'fadeLoop': {
       if (before) return
-      const elapsed = localTime - (anim.startTime + anim.delay)
+      const elapsed = localTime - (loopStart ?? (anim.startTime + anim.delay))
       const phase   = (elapsed % anim.duration) / anim.duration
       const v       = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2)
       out.opacity   = lerp(el.opacity * 0.1, el.opacity, v)
