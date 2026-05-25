@@ -180,6 +180,11 @@ export interface IconElement extends BaseElement {
   strokeWidth: number
 }
 
+export interface AudioMarker {
+  id: string
+  offset: number  // seconds from clip start (audio.x)
+}
+
 export interface AudioElement extends BaseElement {
   type: 'audio'
   src: string
@@ -192,6 +197,7 @@ export interface AudioElement extends BaseElement {
   duration: number   // Trim duration (seconds)
   loop: boolean
   track: 'background' | 'voiceover'
+  markers?: AudioMarker[]
 }
 
 export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElement | ImageElement | TableElement | ChartElement | VideoElement | AudioElement | IconElement

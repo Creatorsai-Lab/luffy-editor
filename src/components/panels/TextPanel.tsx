@@ -1,24 +1,75 @@
 import { useEditorStore } from '../../store/editorStore'
 import { FONT_FAMILIES } from '../../types/editor'
-import type { TextElement, FontWeight, AlignType } from '../../types/editor'
-import { AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Type } from 'lucide-react'
+import type { TextElement, FontWeight, AlignType, AnimationType, EasingType, ElementAnimation, TextEffectType } from '../../types/editor'
+import { AlignLeft, AlignCenter, AlignRight, Italic, Underline, Type, Plus, Trash2 } from 'lucide-react'
 import { cn } from '../../utils/cn'
-import { makeText } from '../../utils/defaults'
+import { makeAnimation } from '../../utils/defaults'
 
 const WEIGHTS: { label: string; value: FontWeight }[] = [
   { label: 'Normal',   value: 'normal' },
   { label: 'Medium',   value: 'medium' },
   { label: 'Semibold', value: 'semibold' },
-  { label: 'Bold',     value: 'bold' }
+  { label: 'Bold',     value: 'bold' },
 ]
 
+const TEXT_EFFECTS: { label: string; value: TextEffectType }[] = [
+  { label: 'Shadow',  value: 'shadow'  },
+  { label: 'Glow',    value: 'glow'    },
+  { label: 'Outline', value: 'outline' },
+  { label: 'Hollow',  value: 'hollow'  },
+  { label: 'Glitch',  value: 'glitch'  },
+  { label: 'Bubble',  value: 'bubble'  },
+]
+
+const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
+  { label: 'Typewriter (Chars)', value: 'typewriterChars' },
+  { label: 'Typewriter (Words)', value: 'typewriterWords' },
+  { label: 'Fade In',            value: 'textFade'        },
+  { label: 'Burst',              value: 'textBurst'       },
+  { label: 'Bounce',             value: 'textBounce'      },
+  { label: 'Block',              value: 'textBlock'       },
+  { label: 'Squiz In',           value: 'textSquiz'       },
+  { label: 'Spread',             value: 'textSpread'      },
+  { label: 'Twirl',              value: 'textTwirl'       },
+  { label: 'Zoom In',            value: 'textZoomIn'      },
+]
+
+const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
+  { label: 'Pulse',  value: 'pulse'      },
+  { label: 'Bounce', value: 'bounceLoop' },
+]
+
+const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
+  { label: 'Fade Out', value: 'textFade'    },
+  { label: 'Zoom Out', value: 'textZoomOut' },
+]
+
+const EASINGS: { label: string; value: EasingType }[] = [
+  { label: 'Linear',     value: 'linear'   },
+  { label: 'Ease In',    value: 'easeIn'   },
+  { label: 'Ease Out',   value: 'easeOut'  },
+  { label: 'Ease InOut', value: 'easeInOut'},
+  { label: 'Bounce',     value: 'bounce'   },
+]
+
+const LOOP_TYPE_SET = new Set<string>(['pulse', 'bounceLoop', 'rotateLoop', 'flowLoop', 'fadeLoop'])
+const isLoopAnim = (a: ElementAnimation) => LOOP_TYPE_SET.has(a.type) || a.timing === 'loop'
+
 export default function TextPanel() {
-  const { getSelectedEls, updateElement, addElement, activeTool, currentSceneId } = useEditorStore()
+  const { getSelectedEls, updateElement, addAnimation } = useEditorStore()
   const selected = getSelectedEls()
   const el = selected.find(e => e.type === 'text') as TextElement | undefined
 
   function upd(patch: Partial<TextElement>) {
     if (el) updateElement(el.id, patch)
+  }
+
+  function toggleEffect(effect: TextEffectType) {
+    if (!el) return
+    const effects = el.effects || []
+    updateElement(el.id, {
+      effects: effects.includes(effect) ? effects.filter(e => e !== effect) : [...effects, effect],
+    })
   }
 
   return (
@@ -33,121 +84,161 @@ export default function TextPanel() {
         )}
 
         {el && (
-          <div className="flex flex-col gap-0.5 px-3 py-2">
-            {/* Content */}
-            <Row label="Content">
-              <textarea
-                className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1.5 resize-none"
-                rows={3}
-                value={el.content}
-                onChange={e => upd({ content: e.target.value })}
-              />
-            </Row>
+          <>
+            <div className="flex flex-col gap-0.5 px-3 py-2">
+              <Row label="Content">
+                <textarea
+                  className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1.5 resize-none"
+                  rows={3}
+                  value={el.content}
+                  onChange={e => upd({ content: e.target.value })}
+                />
+              </Row>
 
-          {/* Font family */}
-          <Row label="Font">
-            <select
-              value={el.fontFamily}
-              onChange={e => upd({ fontFamily: e.target.value })}
-              className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
-            >
-              {FONT_FAMILIES.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-          </Row>
+              <Row label="Font">
+                <select
+                  value={el.fontFamily}
+                  onChange={e => upd({ fontFamily: e.target.value })}
+                  className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+                >
+                  {FONT_FAMILIES.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+              </Row>
 
-          {/* Size */}
-          <Row label="Size">
-            <NumberInput value={el.fontSize} min={8} max={400} onChange={v => upd({ fontSize: v })} />
-          </Row>
+              <Row label="Size">
+                <NumberInput value={el.fontSize} min={8} max={400} onChange={v => upd({ fontSize: v })} />
+              </Row>
 
-          {/* Weight */}
-          <Row label="Weight">
-            <select
-              value={el.fontWeight}
-              onChange={e => upd({ fontWeight: e.target.value as FontWeight })}
-              className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
-            >
-              {WEIGHTS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
-            </select>
-          </Row>
+              <Row label="Weight">
+                <select
+                  value={el.fontWeight}
+                  onChange={e => upd({ fontWeight: e.target.value as FontWeight })}
+                  className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+                >
+                  {WEIGHTS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
+                </select>
+              </Row>
 
-          {/* Style toggles */}
-          <Row label="Style">
-            <div className="flex gap-1">
-              <ToggleBtn active={el.italic}    onClick={() => upd({ italic:    !el.italic    })}><Italic    size={11} /></ToggleBtn>
-              <ToggleBtn active={el.underline} onClick={() => upd({ underline: !el.underline })}><Underline size={11} /></ToggleBtn>
+              <Row label="Style">
+                <div className="flex gap-1">
+                  <ToggleBtn active={el.italic}    onClick={() => upd({ italic:    !el.italic    })}><Italic    size={11} /></ToggleBtn>
+                  <ToggleBtn active={el.underline} onClick={() => upd({ underline: !el.underline })}><Underline size={11} /></ToggleBtn>
+                </div>
+              </Row>
+
+              <Row label="Align">
+                <div className="flex gap-1">
+                  {(['left','center','right'] as AlignType[]).map(a => (
+                    <ToggleBtn key={a} active={el.align === a} onClick={() => upd({ align: a })}>
+                      {a === 'left' ? <AlignLeft size={11} /> : a === 'center' ? <AlignCenter size={11} /> : <AlignRight size={11} />}
+                    </ToggleBtn>
+                  ))}
+                </div>
+              </Row>
+
+              <Row label="Color">
+                <ColorInput value={el.color} onChange={v => upd({ color: v })} />
+              </Row>
+
+              <Row label="Line Height">
+                <Slider value={el.lineHeight} min={0.8} max={3} step={0.05}
+                  onChange={v => upd({ lineHeight: v })} display={el.lineHeight.toFixed(2)} />
+              </Row>
+
+              <Row label="Opacity">
+                <Slider value={el.opacity} min={0} max={1} step={0.01}
+                  onChange={v => upd({ opacity: v })} display={`${Math.round(el.opacity * 100)}%`} />
+              </Row>
+
+              <Row label="Stretch H">
+                <Slider value={el.stretchX ?? 1} min={0.2} max={3} step={0.05}
+                  onChange={v => upd({ stretchX: v })} display={`${((el.stretchX ?? 1) * 100).toFixed(0)}%`} />
+              </Row>
+
+              <Row label="Stretch V">
+                <Slider value={el.stretchY ?? 1} min={0.2} max={3} step={0.05}
+                  onChange={v => upd({ stretchY: v })} display={`${((el.stretchY ?? 1) * 100).toFixed(0)}%`} />
+              </Row>
+
+              <Row label="Border">
+                <ColorInput value={el.textStroke || '#ffffff'} onChange={v => upd({ textStroke: v })} />
+              </Row>
+
+              <Row label="Border Width">
+                <Slider value={el.textStrokeWidth ?? 0} min={0} max={10} step={0.5}
+                  onChange={v => upd({ textStrokeWidth: v })} display={`${el.textStrokeWidth ?? 0}px`} />
+              </Row>
+
+              <Row label="Shadow Color">
+                <ColorInput value={el.shadowColor || '#000000'} onChange={v => upd({ shadowColor: v })} />
+              </Row>
+
+              <Row label="Shadow Blur">
+                <Slider value={el.shadowBlur ?? 0} min={0} max={40} step={1}
+                  onChange={v => upd({ shadowBlur: v })} display={`${el.shadowBlur ?? 0}`} />
+              </Row>
+
+              <Row label="Shadow Offset">
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <span className="label block">X</span>
+                    <NumberInput value={el.shadowOffsetX ?? 0} min={-50} max={50} onChange={v => upd({ shadowOffsetX: v })} />
+                  </div>
+                  <div className="flex-1">
+                    <span className="label block">Y</span>
+                    <NumberInput value={el.shadowOffsetY ?? 0} min={-50} max={50} onChange={v => upd({ shadowOffsetY: v })} />
+                  </div>
+                </div>
+              </Row>
             </div>
-          </Row>
 
-          {/* Alignment */}
-          <Row label="Align">
-            <div className="flex gap-1">
-              {(['left','center','right'] as AlignType[]).map(a => (
-                <ToggleBtn key={a} active={el.align === a} onClick={() => upd({ align: a })}>
-                  {a === 'left' ? <AlignLeft size={11} /> : a === 'center' ? <AlignCenter size={11} /> : <AlignRight size={11} />}
-                </ToggleBtn>
-              ))}
-            </div>
-          </Row>
-
-          {/* Color */}
-          <Row label="Color">
-            <ColorInput value={el.color} onChange={v => upd({ color: v })} />
-          </Row>
-
-          {/* Line height */}
-          <Row label="Line Height">
-            <Slider value={el.lineHeight} min={0.8} max={3} step={0.05}
-              onChange={v => upd({ lineHeight: v })} display={el.lineHeight.toFixed(2)} />
-          </Row>
-
-          {/* Opacity */}
-          <Row label="Opacity">
-            <Slider value={el.opacity} min={0} max={1} step={0.01}
-              onChange={v => upd({ opacity: v })} display={`${Math.round(el.opacity * 100)}%`} />
-          </Row>
-
-          <Row label="Stretch H">
-            <Slider value={el.stretchX ?? 1} min={0.2} max={3} step={0.05}
-              onChange={v => upd({ stretchX: v })} display={`${((el.stretchX ?? 1) * 100).toFixed(0)}%`} />
-          </Row>
-
-          <Row label="Stretch V">
-            <Slider value={el.stretchY ?? 1} min={0.2} max={3} step={0.05}
-              onChange={v => upd({ stretchY: v })} display={`${((el.stretchY ?? 1) * 100).toFixed(0)}%`} />
-          </Row>
-
-          <Row label="Border">
-            <ColorInput value={el.textStroke || '#ffffff'} onChange={v => upd({ textStroke: v })} />
-          </Row>
-
-          <Row label="Border Width">
-            <Slider value={el.textStrokeWidth ?? 0} min={0} max={10} step={0.5}
-              onChange={v => upd({ textStrokeWidth: v })} display={`${el.textStrokeWidth ?? 0}px`} />
-          </Row>
-
-          <Row label="Shadow Color">
-            <ColorInput value={el.shadowColor || '#000000'} onChange={v => upd({ shadowColor: v })} />
-          </Row>
-
-          <Row label="Shadow Blur">
-            <Slider value={el.shadowBlur ?? 0} min={0} max={40} step={1}
-              onChange={v => upd({ shadowBlur: v })} display={`${el.shadowBlur ?? 0}`} />
-          </Row>
-
-          <Row label="Shadow Offset">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <span className="label block">X</span>
-                <NumberInput value={el.shadowOffsetX ?? 0} min={-50} max={50} onChange={v => upd({ shadowOffsetX: v })} />
+            {/* ── Effects ───────────────────────────────────────────── */}
+            <div className="border-t border-editor-border px-3 py-2">
+              <span className="text-xs font-medium text-editor-text block mb-2">Effects</span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {TEXT_EFFECTS.map(effect => {
+                  const isActive = (el.effects || []).includes(effect.value)
+                  return (
+                    <button
+                      key={effect.value}
+                      onClick={() => toggleEffect(effect.value)}
+                      className={cn(
+                        'px-2 py-1.5 rounded border text-xs transition-all text-left',
+                        isActive
+                          ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
+                          : 'bg-editor-elevated border-editor-border text-editor-text hover:border-editor-border-strong'
+                      )}
+                    >
+                      {effect.label}
+                    </button>
+                  )
+                })}
               </div>
-              <div className="flex-1">
-                <span className="label block">Y</span>
-                <NumberInput value={el.shadowOffsetY ?? 0} min={-50} max={50} onChange={v => upd({ shadowOffsetY: v })} />
-              </div>
             </div>
-          </Row>
-        </div>
+
+            {/* ── Animations ────────────────────────────────────────── */}
+            <AnimSection
+              label="On Enter" color="text-green-400"
+              anims={el.animations.filter(a => !isLoopAnim(a) && a.timing === 'onEnter')}
+              types={ENTER_ANIMS}
+              onAdd={() => addAnimation(el.id, { ...makeAnimation(), type: 'typewriterChars', timing: 'onEnter' })}
+              elId={el.id} isLoop={false}
+            />
+            <AnimSection
+              label="Loop" color="text-editor-accent"
+              anims={el.animations.filter(a => isLoopAnim(a))}
+              types={LOOP_ANIMS}
+              onAdd={() => addAnimation(el.id, { ...makeAnimation(), type: 'pulse', timing: 'loop', duration: 1 })}
+              elId={el.id} isLoop={true}
+            />
+            <AnimSection
+              label="On Exit" color="text-red-400"
+              anims={el.animations.filter(a => !isLoopAnim(a) && a.timing === 'onExit')}
+              types={EXIT_ANIMS}
+              onAdd={() => addAnimation(el.id, { ...makeAnimation(), type: 'textFade', timing: 'onExit' })}
+              elId={el.id} isLoop={false}
+            />
+          </>
         )}
       </div>
     </div>
@@ -236,5 +327,114 @@ function ToggleBtn({ active, onClick, children }: {
     >
       {children}
     </button>
+  )
+}
+
+function AnimSection({
+  label, color, anims, types, onAdd, elId, isLoop
+}: {
+  label: string
+  color: string
+  anims: ElementAnimation[]
+  types: { label: string; value: AnimationType }[]
+  onAdd: () => void
+  elId: string
+  isLoop: boolean
+}) {
+  return (
+    <div className="border-t border-editor-border">
+      <div className="px-3 py-1.5 flex items-center justify-between">
+        <span className={cn('text-[10px] font-semibold uppercase tracking-wider', color)}>{label}</span>
+        <button
+          onClick={onAdd}
+          className="flex items-center gap-1 text-[10px] px-2 py-0.5 bg-editor-elevated text-[#c1c1c1] border border-editor-border rounded hover:text-editor-text transition-colors"
+        >
+          <Plus size={8} /> Add
+        </button>
+      </div>
+      {anims.length === 0 && (
+        <p className="text-[10px] text-[#595959] px-3 pb-2">None — click Add to create one.</p>
+      )}
+      {anims.map((anim, i) => (
+        <AnimBlock key={anim.id} anim={anim} index={i} elId={elId} types={types} isLoop={isLoop} />
+      ))}
+    </div>
+  )
+}
+
+function AnimBlock({
+  anim, index, elId, types, isLoop
+}: {
+  anim: ElementAnimation; index: number; elId: string
+  types: { label: string; value: AnimationType }[]
+  isLoop: boolean
+}) {
+  const { updateAnimation, removeAnimation } = useEditorStore()
+
+  function upd(patch: Partial<ElementAnimation>) {
+    updateAnimation(elId, anim.id, patch)
+  }
+
+  return (
+    <div className="border-t border-editor-border px-3 py-2 flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-editor-secondary font-medium">#{index + 1}</span>
+        <button onClick={() => removeAnimation(elId, anim.id)} className="text-[#595959] hover:text-red-400 transition-colors">
+          <Trash2 size={10} />
+        </button>
+      </div>
+
+      <Row label="Type">
+        <select
+          value={anim.type}
+          onChange={e => upd({ type: e.target.value as AnimationType })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+        >
+          {types.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+      </Row>
+
+      {isLoop && (
+        <div className="text-[10px] text-editor-accent bg-editor-accent-dim rounded px-2 py-0.5 w-fit">
+          ∞ Loops continuously
+        </div>
+      )}
+
+      <Row label="Start (s)">
+        <input type="number" min={0} max={60} step={0.1}
+          value={anim.startTime}
+          onChange={e => upd({ startTime: Number(e.target.value) })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        />
+      </Row>
+
+      <Row label={isLoop ? 'Period (s)' : 'Duration (s)'}>
+        <input type="number" min={0.1} max={30} step={0.1}
+          value={anim.duration}
+          onChange={e => upd({ duration: Number(e.target.value) })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        />
+      </Row>
+
+      <Row label="Delay (s)">
+        <input type="number" min={0} max={30} step={0.1}
+          value={anim.delay}
+          onChange={e => upd({ delay: Number(e.target.value) })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        />
+      </Row>
+
+      {!isLoop && (
+        <Row label="Easing">
+          <select
+            value={anim.easing}
+            onChange={e => upd({ easing: e.target.value as EasingType })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+          >
+            {EASINGS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+          </select>
+        </Row>
+      )}
+    </div>
   )
 }

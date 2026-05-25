@@ -95,6 +95,10 @@ interface EditorActions {
   addTimeMarker:    (time: number) => void
   removeTimeMarker: (id: string) => void
 
+  // Audio markers (stored relative to clip, move with clip, deleted with clip)
+  addAudioMarker:    (audioId: string, offset: number) => void
+  removeAudioMarker: (audioId: string, markerId: string) => void
+
   // History
   undo:             () => void
   redo:             () => void
@@ -439,6 +443,33 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       removeTimeMarker: (id) => set(s => {
         if (!s.project) return
         s.project.timeMarkers = (s.project.timeMarkers ?? []).filter(m => m.id !== id)
+        s.isDirty = true
+      }),
+
+      addAudioMarker: (audioId, offset) => set(s => {
+        if (!s.project) return
+        for (const sc of s.project.scenes) {
+          const el = sc.elements.find(e => e.id === audioId)
+          if (el && el.type === 'audio') {
+            const audio = el as import('../types/editor').AudioElement
+            if (!audio.markers) audio.markers = []
+            audio.markers.push({ id: uuid(), offset })
+            break
+          }
+        }
+        s.isDirty = true
+      }),
+
+      removeAudioMarker: (audioId, markerId) => set(s => {
+        if (!s.project) return
+        for (const sc of s.project.scenes) {
+          const el = sc.elements.find(e => e.id === audioId)
+          if (el && el.type === 'audio') {
+            const audio = el as import('../types/editor').AudioElement
+            audio.markers = (audio.markers ?? []).filter(m => m.id !== markerId)
+            break
+          }
+        }
         s.isDirty = true
       }),
 

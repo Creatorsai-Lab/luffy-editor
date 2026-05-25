@@ -1,21 +1,16 @@
 import { useState, useMemo } from 'react'
 import { Shapes, Search } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import type { IconElement } from '../../types/editor'
 import { ICON_MAP, ICON_CATEGORIES, ALL_CATEGORY } from '../../engine/iconData'
 import { makeIcon } from '../../utils/defaults'
-import { PanelHeader, Row, ColorInput } from './TextPanel'
+import { PanelHeader } from './TextPanel'
 
 const CATEGORIES = [ALL_CATEGORY, ...Object.keys(ICON_CATEGORIES)]
 
-export default function IconPanel() {
-  const { addElement, updateElement, getSelectedEls } = useEditorStore()
-
+export default function IconCollectionPanel() {
+  const { addElement } = useEditorStore()
   const [query,    setQuery]    = useState('')
   const [category, setCategory] = useState(ALL_CATEGORY)
-
-  const selected = getSelectedEls()
-  const iconEl   = selected.find(e => e.type === 'icon') as IconElement | undefined
 
   const filteredIcons = useMemo(() => {
     const pool = category === ALL_CATEGORY
@@ -24,14 +19,6 @@ export default function IconPanel() {
     const q = query.toLowerCase().replace(/\s/g, '')
     return q ? pool.filter(n => n.toLowerCase().includes(q)) : pool
   }, [category, query])
-
-  function handleInsert(iconName: string) {
-    addElement(makeIcon(iconName, 80, 80))
-  }
-
-  function upd(patch: Partial<IconElement>) {
-    if (iconEl) updateElement(iconEl.id, patch)
-  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -74,17 +61,12 @@ export default function IconPanel() {
           {filteredIcons.map(name => {
             const Comp = ICON_MAP[name]
             if (!Comp) return null
-            const isSelected = iconEl?.iconName === name
             return (
               <button
                 key={name}
                 title={name}
-                onClick={() => handleInsert(name)}
-                className={`aspect-square flex items-center justify-center rounded transition-all group ${
-                  isSelected
-                    ? 'bg-editor-accent/20 ring-1 ring-editor-accent'
-                    : 'bg-editor-elevated hover:bg-editor-hover'
-                }`}
+                onClick={() => addElement(makeIcon(name, 80, 80))}
+                className="aspect-square flex items-center justify-center rounded transition-all group bg-editor-elevated hover:bg-editor-hover"
               >
                 <Comp
                   size={20}
@@ -99,44 +81,6 @@ export default function IconPanel() {
           )}
         </div>
       </div>
-
-      {/* Selected icon properties */}
-      {iconEl && (
-        <div className="border-t border-editor-border px-3 py-3 flex flex-col gap-2 flex-none">
-          <div className="text-[10px] text-[#c1c1c1] uppercase tracking-wider font-medium">
-            {iconEl.iconName}
-          </div>
-
-          <Row label="Color">
-            <ColorInput
-              value={iconEl.color}
-              onChange={v => upd({ color: v })}
-            />
-          </Row>
-
-          <Row label="Stroke Width">
-            <input
-              type="range" min={0.5} max={4} step={0.5}
-              value={iconEl.strokeWidth}
-              onChange={e => upd({ strokeWidth: parseFloat(e.target.value) })}
-              className="flex-1 accent-editor-accent nodrag"
-            />
-            <span className="text-[10px] text-[#c1c1c1] w-5 text-right">{iconEl.strokeWidth}</span>
-          </Row>
-
-          <Row label="Opacity">
-            <input
-              type="range" min={0} max={1} step={0.01}
-              value={iconEl.opacity}
-              onChange={e => upd({ opacity: parseFloat(e.target.value) })}
-              className="flex-1 accent-editor-accent nodrag"
-            />
-            <span className="text-[10px] text-[#c1c1c1] w-8 text-right">
-              {Math.round(iconEl.opacity * 100)}%
-            </span>
-          </Row>
-        </div>
-      )}
     </div>
   )
 }

@@ -1,12 +1,50 @@
 import { useState } from 'react'
-import { Image as ImageIcon, Lock, Unlock, RotateCcw } from 'lucide-react'
+import { Image as ImageIcon, Lock, Unlock, RotateCcw, Plus, Trash2 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import type { ImageElement } from '../../types/editor'
+import type { ImageElement, AnimationType, EasingType, SlideDir, ElementAnimation } from '../../types/editor'
 import { PanelHeader, Row, Slider, NumberInput } from './TextPanel'
 import { cn } from '../../utils/cn'
+import { makeAnimation } from '../../utils/defaults'
+
+const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
+  { label: 'Fade In',  value: 'fadeIn'  },
+  { label: 'Slide In', value: 'slideIn' },
+  { label: 'Scale In', value: 'scaleIn' },
+  { label: 'Spin In',  value: 'spin'    },
+]
+
+const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
+  { label: 'Pulse',  value: 'pulse'      },
+  { label: 'Bounce', value: 'bounceLoop' },
+  { label: 'Rotate', value: 'rotateLoop' },
+]
+
+const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
+  { label: 'Fade Out',  value: 'fadeOut'  },
+  { label: 'Slide Out', value: 'slideOut' },
+  { label: 'Scale Out', value: 'scaleOut' },
+]
+
+const EASINGS: { label: string; value: EasingType }[] = [
+  { label: 'Linear',     value: 'linear'   },
+  { label: 'Ease In',    value: 'easeIn'   },
+  { label: 'Ease Out',   value: 'easeOut'  },
+  { label: 'Ease InOut', value: 'easeInOut'},
+  { label: 'Bounce',     value: 'bounce'   },
+]
+
+const DIRECTIONS: { label: string; value: SlideDir }[] = [
+  { label: '← Left',  value: 'left'  },
+  { label: '→ Right', value: 'right' },
+  { label: '↑ Up',    value: 'up'    },
+  { label: '↓ Down',  value: 'down'  },
+]
+
+const LOOP_TYPE_SET = new Set<string>(['pulse', 'bounceLoop', 'rotateLoop', 'flowLoop', 'fadeLoop'])
+const isLoopAnim = (a: ElementAnimation) => LOOP_TYPE_SET.has(a.type) || a.timing === 'loop'
 
 export default function ImagePanel() {
-  const { getSelectedEls, updateElement } = useEditorStore()
+  const { getSelectedEls, updateElement, addAnimation } = useEditorStore()
   const selected = getSelectedEls()
   const el = selected.find(e => e.type === 'image') as ImageElement | undefined
 
@@ -20,20 +58,14 @@ export default function ImagePanel() {
 
   function handleWidth(newW: number) {
     if (!el) return
-    if (lockRatio) {
-      upd({ width: newW, height: Math.round(newW / ratio) })
-    } else {
-      upd({ width: newW })
-    }
+    if (lockRatio) upd({ width: newW, height: Math.round(newW / ratio) })
+    else upd({ width: newW })
   }
 
   function handleHeight(newH: number) {
     if (!el) return
-    if (lockRatio) {
-      upd({ height: newH, width: Math.round(newH * ratio) })
-    } else {
-      upd({ height: newH })
-    }
+    if (lockRatio) upd({ height: newH, width: Math.round(newH * ratio) })
+    else upd({ height: newH })
   }
 
   function resetFilters() {
@@ -52,136 +84,265 @@ export default function ImagePanel() {
         )}
 
         {el && (
-          <div className="flex flex-col gap-0.5 px-3 py-2">
+          <>
+            <div className="flex flex-col gap-0.5 px-3 py-2">
 
-            {/* ── Dimensions ──────────────────────────────────────── */}
-            <div className="pb-2 mb-1 border-b border-editor-border">
-              <span className="text-xs font-medium text-editor-text block mb-1">Dimensions</span>
+              {/* ── Dimensions ──────────────────────────────────────── */}
+              <div className="pb-2 mb-1 border-b border-editor-border">
+                <span className="text-xs font-medium text-editor-text block mb-1">Dimensions</span>
 
-              <Row label="Width">
-                <NumberInput value={Math.round(el.width)} min={10} max={9999} onChange={handleWidth} />
-              </Row>
+                <Row label="Width">
+                  <NumberInput value={Math.round(el.width)} min={10} max={9999} onChange={handleWidth} />
+                </Row>
 
-              <Row label="Height">
-                <NumberInput value={Math.round(el.height)} min={10} max={9999} onChange={handleHeight} />
-              </Row>
+                <Row label="Height">
+                  <NumberInput value={Math.round(el.height)} min={10} max={9999} onChange={handleHeight} />
+                </Row>
 
-              <Row label="Lock Ratio">
-                <button
-                  onClick={() => setLockRatio(v => !v)}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors',
-                    lockRatio
-                      ? 'bg-editor-accent text-white'
-                      : 'bg-editor-elevated text-[#c1c1c1] hover:text-editor-text border border-editor-border'
-                  )}
-                >
-                  {lockRatio ? <Lock size={10} /> : <Unlock size={10} />}
-                  {lockRatio ? 'Locked' : 'Unlocked'}
-                </button>
-              </Row>
+                <Row label="Lock Ratio">
+                  <button
+                    onClick={() => setLockRatio(v => !v)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors',
+                      lockRatio
+                        ? 'bg-editor-accent text-white'
+                        : 'bg-editor-elevated text-[#c1c1c1] hover:text-editor-text border border-editor-border'
+                    )}
+                  >
+                    {lockRatio ? <Lock size={10} /> : <Unlock size={10} />}
+                    {lockRatio ? 'Locked' : 'Unlocked'}
+                  </button>
+                </Row>
 
-              <Row label="Corner Radius">
-                <Slider
-                  value={el.cornerRadius}
-                  min={0} max={200} step={1}
-                  onChange={v => upd({ cornerRadius: v })}
-                  display={`${el.cornerRadius}px`}
-                />
-              </Row>
-            </div>
+                <Row label="Corner Radius">
+                  <Slider
+                    value={el.cornerRadius}
+                    min={0} max={200} step={1}
+                    onChange={v => upd({ cornerRadius: v })}
+                    display={`${el.cornerRadius}px`}
+                  />
+                </Row>
+              </div>
 
-            {/* ── Adjustments ─────────────────────────────────────── */}
-            <div className="pb-2 mb-1 border-b border-editor-border">
-              <span className="text-xs font-medium text-editor-text block mb-1">Adjustments</span>
+              {/* ── Adjustments ─────────────────────────────────────── */}
+              <div className="pb-2 mb-1 border-b border-editor-border">
+                <span className="text-xs font-medium text-editor-text block mb-1">Adjustments</span>
 
-              <Row label="Opacity">
-                <Slider
-                  value={Math.round((el.opacity ?? 1) * 100)}
-                  min={0} max={100} step={1}
-                  onChange={v => upd({ opacity: v / 100 })}
-                  display={`${Math.round((el.opacity ?? 1) * 100)}%`}
-                />
-              </Row>
+                <Row label="Opacity">
+                  <Slider value={Math.round((el.opacity ?? 1) * 100)} min={0} max={100} step={1}
+                    onChange={v => upd({ opacity: v / 100 })} display={`${Math.round((el.opacity ?? 1) * 100)}%`} />
+                </Row>
+                <Row label="Brightness">
+                  <Slider value={el.brightness ?? 100} min={0} max={200} step={1}
+                    onChange={v => upd({ brightness: v })} display={`${el.brightness ?? 100}%`} />
+                </Row>
+                <Row label="Contrast">
+                  <Slider value={el.contrast ?? 100} min={0} max={200} step={1}
+                    onChange={v => upd({ contrast: v })} display={`${el.contrast ?? 100}%`} />
+                </Row>
+                <Row label="Saturation">
+                  <Slider value={el.saturation ?? 100} min={0} max={200} step={1}
+                    onChange={v => upd({ saturation: v })} display={`${el.saturation ?? 100}%`} />
+                </Row>
+                <Row label="Hue Rotate">
+                  <Slider value={el.hueRotate ?? 0} min={0} max={360} step={1}
+                    onChange={v => upd({ hueRotate: v })} display={`${el.hueRotate ?? 0}°`} />
+                </Row>
+                <Row label="Blur">
+                  <Slider value={el.blur ?? 0} min={0} max={20} step={0.5}
+                    onChange={v => upd({ blur: v })} display={`${el.blur ?? 0}px`} />
+                </Row>
+              </div>
 
-              <Row label="Brightness">
-                <Slider
-                  value={el.brightness ?? 100}
-                  min={0} max={200} step={1}
-                  onChange={v => upd({ brightness: v })}
-                  display={`${el.brightness ?? 100}%`}
-                />
-              </Row>
+              {/* ── Effects ─────────────────────────────────────────── */}
+              <div className="pb-2">
+                <span className="text-xs font-medium text-editor-text block mb-1">Effects</span>
 
-              <Row label="Contrast">
-                <Slider
-                  value={el.contrast ?? 100}
-                  min={0} max={200} step={1}
-                  onChange={v => upd({ contrast: v })}
-                  display={`${el.contrast ?? 100}%`}
-                />
-              </Row>
+                <Row label="Glassmorphism">
+                  <button
+                    onClick={() => upd({ glass: !el.glass })}
+                    className={cn(
+                      'flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors',
+                      el.glass
+                        ? 'bg-editor-accent text-white'
+                        : 'bg-editor-elevated text-[#c1c1c1] hover:text-editor-text border border-editor-border'
+                    )}
+                  >
+                    {el.glass ? 'On' : 'Off'}
+                  </button>
+                </Row>
 
-              <Row label="Saturation">
-                <Slider
-                  value={el.saturation ?? 100}
-                  min={0} max={200} step={1}
-                  onChange={v => upd({ saturation: v })}
-                  display={`${el.saturation ?? 100}%`}
-                />
-              </Row>
-
-              <Row label="Hue Rotate">
-                <Slider
-                  value={el.hueRotate ?? 0}
-                  min={0} max={360} step={1}
-                  onChange={v => upd({ hueRotate: v })}
-                  display={`${el.hueRotate ?? 0}°`}
-                />
-              </Row>
-
-              <Row label="Blur">
-                <Slider
-                  value={el.blur ?? 0}
-                  min={0} max={20} step={0.5}
-                  onChange={v => upd({ blur: v })}
-                  display={`${el.blur ?? 0}px`}
-                />
-              </Row>
-            </div>
-
-            {/* ── Effects ─────────────────────────────────────────── */}
-            <div className="pb-2">
-              <span className="text-xs font-medium text-editor-text block mb-1">Effects</span>
-
-              <Row label="Glassmorphism">
-                <button
-                  onClick={() => upd({ glass: !el.glass })}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors',
-                    el.glass
-                      ? 'bg-editor-accent text-white'
-                      : 'bg-editor-elevated text-[#c1c1c1] hover:text-editor-text border border-editor-border'
-                  )}
-                >
-                  {el.glass ? 'On' : 'Off'}
-                </button>
-              </Row>
-
-              <div className="mt-2">
-                <button
-                  onClick={resetFilters}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded text-xs bg-editor-elevated text-[#c1c1c1] hover:text-editor-text border border-editor-border transition-colors"
-                >
-                  <RotateCcw size={10} />
-                  Reset Adjustments
-                </button>
+                <div className="mt-2">
+                  <button
+                    onClick={resetFilters}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded text-xs bg-editor-elevated text-[#c1c1c1] hover:text-editor-text border border-editor-border transition-colors"
+                  >
+                    <RotateCcw size={10} />
+                    Reset Adjustments
+                  </button>
+                </div>
               </div>
             </div>
 
-          </div>
+            {/* ── Animations ──────────────────────────────────────────── */}
+            <AnimSection
+              label="On Enter" color="text-green-400"
+              anims={el.animations.filter(a => !isLoopAnim(a) && a.timing === 'onEnter')}
+              types={ENTER_ANIMS}
+              onAdd={() => addAnimation(el.id, { ...makeAnimation(), type: 'fadeIn', timing: 'onEnter' })}
+              elId={el.id} isLoop={false}
+            />
+            <AnimSection
+              label="Loop" color="text-editor-accent"
+              anims={el.animations.filter(a => isLoopAnim(a))}
+              types={LOOP_ANIMS}
+              onAdd={() => addAnimation(el.id, { ...makeAnimation(), type: 'pulse', timing: 'loop', duration: 1 })}
+              elId={el.id} isLoop={true}
+            />
+            <AnimSection
+              label="On Exit" color="text-red-400"
+              anims={el.animations.filter(a => !isLoopAnim(a) && a.timing === 'onExit')}
+              types={EXIT_ANIMS}
+              onAdd={() => addAnimation(el.id, { ...makeAnimation(), type: 'fadeOut', timing: 'onExit' })}
+              elId={el.id} isLoop={false}
+            />
+          </>
         )}
       </div>
+    </div>
+  )
+}
+
+function AnimSection({
+  label, color, anims, types, onAdd, elId, isLoop
+}: {
+  label: string
+  color: string
+  anims: ElementAnimation[]
+  types: { label: string; value: AnimationType }[]
+  onAdd: () => void
+  elId: string
+  isLoop: boolean
+}) {
+  return (
+    <div className="border-t border-editor-border">
+      <div className="px-3 py-1.5 flex items-center justify-between">
+        <span className={cn('text-[10px] font-semibold uppercase tracking-wider', color)}>{label}</span>
+        <button
+          onClick={onAdd}
+          className="flex items-center gap-1 text-[10px] px-2 py-0.5 bg-editor-elevated text-[#c1c1c1] border border-editor-border rounded hover:text-editor-text transition-colors"
+        >
+          <Plus size={8} /> Add
+        </button>
+      </div>
+      {anims.length === 0 && (
+        <p className="text-[10px] text-[#595959] px-3 pb-2">None — click Add to create one.</p>
+      )}
+      {anims.map((anim, i) => (
+        <AnimBlock key={anim.id} anim={anim} index={i} elId={elId} types={types} isLoop={isLoop} />
+      ))}
+    </div>
+  )
+}
+
+function AnimBlock({
+  anim, index, elId, types, isLoop
+}: {
+  anim: ElementAnimation; index: number; elId: string
+  types: { label: string; value: AnimationType }[]
+  isLoop: boolean
+}) {
+  const { updateAnimation, removeAnimation } = useEditorStore()
+
+  function upd(patch: Partial<ElementAnimation>) {
+    updateAnimation(elId, anim.id, patch)
+  }
+
+  const hasDir  = anim.type === 'slideIn' || anim.type === 'slideOut'
+  const hasDist = anim.type === 'bounceLoop'
+
+  return (
+    <div className="border-t border-editor-border px-3 py-2 flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-editor-secondary font-medium">#{index + 1}</span>
+        <button onClick={() => removeAnimation(elId, anim.id)} className="text-[#595959] hover:text-red-400 transition-colors">
+          <Trash2 size={10} />
+        </button>
+      </div>
+
+      <Row label="Type">
+        <select
+          value={anim.type}
+          onChange={e => upd({ type: e.target.value as AnimationType })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+        >
+          {types.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+      </Row>
+
+      {isLoop && (
+        <div className="text-[10px] text-editor-accent bg-editor-accent-dim rounded px-2 py-0.5 w-fit">
+          ∞ Loops continuously
+        </div>
+      )}
+
+      {hasDir && (
+        <Row label="Direction">
+          <select
+            value={anim.params?.direction ?? 'left'}
+            onChange={e => upd({ params: { ...anim.params, direction: e.target.value as SlideDir } })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+          >
+            {DIRECTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+          </select>
+        </Row>
+      )}
+
+      {hasDist && (
+        <Row label="Distance (px)">
+          <input type="number" min={4} max={200} step={2}
+            value={anim.params?.distance ?? 24}
+            onChange={e => upd({ params: { ...anim.params, distance: Number(e.target.value) } })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+          />
+        </Row>
+      )}
+
+      <Row label="Start (s)">
+        <input type="number" min={0} max={60} step={0.1}
+          value={anim.startTime}
+          onChange={e => upd({ startTime: Number(e.target.value) })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        />
+      </Row>
+
+      <Row label={isLoop ? 'Period (s)' : 'Duration (s)'}>
+        <input type="number" min={0.1} max={30} step={0.1}
+          value={anim.duration}
+          onChange={e => upd({ duration: Number(e.target.value) })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        />
+      </Row>
+
+      <Row label="Delay (s)">
+        <input type="number" min={0} max={30} step={0.1}
+          value={anim.delay}
+          onChange={e => upd({ delay: Number(e.target.value) })}
+          className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+        />
+      </Row>
+
+      {!isLoop && (
+        <Row label="Easing">
+          <select
+            value={anim.easing}
+            onChange={e => upd({ easing: e.target.value as EasingType })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+          >
+            {EASINGS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+          </select>
+        </Row>
+      )}
     </div>
   )
 }

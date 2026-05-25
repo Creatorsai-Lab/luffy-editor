@@ -43,7 +43,7 @@ export default function Timeline() {
     getTotalDuration,
     setTimelineZoom, setSnapEnabled,
     updateElement, removeElement, addElementToScene,
-    addTimeMarker, removeTimeMarker,
+    addAudioMarker, removeAudioMarker,
   } = useEditorStore()
 
   const [editDurId, setEditDurId] = useState<string | null>(null)
@@ -463,7 +463,6 @@ export default function Timeline() {
       .map((el, idx) => ({ audio: el as AudioElement, sc, scStart, idx }))
   })
 
-  const timeMarkers = project.timeMarkers ?? []
 
   return (
     <div className="flex flex-col bg-[#171717] flex-none" style={{ height: 160 }}>
@@ -832,46 +831,34 @@ export default function Timeline() {
             })}
           </div>
 
-          {/* Time markers — confined to the audio track area only */}
-{timeMarkers.map(marker => {
-  const markerPx = marker.time * PX_PER_SEC
-  return (
-    <div
-      key={marker.id}
-      className="absolute z-20 pointer-events-none"
-      style={{
-        left: markerPx,
-        top: RULER_HEIGHT + SCENE_HEIGHT,
-        bottom: 0,
-      }}
-    >
-      {/* Dense Dotted vertical line (2px line, 2px gap) */}
-      <div
-        className="absolute"
-        style={{
-          top: 0, bottom: 0, left: 0, width: 1.5,
-          background: `repeating-linear-gradient(to bottom, ${MARKER_COLOR} 0px, ${MARKER_COLOR} 2px, transparent 2px, transparent 4px)`,
-          opacity: 0.9,
-        }}
-      />
-      
-      {/* Clickable circular caret at top of audio area */}
-      <div
-        className="absolute pointer-events-auto cursor-pointer group flex items-center justify-center rounded-full"
-        style={{ 
-          top: -2.2, 
-          left: -1.1,
-          width: 5, 
-          height: 5,
-          backgroundColor: MARKER_COLOR
-        }}
-        onClick={e => { e.stopPropagation(); removeTimeMarker(marker.id) }}
-        title={`${fmtTime(marker.time)} — click to remove`}
-      >
-      </div>
-    </div>
-  )
-})}
+          {/* Audio markers — stored on each clip, move with the clip */}
+          {allAudioClips.map(({ audio, scStart }) =>
+            (audio.markers ?? []).map(marker => {
+              const markerPx = (scStart + (audio.x ?? 0) + marker.offset) * PX_PER_SEC
+              return (
+                <div
+                  key={marker.id}
+                  className="absolute z-20 pointer-events-none"
+                  style={{ left: markerPx, top: RULER_HEIGHT + SCENE_HEIGHT, bottom: 0 }}
+                >
+                  <div
+                    className="absolute"
+                    style={{
+                      top: 0, bottom: 0, left: 0, width: 1.5,
+                      background: `repeating-linear-gradient(to bottom, ${MARKER_COLOR} 0px, ${MARKER_COLOR} 2px, transparent 2px, transparent 4px)`,
+                      opacity: 0.9,
+                    }}
+                  />
+                  <div
+                    className="absolute pointer-events-auto cursor-pointer rounded-full"
+                    style={{ top: -2.5, left: -1.5, width: 6, height: 6, backgroundColor: MARKER_COLOR }}
+                    onClick={e => { e.stopPropagation(); removeAudioMarker(audio.id, marker.id) }}
+                    title={`${fmtTime(scStart + (audio.x ?? 0) + marker.offset)} — click to remove`}
+                  />
+                </div>
+              )
+            })
+          )}
           {/* Playhead */}
           <div
             className="absolute top-0 bottom-0 z-30"
@@ -947,10 +934,10 @@ export default function Timeline() {
             onClick: splitAtContextPosition,
           },
           {
-            label: `Add time mark at ${audioContextMenu ? fmtTime(audioContextMenu.absoluteTime) : '0:00.0'}`,
+            label: `Add mark at ${audioContextMenu ? fmtTime(audioContextMenu.clickTimeInAudio) : '0:00.0'} in clip`,
             icon: <Bookmark size={14} />,
             onClick: () => {
-              if (audioContextMenu) addTimeMarker(audioContextMenu.absoluteTime)
+              if (audioContextMenu) addAudioMarker(audioContextMenu.audioId, audioContextMenu.clickTimeInAudio)
               setAudioContextMenu(null)
             }
           },
@@ -977,22 +964,13 @@ export default function Timeline() {
         y={timelineContextMenu?.y ?? 0}
         items={[
           {
-            label: `Add time mark at ${timelineContextMenu ? fmtTime(timelineContextMenu.time) : '0:00.0'}`,
+            label: `Set playhead to ${timelineContextMenu ? fmtTime(timelineContextMenu.time) : '0:00.0'}`,
             icon: <Bookmark size={14} />,
             onClick: () => {
-              if (timelineContextMenu) addTimeMarker(timelineContextMenu.time)
+              if (timelineContextMenu) setPlayhead(timelineContextMenu.time)
               setTimelineContextMenu(null)
             }
           },
-          ...(timeMarkers.length > 0 ? [{
-            label: 'Clear all markers',
-            icon: <Trash2 size={14} />,
-            dangerous: true,
-            onClick: () => {
-              timeMarkers.forEach(m => removeTimeMarker(m.id))
-              setTimelineContextMenu(null)
-            }
-          }] : [])
         ]}
         onClose={() => setTimelineContextMenu(null)}
       />
