@@ -128,7 +128,7 @@ export function makeIcon(iconName: string, x: number, y: number): IconElement {
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     iconName,
-    color: '#ffffff',
+    color: '#202020',
     strokeWidth: 2,
   }
 }

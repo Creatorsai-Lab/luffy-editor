@@ -5,7 +5,7 @@ import { Clipboard, Copy, Trash2, ImageIcon } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
 import { registerStage } from '../../engine/stageRegistry'
-import { makeText, makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from '../../utils/defaults'
+import { makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from '../../utils/defaults'
 import type { Background, ImageBg, ImageElement, ShapeType, EditorElement } from '../../types/editor'
 import { toFileUrl } from '../../utils/pathUtils'
 import CanvasElement from './CanvasElement'
@@ -220,10 +220,6 @@ export default function EditorCanvas() {
     const { x, y } = toProjectCoords(e.evt.clientX, e.evt.clientY)
 
     switch (activeTool) {
-      case 'text':
-        addElement(makeText(x, y))
-        setActiveTool('select')
-        break
       case 'shape-rect':
       case 'shape-circle':
       case 'shape-triangle':

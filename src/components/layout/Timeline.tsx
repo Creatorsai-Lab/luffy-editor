@@ -9,8 +9,8 @@ import Tooltip from '../ui/Tooltip'
 import ContextMenu from '../ui/ContextMenu'
 import type { AudioElement } from '../../types/editor'
 
-const RULER_HEIGHT = 18
-const SCENE_HEIGHT = 36
+const RULER_HEIGHT = 22
+const SCENE_HEIGHT = 50
 const TRACK_HEIGHT = 32
 const PX_PER_SEC_BASE = 60
 
@@ -676,17 +676,18 @@ export default function Timeline() {
                     setContextMenu({ x: e.clientX, y: e.clientY, sceneId: sc.id })
                   }}
                   className={cn(
-                    'absolute flex items-center px-3 cursor-pointer text-xs transition-all select-none rounded-md',
+                    'absolute flex items-center px-3 cursor-pointer text-xs transition-all select-none rounded-md overflow-hidden',
                     isDragging && 'opacity-50',
                     isDropTarget && 'ring-2 ring-editor-accent',
                     isResizing && 'ring-2 ring-white',
                     isActive && 'ring-2 ring-white shadow-lg'
                   )}
                   style={{
-                    left: startPx, width: widthPx,
+                    left: startPx, width: Math.max(widthPx - 2, 8),
                     height: SCENE_HEIGHT - 4, top: 2,
                     background: sceneColor, color: 'white',
-                    fontWeight: isActive ? 600 : 400
+                    fontWeight: isActive ? 600 : 400,
+                    paddingBottom: 14,
                   }}
                 >
                   {transColor && (
@@ -700,32 +701,13 @@ export default function Timeline() {
 
                   <span className="truncate flex-1 pl-1 font-medium">{sc.name}</span>
 
-                  {editDurId === sc.id ? (
-                    <input
-                      autoFocus type="number" defaultValue={sc.duration} min={0.5} max={120} step={0.5}
-                      className="w-12 bg-white/20 border border-white/40 rounded text-xs text-white px-1 nodrag"
-                      onBlur={e => { updateScene(sc.id, { duration: Math.max(0.5, Number(e.target.value)) }); setEditDurId(null) }}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') { updateScene(sc.id, { duration: Math.max(0.5, Number(e.currentTarget.value)) }); setEditDurId(null) }
-                        if (e.key === 'Escape') setEditDurId(null)
-                        e.stopPropagation()
-                      }}
-                      onClick={e => e.stopPropagation()}
-                    />
-                  ) : (
-                    <span
-                      className="flex-shrink-0 ml-2 cursor-text hover:bg-white/20 px-1.5 py-0.5 rounded transition-colors"
-                      onDoubleClick={e => { e.stopPropagation(); setEditDurId(sc.id) }}
-                      title="Double-click to edit duration"
-                    >
-                      {Number(sc.duration).toFixed(2)}s
-                    </span>
-                  )}
 
                   <div
                     className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-white/30 rounded-r-md z-10"
                     onMouseDown={e => handleSceneEdgeMouseDown(sc.id, 'end', e)}
                   />
+
+                  <SceneRuler duration={sc.duration} pxPerSec={PX_PER_SEC} />
                 </div>
               )
             })}
@@ -1050,4 +1032,40 @@ function fmtTime(s: number) {
   const m   = Math.floor(s / 60)
   const sec = (s % 60).toFixed(1).padStart(4, '0')
   return `${m}:${sec}`
+}
+
+// Adaptive time ruler rendered inside each scene block
+function SceneRuler({ duration, pxPerSec }: { duration: number; pxPerSec: number }) {
+  const INTERVALS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60]
+  const MIN_PX    = 36
+  const interval  = INTERVALS.find(i => i * pxPerSec >= MIN_PX) ?? 60
+
+  const ticks: number[] = []
+  for (let t = interval; t < duration - interval * 0.15; t += interval) {
+    ticks.push(Math.round(t * 1000) / 1000)
+  }
+
+  return (
+    <>
+      {ticks.map(t => {
+        const label = t < 1 ? `${t}s` : t % 1 === 0 ? `${t}s` : `${t}s`
+        return (
+          <div
+            key={t}
+            className="absolute pointer-events-none"
+            style={{ left: t * pxPerSec, bottom: 0 }}
+          >
+            <div style={{ position: 'absolute', bottom: 0, left: 0, width: 1, height: 7, backgroundColor: 'rgba(242, 235, 255, 0.52)' }} />
+            <span style={{
+              position: 'absolute', bottom: 8, left: -2,
+              fontSize: 9, color: 'rgba(251, 245, 255, 0.68)',
+              lineHeight: 1, whiteSpace: 'nowrap', userSelect: 'none',
+            }}>
+              {label}
+            </span>
+          </div>
+        )
+      })}
+    </>
+  )
 }

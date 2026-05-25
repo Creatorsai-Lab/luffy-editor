@@ -3,7 +3,7 @@ import { FONT_FAMILIES } from '../../types/editor'
 import type { TextElement, FontWeight, AlignType, AnimationType, EasingType, ElementAnimation, TextEffectType } from '../../types/editor'
 import { AlignLeft, AlignCenter, AlignRight, Italic, Underline, Type, Plus, Trash2 } from 'lucide-react'
 import { cn } from '../../utils/cn'
-import { makeAnimation } from '../../utils/defaults'
+import { makeAnimation, makeText } from '../../utils/defaults'
 
 const WEIGHTS: { label: string; value: FontWeight }[] = [
   { label: 'Normal',   value: 'normal' },
@@ -56,7 +56,7 @@ const LOOP_TYPE_SET = new Set<string>(['pulse', 'bounceLoop', 'rotateLoop', 'flo
 const isLoopAnim = (a: ElementAnimation) => LOOP_TYPE_SET.has(a.type) || a.timing === 'loop'
 
 export default function TextPanel() {
-  const { getSelectedEls, updateElement, addAnimation } = useEditorStore()
+  const { getSelectedEls, updateElement, addAnimation, addElement, project } = useEditorStore()
   const selected = getSelectedEls()
   const el = selected.find(e => e.type === 'text') as TextElement | undefined
 
@@ -76,10 +76,24 @@ export default function TextPanel() {
     <div className="flex flex-col h-full overflow-hidden">
       <PanelHeader icon={<Type size={12} />} title="Text" />
 
+      {/* Add text button — always visible */}
+      <div className="px-3 py-2 border-b border-editor-border">
+        <button
+          disabled={!project}
+          onClick={() => {
+            if (!project) return
+            addElement(makeText(project.width / 2 - 250, project.height / 2 - 30))
+          }}
+          className="w-full text-xs py-2 bg-editor-accent-dim text-editor-accent border border-editor-accent rounded hover:bg-editor-accent hover:text-white transition-colors disabled:opacity-50"
+        >
+          + Add Text
+        </button>
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         {!el && (
-          <p className="text-xs text-[#c1c1c1] px-3 py-3">
-            Click <strong className="text-editor-secondary">Text</strong> in the menu then click the canvas to add a text block.
+          <p className="text-xs text-[#c1c1c1] px-3 py-4 text-center">
+            Select a text element to edit its properties.
           </p>
         )}
 
