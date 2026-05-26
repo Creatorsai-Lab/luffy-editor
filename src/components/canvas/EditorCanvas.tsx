@@ -232,6 +232,7 @@ export default function EditorCanvas() {
       case 'shape-speechBubble':
       case 'shape-roundedSpeech':
       case 'shape-cone':
+      case 'shape-cube':
       case 'shape-rect-hand':
       case 'shape-circle-hand':
       case 'shape-square-hand': {

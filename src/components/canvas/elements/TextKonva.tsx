@@ -1,13 +1,16 @@
 import { useEffect, useRef } from 'react'
-import { Text } from 'react-konva'
+import { Text, Group } from 'react-konva'
 import type Konva from 'konva'
-import type { TextElement } from '../../../types/editor'
+import type { TextElement, SlideDir } from '../../../types/editor'
 import { loadFont } from '../../../utils/fontLoader'
 
 interface Props {
   el: TextElement
   konvaProps: Record<string, unknown>
   textProgress: number
+  textMode?: 'chars' | 'words' | 'draw'
+  wipeProgress?: number
+  wipeDir?: SlideDir
 }
 
 const WEIGHT_MAP: Record<string, string> = {
@@ -56,10 +59,9 @@ function resolveEffectProps(el: TextElement) {
   return { shadowEnabled, shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY, stroke, strokeWidth, strokeEnabled, fillEnabled }
 }
 
-export default function TextKonva({ el, konvaProps, textProgress }: Props) {
+export default function TextKonva({ el, konvaProps, textProgress, textMode, wipeProgress = 1, wipeDir }: Props) {
   const nodeRef = useRef<Konva.Text | null>(null)
 
-  // When the font family changes, ensure it's loaded then force-redraw the node
   useEffect(() => {
     const weight = el.fontWeight === 'bold' ? '700' : el.fontWeight === 'semibold' ? '600' : el.fontWeight === 'medium' ? '500' : '400'
     loadFont(el.fontFamily, weight).then(() => {
@@ -67,29 +69,72 @@ export default function TextKonva({ el, konvaProps, textProgress }: Props) {
     }).catch(() => {})
   }, [el.fontFamily, el.fontWeight])
 
-  const content = textProgress < 1
-    ? el.content.slice(0, Math.floor(el.content.length * textProgress))
-    : el.content
+  const content = (() => {
+    if (textProgress >= 1 || textMode === 'draw') return el.content
+    if (textMode === 'words') {
+      const words = el.content.split(' ')
+      const count = Math.max(1, Math.ceil(words.length * textProgress))
+      return words.slice(0, count).join(' ')
+    }
+    return el.content.slice(0, Math.floor(el.content.length * textProgress))
+  })()
 
   const effectProps = resolveEffectProps(el)
+
+  const textStyleProps = {
+    width: el.width,
+    fontSize: el.fontSize,
+    fontFamily: el.fontFamily,
+    fontStyle: [el.italic ? 'italic' : '', WEIGHT_MAP[el.fontWeight] ?? 'normal'].join(' ').trim(),
+    textDecoration: el.underline ? 'underline' : '',
+    fill: el.color,
+    align: el.align,
+    lineHeight: el.lineHeight,
+    letterSpacing: el.letterSpacing,
+    wrap: 'word' as const,
+    perfectDrawEnabled: false,
+    ...effectProps,
+  }
+
+  if (wipeDir && wipeProgress < 1) {
+    const clipX = wipeDir === 'left' ? el.width * (1 - wipeProgress) : 0
+    const clipY = wipeDir === 'up'   ? el.height * (1 - wipeProgress) : 0
+    const clipW = (wipeDir === 'left' || wipeDir === 'right') ? el.width * wipeProgress : el.width
+    const clipH = (wipeDir === 'up'   || wipeDir === 'down')  ? el.height * wipeProgress : el.height
+    return (
+      <Group
+        {...(konvaProps as Record<string, unknown>)}
+        clipX={clipX}
+        clipY={clipY}
+        clipWidth={Math.max(0, clipW)}
+        clipHeight={Math.max(0, clipH)}
+      >
+        <Text ref={nodeRef} {...textStyleProps} text={content} />
+      </Group>
+    )
+  }
+
+  if (textMode === 'draw' && textProgress < 1) {
+    const clipW = Math.max(1, el.width * textProgress)
+    return (
+      <Group
+        {...(konvaProps as Record<string, unknown>)}
+        clipX={0}
+        clipY={-el.fontSize}
+        clipWidth={clipW}
+        clipHeight={el.height + el.fontSize * 2}
+      >
+        <Text ref={nodeRef} {...textStyleProps} text={content} />
+      </Group>
+    )
+  }
 
   return (
     <Text
       ref={nodeRef}
       {...konvaProps}
-      {...effectProps}
+      {...textStyleProps}
       text={content}
-      width={el.width}
-      fontSize={el.fontSize}
-      fontFamily={el.fontFamily}
-      fontStyle={[el.italic ? 'italic' : '', WEIGHT_MAP[el.fontWeight] ?? 'normal'].join(' ').trim()}
-      textDecoration={el.underline ? 'underline' : ''}
-      fill={el.color}
-      align={el.align}
-      lineHeight={el.lineHeight}
-      letterSpacing={el.letterSpacing}
-      wrap="word"
-      perfectDrawEnabled={false}
     />
   )
 }

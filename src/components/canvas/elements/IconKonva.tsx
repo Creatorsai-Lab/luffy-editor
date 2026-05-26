@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Image as KonvaImage } from 'react-konva'
 import type Konva from 'konva'
-import type { IconElement } from '../../../types/editor'
+import type { IconElement, SlideDir } from '../../../types/editor'
 import { buildIconSvg, svgToDataUrl } from '../../../engine/iconData'
 
 interface Props {
   el: IconElement
   konvaProps: Record<string, unknown>
+  textProgress?: number
+  wipeProgress?: number
+  wipeDir?: SlideDir
 }
 
 const imageCache = new Map<string, HTMLImageElement>()
@@ -26,7 +29,7 @@ function loadIconImage(iconName: string, color: string, strokeWidth: number): Pr
   })
 }
 
-export default function IconKonva({ el, konvaProps }: Props) {
+export default function IconKonva({ el, konvaProps, textProgress = 1, wipeProgress = 1, wipeDir }: Props) {
   const [image, setImage] = useState<HTMLImageElement | null>(null)
   const nodeRef = useRef<Konva.Image | null>(null)
 
@@ -37,10 +40,22 @@ export default function IconKonva({ el, konvaProps }: Props) {
     })
   }, [el.iconName, el.color, el.strokeWidth])
 
+  const clipProps = (() => {
+    if (wipeDir && wipeProgress < 1) {
+      const clipX = wipeDir === 'left' ? el.width * (1 - wipeProgress) : 0
+      const clipY = wipeDir === 'up'   ? el.height * (1 - wipeProgress) : 0
+      const clipW = (wipeDir === 'left' || wipeDir === 'right') ? el.width * wipeProgress : el.width
+      const clipH = (wipeDir === 'up'   || wipeDir === 'down')  ? el.height * wipeProgress : el.height
+      return { clipX, clipY, clipWidth: Math.max(0, clipW), clipHeight: Math.max(0, clipH) }
+    }
+    return {}
+  })()
+
   return (
     <KonvaImage
       ref={nodeRef}
       {...konvaProps}
+      {...clipProps}
       image={image ?? undefined}
       width={el.width}
       height={el.height}

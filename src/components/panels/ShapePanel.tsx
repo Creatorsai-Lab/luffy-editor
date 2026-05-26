@@ -1,4 +1,4 @@
-import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, MessageCircle, MessageSquare, Cone, Plus, Trash2 } from 'lucide-react'
+import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, MessageCircle, MessageSquare, Cone, Box, Plus, Trash2 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ShapeElement, ShapeType, ActiveTool, AnimationType, EasingType, SlideDir, ElementAnimation } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
@@ -16,26 +16,33 @@ const SHAPES: { icon: React.ReactNode; type: ShapeType; label: string }[] = [
   { icon: <Diamond size={14} />,       type: 'diamond',       label: 'Diamond'      },
   { icon: <MessageSquare size={14} />, type: 'speechBubble',  label: 'Speech Box'   },
   { icon: <MessageCircle size={14} />, type: 'roundedSpeech', label: 'Casual Speech'},
-  { icon: <Cone size={14} />,          type: 'cone',          label: 'Cone'         },
+  { icon: <Cone size={14} />,          type: 'cone',          label: '3D Cone'      },
+  { icon: <Box size={14} />,           type: 'cube',          label: '3D Cube'      },
 ]
 
+const SHAPES_3D = new Set<ShapeType>(['cone', 'cube'])
+
 const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Fade In',  value: 'fadeIn'  },
-  { label: 'Slide In', value: 'slideIn' },
-  { label: 'Scale In', value: 'scaleIn' },
-  { label: 'Spin In',  value: 'spin'    },
+  { label: 'Slide In',  value: 'slideIn'  },
+  { label: 'Fade In',   value: 'fadeIn'   },
+  { label: 'Scale In',  value: 'scaleIn'  },
+  { label: 'Scale Out', value: 'scaleOut' },
+  { label: 'Wipe In',   value: 'wipeIn'   },
 ]
 
 const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Pulse',  value: 'pulse'      },
-  { label: 'Bounce', value: 'bounceLoop' },
-  { label: 'Rotate', value: 'rotateLoop' },
+  { label: 'Pulse',     value: 'pulse'      },
+  { label: 'Bounce',    value: 'bounceLoop' },
+  { label: 'Rotate',    value: 'rotateLoop' },
+  { label: 'Fade Loop', value: 'fadeLoop'   },
 ]
 
 const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Fade Out',  value: 'fadeOut'  },
   { label: 'Slide Out', value: 'slideOut' },
+  { label: 'Fade Out',  value: 'fadeOut'  },
+  { label: 'Scale In',  value: 'scaleIn'  },
   { label: 'Scale Out', value: 'scaleOut' },
+  { label: 'Wipe Out',  value: 'wipeOut'  },
 ]
 
 const EASINGS: { label: string; value: EasingType }[] = [
@@ -129,6 +136,39 @@ export default function ShapePanel() {
                   onChange={v => upd({ cornerRadius: v })} display={`${el.cornerRadius}px`} />
               </Row>
             )}
+            {SHAPES_3D.has(el.shapeType) && (
+              <>
+                <Row label="Depth">
+                  <Slider
+                    value={el.depth ?? 55}
+                    min={10} max={300} step={1}
+                    onChange={v => upd({ depth: v })}
+                    display={`${el.depth ?? 55}px`}
+                  />
+                </Row>
+                <Row label="Face Color">
+                  <div className="flex items-center gap-1">
+                    <ColorInput
+                      value={el.faceColor || '#808080'}
+                      onChange={v => upd({ faceColor: v })}
+                      disabled={!el.faceColor}
+                    />
+                    <button
+                      onClick={() => upd({ faceColor: el.faceColor ? '' : '#808080' })}
+                      className={cn(
+                        'px-2 py-1 text-2xs rounded border transition-colors',
+                        el.faceColor
+                          ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
+                          : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text'
+                      )}
+                      title="Toggle custom face color"
+                    >
+                      {el.faceColor ? 'Custom' : 'Auto'}
+                    </button>
+                  </div>
+                </Row>
+              </>
+            )}
             <Row label="Opacity">
               <Slider value={el.opacity} min={0} max={1} step={0.01}
                 onChange={v => upd({ opacity: v })} display={`${Math.round(el.opacity * 100)}%`} />
@@ -214,7 +254,7 @@ function AnimBlock({
     updateAnimation(elId, anim.id, patch)
   }
 
-  const hasDir  = anim.type === 'slideIn' || anim.type === 'slideOut'
+  const hasDir  = ['slideIn', 'slideOut', 'wipeIn', 'wipeOut'].includes(anim.type)
   const hasDist = anim.type === 'bounceLoop'
 
   return (

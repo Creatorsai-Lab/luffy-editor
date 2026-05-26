@@ -28,8 +28,11 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
 
   // Animation-driven scale from center: adjust x/y so the element scales around its center,
   // not the Konva default of top-left corner.
-  const animScaleX = animProps?.scaleX ?? 1
-  const animScaleY = animProps?.scaleY ?? 1
+  // When offsetX/offsetY are set (e.g. rotateLoop), use Konva's offset system instead.
+  const animScaleX  = animProps?.scaleX  ?? 1
+  const animScaleY  = animProps?.scaleY  ?? 1
+  const animOffsetX = animProps?.offsetX ?? 0
+  const animOffsetY = animProps?.offsetY ?? 0
   const elW = 'width'  in element ? (element as { width:  number }).width  : 0
   const elH = 'height' in element ? (element as { height: number }).height : 0
   const rawX = animProps?.x ?? element.x
@@ -37,8 +40,10 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
 
   const props = {
     id:       element.id,
-    x:        rawX + (elW / 2) * (1 - animScaleX),
-    y:        rawY + (elH / 2) * (1 - animScaleY),
+    x:        rawX + (animOffsetX > 0 ? animOffsetX : (elW / 2) * (1 - animScaleX)),
+    y:        rawY + (animOffsetY > 0 ? animOffsetY : (elH / 2) * (1 - animScaleY)),
+    offsetX:  animOffsetX,
+    offsetY:  animOffsetY,
     opacity:  animProps?.opacity  ?? element.opacity,
     scaleX:   element.type === 'text'
       ? animScaleX * ((element as import('../../types/editor').TextElement).stretchX ?? 1)
@@ -100,17 +105,20 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     }
   }
 
+  const wipeProgress = animProps?.wipeProgress ?? 1
+  const wipeDir      = animProps?.wipeDir
+
   switch (element.type) {
-    case 'text':   return <TextKonva   el={element} konvaProps={props} textProgress={animProps?.textProgress ?? 1} />
-    case 'shape':  return <ShapeKonva  el={element} konvaProps={props} />
+    case 'text':   return <TextKonva   el={element} konvaProps={props} textProgress={animProps?.textProgress ?? 1} textMode={animProps?.textMode} wipeProgress={wipeProgress} wipeDir={wipeDir} />
+    case 'shape':  return <ShapeKonva  el={element} konvaProps={props} wipeProgress={wipeProgress} wipeDir={wipeDir} />
     case 'arrow':  return <ArrowKonva  el={element} konvaProps={props} pathProgress={animProps?.textProgress ?? 1} dashOffset={animProps?.dashOffset ?? 0} />
     case 'code':   return <CodeKonva   el={element} konvaProps={props} />
-    case 'image':  return <ImageKonva  el={element} konvaProps={props} />
+    case 'image':  return <ImageKonva  el={element} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
     case 'table':  return <TableKonva  el={element} konvaProps={props} />
     case 'chart':  return <ChartKonva  el={element} konvaProps={props} />
     case 'video':  return <VideoKonva  el={element} konvaProps={props} />
-    case 'icon':   return <IconKonva   el={element as import('../../types/editor').IconElement} konvaProps={props} />
-    case 'audio':  return null // Audio only appears in timeline, not on canvas
+    case 'icon':   return <IconKonva   el={element as import('../../types/editor').IconElement} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
+    case 'audio':  return null
     default:       return null
   }
 }

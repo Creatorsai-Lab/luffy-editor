@@ -6,22 +6,26 @@ import { cn } from '../../utils/cn'
 import { makeAnimation } from '../../utils/defaults'
 
 const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Fade In',  value: 'fadeIn'  },
-  { label: 'Slide In', value: 'slideIn' },
-  { label: 'Scale In', value: 'scaleIn' },
-  { label: 'Spin In',  value: 'spin'    },
+  { label: 'Slide In',  value: 'slideIn'  },
+  { label: 'Fade In',   value: 'fadeIn'   },
+  { label: 'Scale In',  value: 'scaleIn'  },
+  { label: 'Scale Out', value: 'scaleOut' },
+  { label: 'Wipe In',   value: 'wipeIn'   },
 ]
 
 const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Pulse',  value: 'pulse'      },
-  { label: 'Bounce', value: 'bounceLoop' },
-  { label: 'Rotate', value: 'rotateLoop' },
+  { label: 'Pulse',     value: 'pulse'      },
+  { label: 'Bounce',    value: 'bounceLoop' },
+  { label: 'Rotate',    value: 'rotateLoop' },
+  { label: 'Fade Loop', value: 'fadeLoop'   },
 ]
 
 const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Fade Out',  value: 'fadeOut'  },
   { label: 'Slide Out', value: 'slideOut' },
+  { label: 'Fade Out',  value: 'fadeOut'  },
+  { label: 'Scale In',  value: 'scaleIn'  },
   { label: 'Scale Out', value: 'scaleOut' },
+  { label: 'Wipe Out',  value: 'wipeOut'  },
 ]
 
 const EASINGS: { label: string; value: EasingType }[] = [
@@ -172,7 +176,7 @@ function AnimBlock({
     updateAnimation(elId, anim.id, patch)
   }
 
-  const hasDir  = anim.type === 'slideIn' || anim.type === 'slideOut'
+  const hasDir  = ['slideIn', 'slideOut', 'wipeIn', 'wipeOut'].includes(anim.type)
   const hasDist = anim.type === 'bounceLoop'
 
   return (

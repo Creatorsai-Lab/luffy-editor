@@ -1,4 +1,4 @@
-import { Arrow } from 'react-konva'
+import { Arrow, Line } from 'react-konva'
 import type { ArrowElement } from '../../../types/editor'
 
 interface Props {
@@ -9,8 +9,10 @@ interface Props {
 }
 
 export default function ArrowKonva({ el, konvaProps, pathProgress = 1, dashOffset = 0 }: Props) {
+  // Only hide end pointer when a drawPath animation is actively drawing the line
+  const hasDrawAnim = el.animations.some(a => a.type === 'drawPath')
   const pointerAtBeginning = el.arrowHead === 'start' || el.arrowHead === 'both'
-  const pointerAtEnd       = (el.arrowHead === 'end' || el.arrowHead === 'both') && pathProgress >= 1
+  const pointerAtEnd       = (el.arrowHead === 'end' || el.arrowHead === 'both') && (!hasDrawAnim || pathProgress >= 1)
 
   // flowLoop forces dashes even if the arrow wasn't manually set to dashed
   const hasFlow = dashOffset !== 0
@@ -49,26 +51,39 @@ export default function ArrowKonva({ el, konvaProps, pathProgress = 1, dashOffse
     return [x1, y1, qx, qy, ex, ey]
   })()
 
+  const headColor = el.arrowHeadColor && el.arrowHeadColor !== '' ? el.arrowHeadColor : el.stroke
+  const animX = konvaProps.x as number
+  const animY = konvaProps.y as number
+
+  const commonProps = {
+    ...konvaProps,
+    x: animX,
+    y: animY,
+    points,
+    stroke: el.stroke,
+    strokeWidth: el.strokeWidth,
+    dash,
+    dashOffset,
+    tension: el.curve ? 0.5 : 0,
+    lineCap: 'round' as const,
+    lineJoin: 'round' as const,
+    hitStrokeWidth: Math.max(16, (el.strokeWidth ?? 2) + 8),
+    perfectDrawEnabled: false,
+  }
+
+  if (el.arrowHead === 'none') {
+    return <Line key={`none-${el.id}`} {...commonProps} />
+  }
+
   return (
     <Arrow
-      {...konvaProps}
-      x={0}
-      y={0}
-      points={points}
-      stroke={el.stroke}
-      strokeWidth={el.strokeWidth}
-      fill={el.arrowHeadColor || el.stroke}
-      dash={dash}
-      dashOffset={dashOffset}
+      {...commonProps}
+      key={`${el.arrowHead}-${headColor}`}
+      fill={headColor}
       pointerAtBeginning={pointerAtBeginning}
       pointerAtEnd={pointerAtEnd}
       pointerLength={el.pointerLength ?? 12}
       pointerWidth={el.pointerWidth ?? 10}
-      tension={el.curve ? 0.5 : 0}
-      lineCap="round"
-      lineJoin="round"
-      hitStrokeWidth={Math.max(16, (el.strokeWidth ?? 2) + 8)}
-      perfectDrawEnabled={false}
     />
   )
 }

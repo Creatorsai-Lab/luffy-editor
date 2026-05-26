@@ -1,6 +1,6 @@
 import { useEditorStore } from '../../store/editorStore'
 import { FONT_FAMILIES } from '../../types/editor'
-import type { TextElement, FontWeight, AlignType, AnimationType, EasingType, ElementAnimation, TextEffectType } from '../../types/editor'
+import type { TextElement, FontWeight, AlignType, AnimationType, EasingType, SlideDir, ElementAnimation, TextEffectType } from '../../types/editor'
 import { AlignLeft, AlignCenter, AlignRight, Italic, Underline, Type, Plus, Trash2 } from 'lucide-react'
 import { cn } from '../../utils/cn'
 import { makeAnimation, makeText } from '../../utils/defaults'
@@ -22,26 +22,35 @@ const TEXT_EFFECTS: { label: string; value: TextEffectType }[] = [
 ]
 
 const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Typewriter (Chars)', value: 'typewriterChars' },
-  { label: 'Typewriter (Words)', value: 'typewriterWords' },
-  { label: 'Fade In',            value: 'textFade'        },
-  { label: 'Burst',              value: 'textBurst'       },
-  { label: 'Bounce',             value: 'textBounce'      },
-  { label: 'Block',              value: 'textBlock'       },
-  { label: 'Squiz In',           value: 'textSquiz'       },
-  { label: 'Spread',             value: 'textSpread'      },
-  { label: 'Twirl',              value: 'textTwirl'       },
-  { label: 'Zoom In',            value: 'textZoomIn'      },
+  { label: 'Slide In',           value: 'slideIn'        },
+  { label: 'Fade In',            value: 'fadeIn'         },
+  { label: 'Scale In',           value: 'scaleIn'        },
+  { label: 'Scale Out',          value: 'scaleOut'       },
+  { label: 'Wipe In',            value: 'wipeIn'         },
+  { label: 'Typewriter (Chars)', value: 'typewriterChars'},
+  { label: 'Typewriter (Words)', value: 'typewriterWords'},
 ]
 
 const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Pulse',  value: 'pulse'      },
-  { label: 'Bounce', value: 'bounceLoop' },
+  { label: 'Pulse',     value: 'pulse'      },
+  { label: 'Bounce',    value: 'bounceLoop' },
+  { label: 'Rotate',    value: 'rotateLoop' },
+  { label: 'Fade Loop', value: 'fadeLoop'   },
 ]
 
 const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Fade Out', value: 'textFade'    },
-  { label: 'Zoom Out', value: 'textZoomOut' },
+  { label: 'Slide Out', value: 'slideOut' },
+  { label: 'Fade Out',  value: 'fadeOut'  },
+  { label: 'Scale In',  value: 'scaleIn'  },
+  { label: 'Scale Out', value: 'scaleOut' },
+  { label: 'Wipe Out',  value: 'wipeOut'  },
+]
+
+const DIRECTIONS: { label: string; value: SlideDir }[] = [
+  { label: '← Left',  value: 'left'  },
+  { label: '→ Right', value: 'right' },
+  { label: '↑ Up',    value: 'up'    },
+  { label: '↓ Down',  value: 'down'  },
 ]
 
 const EASINGS: { label: string; value: EasingType }[] = [
@@ -389,6 +398,9 @@ function AnimBlock({
     updateAnimation(elId, anim.id, patch)
   }
 
+  const hasDir  = ['slideIn', 'slideOut', 'wipeIn', 'wipeOut'].includes(anim.type)
+  const hasDist = anim.type === 'bounceLoop'
+
   return (
     <div className="border-t border-editor-border px-3 py-2 flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
@@ -412,6 +424,28 @@ function AnimBlock({
         <div className="text-[10px] text-editor-accent bg-editor-accent-dim rounded px-2 py-0.5 w-fit">
           ∞ Loops continuously
         </div>
+      )}
+
+      {hasDir && (
+        <Row label="Direction">
+          <select
+            value={anim.params?.direction ?? 'right'}
+            onChange={e => upd({ params: { ...anim.params, direction: e.target.value as SlideDir } })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+          >
+            {DIRECTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+          </select>
+        </Row>
+      )}
+
+      {hasDist && (
+        <Row label="Distance (px)">
+          <input type="number" min={4} max={200} step={2}
+            value={anim.params?.distance ?? 24}
+            onChange={e => upd({ params: { ...anim.params, distance: Number(e.target.value) } })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+          />
+        </Row>
       )}
 
       <Row label="Start (s)">

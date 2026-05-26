@@ -1,4 +1,4 @@
-import type { EditorElement, ElementAnimation, EasingType } from '../types/editor'
+import type { EditorElement, ElementAnimation, EasingType, SlideDir } from '../types/editor'
 
 // ─── Easing ───────────────────────────────────────────────────────────────────
 
@@ -28,8 +28,12 @@ export interface AnimatedProps {
   opacity: number
   scaleX: number; scaleY: number
   rotation: number
+  offsetX: number; offsetY: number
   textProgress: number
+  textMode: 'chars' | 'words' | 'draw' | undefined
   dashOffset: number
+  wipeProgress: number
+  wipeDir: SlideDir | undefined
 }
 
 export function getAnimatedProps(el: EditorElement, localTime: number): AnimatedProps {
@@ -38,8 +42,12 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
     opacity: el.opacity,
     scaleX: 1, scaleY: 1,
     rotation: el.rotation,
+    offsetX: 0, offsetY: 0,
     textProgress: 1,
+    textMode: undefined,
     dashOffset: 0,
+    wipeProgress: 1,
+    wipeDir: undefined,
   }
 
   const anims = el.animations
@@ -198,19 +206,35 @@ function applyAnim(
     }
 
     case 'scaleIn':
-      if (before) { out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
-      if (after)  { out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
-      out.scaleX  = lerp(0, 1, t)
-      out.scaleY  = lerp(0, 1, t)
-      out.opacity = lerp(0, el.opacity, t)
+      if (anim.timing === 'onExit') {
+        if (after)  { out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
+        if (before) return
+        out.scaleX  = lerp(1, 0, t)
+        out.scaleY  = lerp(1, 0, t)
+        out.opacity = lerp(el.opacity, 0, t)
+      } else {
+        if (before) { out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
+        if (after)  { out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
+        out.scaleX  = lerp(0, 1, t)
+        out.scaleY  = lerp(0, 1, t)
+        out.opacity = lerp(0, el.opacity, t)
+      }
       break
 
     case 'scaleOut':
-      if (after)  { out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
-      if (before) return
-      out.scaleX  = lerp(1, 0, t)
-      out.scaleY  = lerp(1, 0, t)
-      out.opacity = lerp(el.opacity, 0, t)
+      if (anim.timing === 'onEnter') {
+        if (before) { out.scaleX = 2.5; out.scaleY = 2.5; out.opacity = 0; return }
+        if (after)  { out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
+        out.scaleX  = lerp(2.5, 1, t)
+        out.scaleY  = lerp(2.5, 1, t)
+        out.opacity = lerp(0, el.opacity, t)
+      } else {
+        if (after)  { out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
+        if (before) return
+        out.scaleX  = lerp(1, 0, t)
+        out.scaleY  = lerp(1, 0, t)
+        out.opacity = lerp(el.opacity, 0, t)
+      }
       break
 
     case 'typewriter':
@@ -231,104 +255,50 @@ function applyAnim(
       out.rotation = el.rotation + lerp(0, 360, t)
       break
 
+    case 'wipeIn': {
+      const dir = (anim.params?.direction ?? 'right') as SlideDir
+      if (before) { out.opacity = 0; out.wipeProgress = 0; out.wipeDir = dir; return }
+      if (after)  { out.wipeProgress = 1; out.wipeDir = undefined; return }
+      out.wipeProgress = t
+      out.wipeDir = dir
+      break
+    }
+
+    case 'wipeOut': {
+      const dir = (anim.params?.direction ?? 'right') as SlideDir
+      if (after)  { out.opacity = 0; out.wipeProgress = 0; out.wipeDir = dir; return }
+      if (before) return
+      out.wipeProgress = 1 - t
+      out.wipeDir = dir
+      break
+    }
+
     // ─── Text-specific animations ───────────────────────────────────────────
     case 'typewriterChars':
-      if (before) { out.textProgress = 0; return }
-      if (after)  { out.textProgress = 1; return }
+      if (before) { out.opacity = 0; out.textProgress = 0; out.textMode = 'chars'; return }
+      if (after)  { out.textProgress = 1; out.textMode = 'chars'; return }
       out.textProgress = t
+      out.textMode = 'chars'
       break
 
     case 'typewriterWords':
-      if (before) { out.textProgress = 0; return }
-      if (after)  { out.textProgress = 1; return }
+      if (before) { out.opacity = 0; out.textProgress = 0; out.textMode = 'words'; return }
+      if (after)  { out.textProgress = 1; out.textMode = 'words'; return }
       out.textProgress = t
+      out.textMode = 'words'
       break
 
     case 'textFade':
       if (anim.timing === 'onExit') {
-        // Exit: fade from visible to invisible
         if (after)  { out.opacity = 0; return }
-        if (before) return   // before exit starts: element is fully visible
+        if (before) return
         out.opacity = lerp(el.opacity, 0, t)
       } else {
-        // Enter: fade from invisible to visible
         if (before) { out.opacity = 0; return }
         if (after)  { out.opacity = el.opacity; return }
         out.opacity = lerp(0, el.opacity, t)
       }
       break
-
-    case 'textBurst': {
-      if (before) { out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
-      if (after)  { out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
-      const burst = t < 0.5 ? t * 2.4 : 1 - (t - 0.5) * 0.8
-      out.scaleX  = burst
-      out.scaleY  = burst
-      out.opacity = lerp(0, el.opacity, t)
-      break
-    }
-
-    case 'textBounce': {
-      if (before) { out.y = el.y - 100; out.opacity = 0; return }
-      if (after)  { out.y = el.y; out.opacity = el.opacity; return }
-      const bounceT = ease(t, 'bounce')
-      out.y = lerp(el.y - 100, el.y, bounceT)
-      out.opacity = lerp(0, el.opacity, t)
-      break
-    }
-
-    case 'textBlock': {
-      if (before) { out.scaleY = 0; out.opacity = 0; return }
-      if (after)  { out.scaleY = 1; out.opacity = el.opacity; return }
-      out.scaleY = t
-      out.opacity = lerp(0, el.opacity, t)
-      break
-    }
-
-    case 'textSquiz': {
-      if (before) { out.scaleX = 0; out.scaleY = 1.5; out.opacity = 0; return }
-      if (after)  { out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
-      out.scaleX = t
-      out.scaleY = lerp(1.5, 1, t)
-      out.opacity = lerp(0, el.opacity, t)
-      break
-    }
-
-    case 'textSpread': {
-      if (before) { out.scaleX = 0.2; out.opacity = 0; return }
-      if (after)  { out.scaleX = 1; out.opacity = el.opacity; return }
-      out.scaleX = lerp(0.2, 1, t)
-      out.opacity = lerp(0, el.opacity, t)
-      break
-    }
-
-    case 'textTwirl': {
-      if (before) { out.rotation = el.rotation - 180; out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
-      if (after)  { out.rotation = el.rotation; out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
-      out.rotation = lerp(el.rotation - 180, el.rotation, t)
-      out.scaleX = t
-      out.scaleY = t
-      out.opacity = lerp(0, el.opacity, t)
-      break
-    }
-
-    case 'textZoomIn': {
-      if (before) { out.scaleX = 0; out.scaleY = 0; out.opacity = 0; return }
-      if (after)  { out.scaleX = 1; out.scaleY = 1; out.opacity = el.opacity; return }
-      out.scaleX = t
-      out.scaleY = t
-      out.opacity = lerp(0, el.opacity, t)
-      break
-    }
-
-    case 'textZoomOut': {
-      if (after)  { out.scaleX = 3; out.scaleY = 3; out.opacity = 0; return }
-      if (before) return
-      out.scaleX = lerp(1, 3, t)
-      out.scaleY = lerp(1, 3, t)
-      out.opacity = lerp(el.opacity, 0, t)
-      break
-    }
 
     // ─── Loop animations ────────────────────────────────────────────────────
     // loopStart is the effectiveStart passed from the loop dispatch section;
@@ -340,7 +310,6 @@ function applyAnim(
       const v       = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2)
       out.scaleX    = 0.88 + 0.24 * v
       out.scaleY    = out.scaleX
-      out.opacity   = lerp(el.opacity * 0.65, el.opacity, v)
       break
     }
 
@@ -359,6 +328,8 @@ function applyAnim(
       const elapsed = localTime - (loopStart ?? (anim.startTime + anim.delay))
       const turns   = elapsed / anim.duration
       out.rotation  = el.rotation + turns * 360
+      out.offsetX   = el.width / 2
+      out.offsetY   = el.height / 2
       break
     }
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   Type, Square, ArrowRight, Code2, Table2, Image as ImageIcon,
   Sparkles, Layers, Shuffle, Upload, ImagePlus, BarChart3, Music,
-  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointer2
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { useHistoryStore } from '../../store/historyStore'
@@ -37,6 +37,7 @@ export default function MenuSideBar() {
     setActiveTool, setActivePanel,
     setProjectName, setCanvasSize,
     setPreviewOpen, setExportOpen,
+    deselectAll,
     undo, redo
   } = useEditorStore()
 
@@ -151,6 +152,28 @@ export default function MenuSideBar() {
       {/* Menu Bar Tools Grid (2 items per row) */}
       <div className="p-3">
         <div className="text-[0.75rem] text-[#c1c1c1] uppercase tracking-wider mb-3 px-1 font-semibold">Tools</div>
+
+        {/* Free cursor */}
+        <button
+          disabled={disabled}
+          onClick={() => {
+            if (disabled) return
+            setActiveTool('select')
+            deselectAll()
+            setActivePanel(null)
+          }}
+          className={cn(
+            'w-full flex items-center gap-2 px-3 py-2 rounded mb-2 transition-all text-[0.78rem]',
+            disabled ? 'text-[#c1c1c1] cursor-not-allowed' :
+              activeTool === 'select' && activePanel === null
+                ? 'bg-purple-900/30 text-purple-400'
+                : 'text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover'
+          )}
+        >
+          <MousePointer2 size={14} />
+          <span>Free Cursor</span>
+        </button>
+
         <div className="grid grid-cols-2 gap-2">
           {TOOLS.map((item, i) => {
             const isActive = activePanel === item.panel

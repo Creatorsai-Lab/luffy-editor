@@ -14,22 +14,27 @@ const HEADS: { label: string; value: ArrowHeadType }[] = [
 
 const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
   { label: 'Draw On',  value: 'drawPath' },
-  { label: 'Slide In', value: 'slideIn' },
-  { label: 'Fade In',  value: 'fadeIn' },
-  { label: 'Zoom In',  value: 'scaleIn' },
+  { label: 'Slide In', value: 'slideIn'  },
+  { label: 'Fade In',  value: 'fadeIn'   },
+  { label: 'Scale In', value: 'scaleIn'  },
+  { label: 'Scale Out',value: 'scaleOut' },
+  { label: 'Wipe In',  value: 'wipeIn'   },
 ]
 
 const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Pulse',     value: 'pulse' },
-  { label: 'Flow',      value: 'flowLoop' },
-  { label: 'Fade Loop', value: 'fadeLoop' },
+  { label: 'Pulse',     value: 'pulse'      },
+  { label: 'Flow',      value: 'flowLoop'   },
+  { label: 'Bounce',    value: 'bounceLoop' },
+  { label: 'Fade Loop', value: 'fadeLoop'   },
 ]
 
 const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
-  { label: 'Draw Off',  value: 'drawOff' },
+  { label: 'Draw Off',  value: 'drawOff'  },
   { label: 'Slide Out', value: 'slideOut' },
-  { label: 'Fade Out',  value: 'fadeOut' },
-  { label: 'Zoom Out',  value: 'scaleOut' },
+  { label: 'Fade Out',  value: 'fadeOut'  },
+  { label: 'Scale In',  value: 'scaleIn'  },
+  { label: 'Scale Out', value: 'scaleOut' },
+  { label: 'Wipe Out',  value: 'wipeOut'  },
 ]
 
 const EASINGS: { label: string; value: EasingType }[] = [
@@ -124,7 +129,10 @@ export default function ArrowPanel() {
           </Row>
 
           <Row label="Head Color">
-            <ColorInput value={el.arrowHeadColor || el.stroke} onChange={v => upd({ arrowHeadColor: v })} />
+            <ColorInput
+              value={el.arrowHeadColor && el.arrowHeadColor !== '' ? el.arrowHeadColor : el.stroke}
+              onChange={v => upd({ arrowHeadColor: v })}
+            />
           </Row>
 
           <Row label="Width">
@@ -263,7 +271,8 @@ function AnimBlock({
     updateAnimation(elId, anim.id, patch)
   }
 
-  const hasDir = anim.type === 'slideIn' || anim.type === 'slideOut'
+  const hasDir  = ['slideIn', 'slideOut', 'wipeIn', 'wipeOut'].includes(anim.type)
+  const hasDist = anim.type === 'bounceLoop'
 
   return (
     <div className="border-b border-editor-border px-3 py-2 flex flex-col gap-1.5">
@@ -293,12 +302,22 @@ function AnimBlock({
       {hasDir && (
         <Row label="Direction">
           <select
-            value={anim.params?.direction ?? 'left'}
+            value={anim.params?.direction ?? 'right'}
             onChange={e => upd({ params: { ...anim.params, direction: e.target.value as SlideDir } })}
             className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
           >
             {DIRECTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
           </select>
+        </Row>
+      )}
+
+      {hasDist && (
+        <Row label="Distance (px)">
+          <input type="number" min={4} max={200} step={2}
+            value={anim.params?.distance ?? 24}
+            onChange={e => upd({ params: { ...anim.params, distance: Number(e.target.value) } })}
+            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1 nodrag"
+          />
         </Row>
       )}
 

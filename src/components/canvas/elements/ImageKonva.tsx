@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Shape, Rect, Group, Text } from 'react-konva'
-import type { ImageElement } from '../../../types/editor'
+import type { ImageElement, SlideDir } from '../../../types/editor'
 import { toFileUrl } from '../../../utils/pathUtils'
 
 interface Props {
   el: ImageElement
   konvaProps: Record<string, unknown>
+  textProgress?: number
+  wipeProgress?: number
+  wipeDir?: SlideDir
 }
 
-export default function ImageKonva({ el, konvaProps }: Props) {
+export default function ImageKonva({ el, konvaProps, textProgress = 1, wipeProgress = 1, wipeDir }: Props) {
   const [img, setImg] = useState<HTMLImageElement | null>(null)
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -107,6 +110,17 @@ export default function ImageKonva({ el, konvaProps }: Props) {
         const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
 
         raw.save()
+
+        // wipe reveal: directional clip
+        if (wipeDir && wipeProgress < 1) {
+          const clipX = wipeDir === 'left' ? el.width * (1 - wipeProgress) : 0
+          const clipY = wipeDir === 'up'   ? el.height * (1 - wipeProgress) : 0
+          const clipW = (wipeDir === 'left' || wipeDir === 'right') ? el.width * wipeProgress : el.width
+          const clipH = (wipeDir === 'up'   || wipeDir === 'down')  ? el.height * wipeProgress : el.height
+          raw.beginPath()
+          raw.rect(clipX, clipY, Math.max(0, clipW), Math.max(0, clipH))
+          raw.clip()
+        }
 
         // Clip to rounded rect if needed
         if (el.cornerRadius > 0) {

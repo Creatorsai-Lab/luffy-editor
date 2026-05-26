@@ -54,13 +54,18 @@ export function makeText(x: number, y: number): TextElement {
 }
 
 export function makeShape(type: ShapeType, x: number, y: number): ShapeElement {
+  const is3D = type === 'cube' || type === 'cone'
+  const size = type === 'cube' ? 140 : 120
   return {
     id: uuid(), type: 'shape', name: type.charAt(0).toUpperCase() + type.slice(1),
-    x, y, width: 120, height: 120,
+    x, y,
+    width:  size,
+    height: size,
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     shapeType: type,
-    fill: '#919191', stroke: 'transparent', strokeWidth: 0, cornerRadius: 8
+    fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, cornerRadius: 8,
+    ...(is3D ? { depth: 55, faceColor: '' } : {}),
   }
 }
 
@@ -72,11 +77,11 @@ export function makeArrow(x1: number, y1: number, x2: number, y2: number): Arrow
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     x1, y1, x2, y2,
-    stroke: '#202020', strokeWidth: 5, arrowHead: 'none', dashed: false,
+    stroke: '#202020', strokeWidth: 5, arrowHead: 'end', dashed: false,
     dotted: false,
     pointerLength: 12,
     pointerWidth: 13,
-    arrowHeadColor: '',
+    arrowHeadColor: '#202020',
     curve: 0,
   }
 }
