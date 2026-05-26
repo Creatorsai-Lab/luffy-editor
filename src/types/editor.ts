@@ -18,7 +18,7 @@ export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'push
 export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated'
 export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
 export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'shape-pentagon' | 'shape-hexagon' | 'shape-octagon' | 'shape-diamond' | 'shape-oval' | 'shape-speechBubble' | 'shape-roundedSpeech' | 'shape-cone' | 'shape-cube' | 'shape-rect-hand' | 'shape-circle-hand' | 'shape-square-hand' | 'arrow' | 'code' | 'table' | 'image' | 'chart' | 'video'
-export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'icons' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | null
+export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'icons' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | 'perspective' | null
 
 // ─── Animation ───────────────────────────────────────────────────────────────
 
@@ -52,6 +52,7 @@ export interface BaseElement {
   visible: boolean
   name: string
   animations: ElementAnimation[]
+  perspectivePts?: { tl: [number, number]; tr: [number, number]; br: [number, number]; bl: [number, number] }
 }
 
 // ─── Concrete elements ────────────────────────────────────────────────────────
@@ -269,10 +270,12 @@ export interface CanvasPreset {
 }
 
 export const CANVAS_PRESETS: CanvasPreset[] = [
-  { label: 'Horizontal HD', width: 1920, height: 1080 },
-  { label: 'Vertical HD',   width: 1080, height: 1920 },
-  { label: 'Square HD',     width: 1080, height: 1080 },
-  { label: '4K',            width: 3840, height: 2160 }
+  { label: '16:9 Landscape HD', width: 1920, height: 1080 },
+  { label: '9:16 Vertical HD',   width: 1080, height: 1920 },
+  { label: '1:1 Square HD',     width: 1080, height: 1080 },
+  { label: '4:5 Portrait HD', width: 1080, height: 1350 },
+  { label: '16:9 Landscape 4K', width: 3840, height: 2160 },
+  { label: '9:16 Vertical 4K', width: 2160, height: 3840}
 ]
 
 export const FONT_FAMILIES = [

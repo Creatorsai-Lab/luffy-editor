@@ -90,7 +90,7 @@ function tokenizeLine(line: string, lang: string): Token[] {
 
 const PADDING     = 12
 const LINE_NUM_W  = 28
-const HEADER_H    = 28
+const HEADER_H    = 35
 
 export default function CodeKonva({ el, konvaProps }: Props) {
   const lines = el.code.split('\n')
@@ -115,7 +115,7 @@ export default function CodeKonva({ el, konvaProps }: Props) {
     }
 
     // ── Header ───────────────────────────────────────────────────────────
-    raw.fillStyle = 'rgba(0,0,0,0.35)'
+    raw.fillStyle = 'rgba(0, 5, 14, 0.35)'
     raw.fillRect(0, 0, w, HEADER_H)
 
     // Traffic-light dots
@@ -123,13 +123,13 @@ export default function CodeKonva({ el, konvaProps }: Props) {
     dots.forEach((color, i) => {
       raw.fillStyle = color
       raw.beginPath()
-      raw.arc(14 + i * 16, HEADER_H / 2, 4.5, 0, Math.PI * 2)
+      raw.arc(20 + i * 16, HEADER_H / 2, 4.5, 0, Math.PI * 2)
       raw.fill()
     })
 
     // Language label (right side)
-    raw.font = `bold 9px Consolas, monospace`
-    raw.fillStyle = '#8b949e'
+    raw.font = `15px Consolas, monospace`
+    raw.fillStyle = '#ffffff'
     raw.textAlign = 'right'
     raw.fillText(el.language.toUpperCase(), w - PADDING, HEADER_H / 2 + 4)
     raw.textAlign = 'left'

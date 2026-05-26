@@ -65,8 +65,8 @@ export default function Header() {
     <header className="drag flex items-center justify-between h-8 bg-black px-3 flex-none relative z-50">
       {/* Left: logo + project switcher */}
       <div className="nodrag flex items-center gap-2" ref={panelRef}>
-        <Clapperboard size={13} className="text-editor-accent flex-none" />
-        <span className="text-xs font-semibold text-editor-text tracking-wide">Luffy</span>
+        <Clapperboard size={16} className="text-editor-accent flex-none" />
+        <span className="text-xs font-semibold text-white tracking-wide">Luffy Editor</span>
 
         {/* Project button */}
         <button

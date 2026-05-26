@@ -64,9 +64,6 @@ interface CanvasActions {
 
   // Canvas zoom and pan
   setCanvasZoom: (zoom: number) => void
-  zoomIn: () => void
-  zoomOut: () => void
-  resetZoom: () => void
   setCanvasPan: (x: number, y: number) => void
   resetPan: () => void
 
@@ -79,8 +76,8 @@ interface CanvasActions {
 
 const DEFAULT_SETTINGS: CanvasSettings = {
   showGrid: false,
-  gridSize: 40,
-  gridColor: 'rgba(255, 255, 255, 0.1)',
+  gridSize: 100,
+  gridColor: 'rgba(202, 185, 204, 0.87)',
   snapToGrid: false,
 
   showGuides: false,

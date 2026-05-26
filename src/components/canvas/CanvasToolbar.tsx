@@ -1,4 +1,4 @@
-import { Grid3x3, Eye, EyeOff, ZoomIn, ZoomOut } from 'lucide-react'
+import { Grid3x3, Eye, EyeOff } from 'lucide-react'
 import { useCanvasStore } from '../../store/canvasStore'
 import Tooltip from '../ui/Tooltip'
 import { cn } from '../../utils/cn'
@@ -7,7 +7,6 @@ export default function CanvasToolbar() {
   const {
     showGrid, setShowGrid,
     showSafeArea, setShowSafeArea,
-    canvasZoom, zoomIn, zoomOut, resetZoom
   } = useCanvasStore()
 
   return (
@@ -19,7 +18,7 @@ export default function CanvasToolbar() {
           className={cn(
             'p-1.5 rounded transition-colors',
             showGrid
-              ? 'bg-editor-accent text-white'
+              ? 'bg-red text-white'
               : 'text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover'
           )}
         >
@@ -40,39 +39,7 @@ export default function CanvasToolbar() {
         >
           {showSafeArea ? <Eye size={14} /> : <EyeOff size={14} />}
         </button>
-      </Tooltip>
-
-      <div className="w-px h-4 bg-editor-border mx-0.5" />
-
-      {/* Zoom out */}
-      <Tooltip text="Zoom Out (Ctrl+-)">
-        <button
-          onClick={zoomOut}
-          className="p-1.5 rounded text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover transition-colors"
-        >
-          <ZoomOut size={14} />
-        </button>
-      </Tooltip>
-
-      {/* Zoom level */}
-      <Tooltip text="Reset Zoom (Ctrl+0)">
-        <button
-          onClick={resetZoom}
-          className="px-2 py-1 text-xs text-editor-text hover:bg-editor-hover rounded transition-colors min-w-[45px] text-center"
-        >
-          {Math.round(canvasZoom * 100)}%
-        </button>
-      </Tooltip>
-
-      {/* Zoom in */}
-      <Tooltip text="Zoom In (Ctrl++)">
-        <button
-          onClick={zoomIn}
-          className="p-1.5 rounded text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover transition-colors"
-        >
-          <ZoomIn size={14} />
-        </button>
-      </Tooltip>
+      </Tooltip>      
     </div>
   )
 }

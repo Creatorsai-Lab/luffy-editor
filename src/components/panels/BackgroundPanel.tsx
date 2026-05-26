@@ -32,10 +32,10 @@ export default function BackgroundPanel() {
   function changeBgType(type: BgType) {
     const defaults: Record<BgType, Background> = {
       solid:    { type: 'solid', color: '#1a1a2e' },
-      gradient: { type: 'gradient', from: '#6366f1', to: '#0f0f1a', angle: 135, fromStop: 0, toStop: 1 },
+      gradient: { type: 'gradient', from: '#6366f1', to: '#f5f5ff', angle: 290, fromStop: 0, toStop: 1 },
       grid:     { type: 'grid', bgColor: '#0f0f1a', lineColor: '#2a2a2a', cellSize: 40 },
-      dots:     { type: 'dots', bgColor: '#0f0f1a', dotColor: '#2a2a2a', spacing: 24, radius: 1.5 },
-      animated: { type: 'animated', variant: 'gradient-flow', colors: ['#6366f1', '#0f0f1a'], speed: 3 }
+      dots:     { type: 'dots', bgColor: '#0f0f1a', dotColor: '#2a2a2a', spacing: 64, radius: 3.5 },
+      animated: { type: 'animated', variant: 'gradient-flow', colors: ['#6366f1', '#d6d6fc'], speed: 3 }
     }
     setBackground(scene!.id, defaults[type])
   }
