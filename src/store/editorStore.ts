@@ -20,6 +20,7 @@ interface EditorState {
   zoom:              number
   activeTool:        ActiveTool
   activePanel:       ActivePanel
+  pendingChartType:  'bar' | 'line' | 'pie' | 'doughnut' | 'area'
   isDirty:           boolean
   codeModalOpen:     boolean
   codeModalElemId:   string | null
@@ -77,6 +78,7 @@ interface EditorActions {
   setZoom:          (z: number) => void
   setActiveTool:    (t: ActiveTool) => void
   setActivePanel:   (p: ActivePanel) => void
+  setPendingChartType: (ct: 'bar' | 'line' | 'pie' | 'doughnut' | 'area') => void
   openCodeModal:    (elemId?: string) => void
   closeCodeModal:   () => void
   setPreviewOpen:   (v: boolean) => void
@@ -124,6 +126,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       zoom:             1,
       activeTool:       'select',
       activePanel:      null,
+      pendingChartType: 'bar',
       isDirty:          false,
       codeModalOpen:    false,
       codeModalElemId:  null,
@@ -384,6 +387,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       setZoom:          (z) => set(s => { s.zoom = z }),
       setActiveTool:    (t) => set(s => { s.activeTool = t }),
       setActivePanel:   (p) => set(s => { s.activePanel = p }),
+      setPendingChartType: (ct) => set(s => { s.pendingChartType = ct }),
       openCodeModal:    (id) => set(s => { s.codeModalOpen = true; s.codeModalElemId = id ?? null }),
       closeCodeModal:   ()  => set(s => { s.codeModalOpen = false; s.codeModalElemId = null }),
       setPreviewOpen:   (v) => set(s => { s.previewOpen = v }),

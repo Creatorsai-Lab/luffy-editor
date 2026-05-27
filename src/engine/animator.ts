@@ -34,6 +34,7 @@ export interface AnimatedProps {
   dashOffset: number
   wipeProgress: number
   wipeDir: SlideDir | undefined
+  chartAnimProgress: number
 }
 
 export function getAnimatedProps(el: EditorElement, localTime: number): AnimatedProps {
@@ -48,6 +49,7 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
     dashOffset: 0,
     wipeProgress: 1,
     wipeDir: undefined,
+    chartAnimProgress: 1,
   }
 
   const anims = el.animations
@@ -89,8 +91,9 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
 
   // Before first enter: element is invisible — return early, no animations run
   if (enters.length > 0 && localTime < firstEnterStart) {
-    props.opacity     = 0
-    props.textProgress = 0
+    props.opacity          = 0
+    props.textProgress     = 0
+    props.chartAnimProgress = 0
     return props
   }
 
@@ -356,6 +359,35 @@ function applyAnim(
       out.opacity   = lerp(el.opacity * 0.1, el.opacity, v)
       break
     }
+
+    // ─── Chart-specific animations ──────────────────────────────────────────
+    case 'chartBarsRise':
+      if (before) { out.opacity = 0; out.chartAnimProgress = 0; return }
+      if (after)  { out.opacity = el.opacity; out.chartAnimProgress = 1; return }
+      out.opacity = lerp(0, el.opacity, t)
+      out.chartAnimProgress = t
+      break
+
+    case 'chartLineDraw':
+      if (before) { out.opacity = 0; out.chartAnimProgress = 0; return }
+      if (after)  { out.opacity = el.opacity; out.chartAnimProgress = 1; return }
+      out.opacity = lerp(0, el.opacity, Math.min(1, t * 3))
+      out.chartAnimProgress = t
+      break
+
+    case 'chartAreaFlow':
+      if (before) { out.opacity = 0; out.chartAnimProgress = 0; return }
+      if (after)  { out.opacity = el.opacity; out.chartAnimProgress = 1; return }
+      out.opacity = lerp(0, el.opacity, Math.min(1, t * 3))
+      out.chartAnimProgress = t
+      break
+
+    case 'chartPieSpin':
+      if (before) { out.opacity = 0; out.chartAnimProgress = 0; return }
+      if (after)  { out.opacity = el.opacity; out.chartAnimProgress = 1; return }
+      out.opacity = lerp(0, el.opacity, Math.min(1, t * 4))
+      out.chartAnimProgress = t
+      break
   }
 }
 

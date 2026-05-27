@@ -36,7 +36,7 @@ export default function EditorCanvas() {
 
   const {
     project, currentSceneId, selectedIds,
-    playhead, isPlaying, activeTool, activePanel,
+    playhead, isPlaying, activeTool, activePanel, pendingChartType,
     addElement, selectElement, deselectAll,
     removeElement, updateScene, setActiveTool, openCodeModal,
     undo, redo, duplicateElement
@@ -250,10 +250,13 @@ export default function EditorCanvas() {
         addElement(makeTable(x - 180, y - 60))
         setActiveTool('select')
         break
-      case 'chart':
-        addElement(makeChart(x - 200, y - 150))
+      case 'chart': {
+        const chart = makeChart(x - 200, y - 150)
+        chart.chartType = pendingChartType
+        addElement(chart)
         setActiveTool('select')
         break
+      }
     }
   }
 

@@ -115,7 +115,7 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     case 'code':   return <CodeKonva   el={element} konvaProps={props} />
     case 'image':  return <ImageKonva  el={element} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
     case 'table':  return <TableKonva  el={element} konvaProps={props} />
-    case 'chart':  return <ChartKonva  el={element} konvaProps={props} />
+    case 'chart':  return <ChartKonva  el={element} konvaProps={props} animProgress={animProps?.chartAnimProgress ?? 1} />
     case 'video':  return <VideoKonva  el={element} konvaProps={props} />
     case 'icon':   return <IconKonva   el={element as import('../../types/editor').IconElement} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
     case 'audio':  return null

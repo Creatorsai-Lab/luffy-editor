@@ -6,7 +6,9 @@ export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'sca
   // Text-specific animations
   'typewriterChars' | 'typewriterWords' | 'textFade' |
   // Arrow-specific animations
-  'drawOff' | 'flowLoop' | 'fadeLoop'
+  'drawOff' | 'flowLoop' | 'fadeLoop' |
+  // Chart-specific animations
+  'chartBarsRise' | 'chartLineDraw' | 'chartAreaFlow' | 'chartPieSpin'
 
 export type AnimationTiming = 'onEnter' | 'onExit' | 'loop'
 export type TextEffectType = 'shadow' | 'glow' | 'outline' | 'hollow' | 'glitch' | 'bubble'
@@ -163,6 +165,10 @@ export interface ChartElement extends BaseElement {
   fontSize?: number        // label font size, default 10
   textColor?: string       // axis/label color, default '#999'
   cornerRadius?: number    // chart background corner radius, default 4
+  fontFamily?: string      // label font family
+  barWidth?: number        // 0.3-1.0, fraction of bar slot filled by bar
+  barSpacing?: number      // 0.0-0.5, fraction of slot used as group gap
+  lineWeight?: number      // stroke width for line/area charts, default 2
 }
 
 export interface VideoElement extends BaseElement {
