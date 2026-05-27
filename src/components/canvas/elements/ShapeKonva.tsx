@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Rect, Circle, RegularPolygon, Star, Line, Ellipse, Shape, Group } from 'react-konva'
 import type Konva from 'konva'
 import type { ShapeElement, SlideDir } from '../../../types/editor'
+import { drawPerspectiveWarp, drawShapeToCtx } from '../../../engine/perspectiveUtils'
 
 // ─── Color helpers ────────────────────────────────────────────────────────────
 
@@ -44,6 +45,35 @@ function addWave(x: number, y: number, seed: number = 0): [number, number] {
 }
 
 export default function ShapeKonva({ el, konvaProps, wipeProgress = 1, wipeDir }: Props) {
+  const [offscreen, setOffscreen] = useState<HTMLCanvasElement | null>(null)
+
+  useEffect(() => {
+    if (!el.perspectivePts) return
+    const canvas = document.createElement('canvas')
+    canvas.width = el.width; canvas.height = el.height
+    drawShapeToCtx(el, canvas.getContext('2d')!)
+    setOffscreen(canvas)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [el.width, el.height, el.fill, el.stroke, el.strokeWidth, el.cornerRadius, el.shapeType,
+      (el as { depth?: number }).depth, (el as { faceColor?: string }).faceColor, !!el.perspectivePts])
+
+  if (el.perspectivePts && offscreen) {
+    return (
+      <Shape
+        {...konvaProps}
+        width={el.width}
+        height={el.height}
+        hitFunc={(ctx, shape) => {
+          ctx.beginPath(); ctx.rect(0, 0, el.width, el.height); ctx.closePath(); ctx.fillStrokeShape(shape)
+        }}
+        sceneFunc={(ctx, _shape) => {
+          const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
+          drawPerspectiveWarp(raw, offscreen, el.perspectivePts!, el.width, el.height)
+        }}
+      />
+    )
+  }
+
   const w = el.width
   const h = el.height
   const radius = Math.min(w, h) / 2

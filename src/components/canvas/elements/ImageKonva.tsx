@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Shape, Rect, Group, Text } from 'react-konva'
 import type { ImageElement, SlideDir } from '../../../types/editor'
 import { toFileUrl } from '../../../utils/pathUtils'
+import { drawPerspectiveWarp } from '../../../engine/perspectiveUtils'
 
 interface Props {
   el: ImageElement
@@ -15,6 +16,7 @@ export default function ImageKonva({ el, konvaProps, textProgress = 1, wipeProgr
   const [img, setImg] = useState<HTMLImageElement | null>(null)
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [offscreen, setOffscreen] = useState<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -45,6 +47,51 @@ export default function ImageKonva({ el, konvaProps, textProgress = 1, wipeProgr
       image.onerror = null
     }
   }, [el.src])
+
+  // Build offscreen canvas for perspective warp
+  useEffect(() => {
+    if (!el.perspectivePts || !img) return
+    const canvas = document.createElement('canvas')
+    canvas.width = el.width; canvas.height = el.height
+    const ctx = canvas.getContext('2d')!
+    ctx.save()
+    if (el.cornerRadius > 0) {
+      const r = el.cornerRadius, W = el.width, H = el.height
+      ctx.beginPath(); ctx.moveTo(r, 0); ctx.arcTo(W,0,W,H,r); ctx.arcTo(W,H,0,H,r)
+      ctx.arcTo(0,H,0,0,r); ctx.arcTo(0,0,W,0,r); ctx.closePath(); ctx.clip()
+    }
+    const parts: string[] = []
+    if ((el.brightness ?? 100) !== 100) parts.push(`brightness(${(el.brightness??100)/100})`)
+    if ((el.contrast   ?? 100) !== 100) parts.push(`contrast(${(el.contrast??100)/100})`)
+    if ((el.saturation ?? 100) !== 100) parts.push(`saturate(${(el.saturation??100)/100})`)
+    if ((el.hueRotate  ?? 0)   !== 0)   parts.push(`hue-rotate(${el.hueRotate??0}deg)`)
+    if ((el.blur       ?? 0)   !== 0)   parts.push(`blur(${el.blur??0}px)`)
+    if (el.glass) parts.push('blur(8px)')
+    ctx.filter = parts.length ? parts.join(' ') : 'none'
+    ctx.drawImage(img, 0, 0, el.width, el.height)
+    if (el.glass) { ctx.filter = 'none'; ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(0,0,el.width,el.height) }
+    ctx.restore()
+    setOffscreen(canvas)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [img, el.width, el.height, el.cornerRadius, el.brightness, el.contrast, el.saturation, el.hueRotate, el.blur, el.glass, !!el.perspectivePts])
+
+  // Perspective warp rendering
+  if (el.perspectivePts && offscreen) {
+    return (
+      <Shape
+        {...konvaProps}
+        width={el.width}
+        height={el.height}
+        hitFunc={(ctx, shape) => {
+          ctx.beginPath(); ctx.rect(0, 0, el.width, el.height); ctx.closePath(); ctx.fillStrokeShape(shape)
+        }}
+        sceneFunc={(ctx, _shape) => {
+          const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
+          drawPerspectiveWarp(raw, offscreen, el.perspectivePts!, el.width, el.height)
+        }}
+      />
+    )
+  }
 
   if (loading) {
     return (

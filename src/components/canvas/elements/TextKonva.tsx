@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
-import { Text, Group } from 'react-konva'
+import { useEffect, useRef, useState } from 'react'
+import { Text, Group, Shape } from 'react-konva'
 import type Konva from 'konva'
 import type { TextElement, SlideDir } from '../../../types/editor'
 import { loadFont } from '../../../utils/fontLoader'
+import { drawPerspectiveWarp, drawTextToCtx } from '../../../engine/perspectiveUtils'
 
 interface Props {
   el: TextElement
@@ -61,6 +62,7 @@ function resolveEffectProps(el: TextElement) {
 
 export default function TextKonva({ el, konvaProps, textProgress, textMode, wipeProgress = 1, wipeDir }: Props) {
   const nodeRef = useRef<Konva.Text | null>(null)
+  const [offscreen, setOffscreen] = useState<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
     const weight = el.fontWeight === 'bold' ? '700' : el.fontWeight === 'semibold' ? '600' : el.fontWeight === 'medium' ? '500' : '400'
@@ -68,6 +70,20 @@ export default function TextKonva({ el, konvaProps, textProgress, textMode, wipe
       nodeRef.current?.getLayer()?.batchDraw()
     }).catch(() => {})
   }, [el.fontFamily, el.fontWeight])
+
+  useEffect(() => {
+    if (!el.perspectivePts) return
+    const weight = el.fontWeight === 'bold' ? '700' : el.fontWeight === 'semibold' ? '600' : el.fontWeight === 'medium' ? '500' : '400'
+    loadFont(el.fontFamily, weight).then(() => {
+      const canvas = document.createElement('canvas')
+      canvas.width = el.width; canvas.height = el.height + el.fontSize * 4
+      drawTextToCtx(el, canvas.getContext('2d')!)
+      setOffscreen(canvas)
+    }).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [el.content, el.color, el.fontSize, el.fontFamily, el.fontWeight, el.italic, el.align,
+      el.lineHeight, el.letterSpacing, el.textStroke, el.textStrokeWidth,
+      el.width, el.height, !!el.perspectivePts])
 
   const content = (() => {
     if (textProgress >= 1 || textMode === 'draw') return el.content
@@ -94,6 +110,23 @@ export default function TextKonva({ el, konvaProps, textProgress, textMode, wipe
     wrap: 'word' as const,
     perfectDrawEnabled: false,
     ...effectProps,
+  }
+
+  if (el.perspectivePts && offscreen) {
+    return (
+      <Shape
+        {...konvaProps}
+        width={el.width}
+        height={el.height}
+        hitFunc={(ctx, shape) => {
+          ctx.beginPath(); ctx.rect(0, 0, el.width, el.height); ctx.closePath(); ctx.fillStrokeShape(shape)
+        }}
+        sceneFunc={(ctx, _shape) => {
+          const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
+          drawPerspectiveWarp(raw, offscreen, el.perspectivePts!, el.width, el.height)
+        }}
+      />
+    )
   }
 
   if (wipeDir && wipeProgress < 1) {

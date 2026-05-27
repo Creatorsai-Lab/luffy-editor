@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import {
-  Type, Square, ArrowRight, Code2, Table2, Image as ImageIcon,
-  Sparkles, Layers, Shuffle, Upload, ImagePlus, BarChart3, Music,
-  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointer2
+  Type, Square, ArrowRight, Code2, Table2, Layers, Shuffle, ImagePlus, BarChart3, Music,
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointerBan, SquareDashedMousePointer
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { useHistoryStore } from '../../store/historyStore'
@@ -17,18 +16,19 @@ interface ToolItem {
   panel: ActivePanel
 }
 const TOOLS: ToolItem[] = [
-    { icon: <PaintBucket size={14} />, label: 'Background', panel: 'background' },
-  { icon: <Type size={14} />, label: 'Text', tool: 'text', panel: 'text' },
-  { icon: <Square size={14} />, label: 'Shapes', tool: 'shape-rect', panel: 'shapes' },
-  { icon: <ArrowRight size={14} />, label: 'Arrow', tool: 'arrow', panel: 'arrows' },
-  { icon: <Code2 size={14} />, label: 'Code', tool: 'code', panel: 'code' },
-  { icon: <Table2 size={14} />, label: 'Table', tool: 'table', panel: 'table' },
-  { icon: <BarChart3 size={14} />, label: 'Charts', tool: 'chart', panel: 'charts' },
-  { icon: <Shapes size={14} />, label: 'Icons', panel: 'icons' },
-  { icon: <ImagePlus size={14} />, label: 'Upload', tool: 'image', panel: 'upload' },
-  { icon: <Music size={14} />, label: 'Audio', panel: 'audio' },
-  { icon: <Shuffle size={14} />, label: 'Transitions', panel: 'transitions' },
-  { icon: <Layers size={14} />, label: 'Layers', panel: 'layers' },
+  { icon: <PaintBucket size={15} />, label: 'Background', panel: 'background' },
+  { icon: <Shuffle size={15} />, label: 'Transitions', panel: 'transitions' },
+  { icon: <Layers size={15} />, label: 'Layers', panel: 'layers' },
+  { icon: <Type size={15} />, label: 'Text', tool: 'text', panel: 'text' },
+  { icon: <Square size={15} />, label: 'Shapes', tool: 'shape-rect', panel: 'shapes' },
+  { icon: <ArrowRight size={15} />, label: 'Arrow', tool: 'arrow', panel: 'arrows' },
+  { icon: <Code2 size={15} />, label: 'Code', tool: 'code', panel: 'code' },
+  { icon: <Table2 size={15} />, label: 'Table', tool: 'table', panel: 'table' },
+  { icon: <BarChart3 size={15} />, label: 'Charts', tool: 'chart', panel: 'charts' },
+  { icon: <Shapes size={15} />, label: 'Icons', panel: 'icons' },
+  { icon: <ImagePlus size={15} />, label: 'Images', tool: 'image', panel: 'upload' },
+  { icon: <Music size={15} />, label: 'Audio', panel: 'audio' },
+  { icon: <SquareDashedMousePointer size={15} />, label: 'Perspective', panel: 'perspective' },
 ]
 
 export default function MenuSideBar() {
@@ -83,10 +83,10 @@ export default function MenuSideBar() {
             className="flex items-center justify-between w-full text-[0.78rem] text-[#d8d8d8] hover:text-purple-400 py-1.5 transition-colors disabled:text-[#c1c1c1]"
           >
             <div className="flex items-center gap-2">
-              <Monitor size={14} />
+              <Monitor size={15} />
               <span className="truncate">{sizeLabel}</span>
             </div>
-            {project && <ChevronDown size={14} />}
+            {project && <ChevronDown size={15} />}
           </button>
 
           {sizeOpen && project && (
@@ -116,7 +116,7 @@ export default function MenuSideBar() {
             className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
             title="Undo"
           >
-            <Undo2 size={14} />
+            <Undo2 size={15} />
           </button>
           <button
             onClick={redo}
@@ -124,7 +124,7 @@ export default function MenuSideBar() {
             className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
             title="Redo"
           >
-            <Redo2 size={14} />
+            <Redo2 size={15} />
           </button>
         </div>
 
@@ -135,7 +135,7 @@ export default function MenuSideBar() {
             onClick={() => setPreviewOpen(true)}
             className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
           >
-            <Play size={14} />
+            <Play size={15} />
             <span>Preview</span>
           </button>
           <button
@@ -143,7 +143,7 @@ export default function MenuSideBar() {
             onClick={() => setExportOpen(true)}
             className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
           >
-            <Download size={14} />
+            <Download size={15} />
             <span>Export</span>
           </button>
         </div>
@@ -170,7 +170,7 @@ export default function MenuSideBar() {
                 : 'text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover'
           )}
         >
-          <MousePointer2 size={14} />
+          <MousePointerBan size={15} />
           <span>Free Cursor</span>
         </button>
 

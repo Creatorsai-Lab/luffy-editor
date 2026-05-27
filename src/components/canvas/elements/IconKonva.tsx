@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Image as KonvaImage } from 'react-konva'
+import { Image as KonvaImage, Shape } from 'react-konva'
 import type Konva from 'konva'
 import type { IconElement, SlideDir } from '../../../types/editor'
 import { buildIconSvg, svgToDataUrl } from '../../../engine/iconData'
+import { drawPerspectiveWarp } from '../../../engine/perspectiveUtils'
 
 interface Props {
   el: IconElement
@@ -31,6 +32,7 @@ function loadIconImage(iconName: string, color: string, strokeWidth: number): Pr
 
 export default function IconKonva({ el, konvaProps, textProgress = 1, wipeProgress = 1, wipeDir }: Props) {
   const [image, setImage] = useState<HTMLImageElement | null>(null)
+  const [offscreen, setOffscreen] = useState<HTMLCanvasElement | null>(null)
   const nodeRef = useRef<Konva.Image | null>(null)
 
   useEffect(() => {
@@ -39,6 +41,33 @@ export default function IconKonva({ el, konvaProps, textProgress = 1, wipeProgre
       nodeRef.current?.getLayer()?.batchDraw()
     })
   }, [el.iconName, el.color, el.strokeWidth])
+
+  useEffect(() => {
+    if (!el.perspectivePts || !image || !image.width) return
+    const canvas = document.createElement('canvas')
+    canvas.width = el.width; canvas.height = el.height
+    const ctx = canvas.getContext('2d')!
+    ctx.drawImage(image, 0, 0, el.width, el.height)
+    setOffscreen(canvas)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [image, el.width, el.height, !!el.perspectivePts])
+
+  if (el.perspectivePts && offscreen) {
+    return (
+      <Shape
+        {...konvaProps}
+        width={el.width}
+        height={el.height}
+        hitFunc={(ctx, shape) => {
+          ctx.beginPath(); ctx.rect(0, 0, el.width, el.height); ctx.closePath(); ctx.fillStrokeShape(shape)
+        }}
+        sceneFunc={(ctx, _shape) => {
+          const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
+          drawPerspectiveWarp(raw, offscreen, el.perspectivePts!, el.width, el.height)
+        }}
+      />
+    )
+  }
 
   const clipProps = (() => {
     if (wipeDir && wipeProgress < 1) {

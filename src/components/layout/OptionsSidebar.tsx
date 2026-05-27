@@ -14,6 +14,7 @@ import AudioPropertiesPanel from '../panels/AudioPropertiesPanel'
 import ImagePanel from '../panels/ImagePanel'
 import IconCollectionPanel from '../panels/IconCollectionPanel'
 import IconEditPanel from '../panels/IconEditPanel'
+import PerspectivePanel from '../panels/PerspectivePanel'
 
 // When an element is selected and the sidebar panel matches the element's "home" panel,
 // show the element's property panel instead of the generic tool panel.
@@ -69,7 +70,8 @@ export default function OptionsSidebar() {
       case 'icons':      return <IconCollectionPanel />
       case 'background': return <BackgroundPanel />
       case 'layers':     return <LayersPanel />
-      case 'transitions':return <TransitionPanel />
+      case 'transitions':  return <TransitionPanel />
+      case 'perspective':  return <PerspectivePanel />
       default:
         return <HintPanel text="Menu Options Panel (select to see)" />
     }

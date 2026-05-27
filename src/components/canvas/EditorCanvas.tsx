@@ -9,6 +9,7 @@ import { makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from 
 import type { Background, ImageBg, ImageElement, ShapeType, EditorElement } from '../../types/editor'
 import { toFileUrl } from '../../utils/pathUtils'
 import CanvasElement from './CanvasElement'
+import PerspectiveHandles from './PerspectiveHandles'
 import CanvasGrid from './CanvasGrid'
 import CanvasGuides from './CanvasGuides'
 import CanvasSafeArea from './CanvasSafeArea'
@@ -35,7 +36,7 @@ export default function EditorCanvas() {
 
   const {
     project, currentSceneId, selectedIds,
-    playhead, isPlaying, activeTool,
+    playhead, isPlaying, activeTool, activePanel,
     addElement, selectElement, deselectAll,
     removeElement, updateScene, setActiveTool, openCodeModal,
     undo, redo, duplicateElement
@@ -368,10 +369,11 @@ export default function EditorCanvas() {
             })}
           </Layer>
 
-          {/* Transformer + arrow preview */}
+          {/* Transformer + perspective handles + arrow preview */}
           <Layer>
             <Transformer
               ref={trRef}
+              visible={activePanel !== 'perspective'}
               rotateEnabled
               enabledAnchors={['top-left','top-center','top-right','middle-right','bottom-right','bottom-center','bottom-left','middle-left']}
               keepRatio={false}
@@ -405,6 +407,11 @@ export default function EditorCanvas() {
                 }
               }}
             />
+
+            {activePanel === 'perspective' && selectedIds.length === 1 && (() => {
+              const perspEl = currentScene?.elements.find(e => e.id === selectedIds[0])
+              return perspEl ? <PerspectiveHandles el={perspEl} /> : null
+            })()}
 
             {drawingArrow && (
               <Shape
