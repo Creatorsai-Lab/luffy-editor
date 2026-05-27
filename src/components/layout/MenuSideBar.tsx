@@ -57,7 +57,7 @@ export default function MenuSideBar() {
         {project && editingName ? (
           <input
             autoFocus
-            className="border border-white text-[#d8d8d8] text-[0.78rem] px-2 py-1 rounded w-full"
+            className="border border-white text-[#f2f2f2] text-[0.78rem] px-2 py-1 rounded w-full"
             defaultValue={project.name}
             onBlur={e => { setProjectName(e.target.value); setEditingName(false) }}
             onKeyDown={e => {
@@ -69,7 +69,7 @@ export default function MenuSideBar() {
           <button
             onClick={() => project && setEditingName(true)}
             disabled={disabled}
-            className="text-[0.78rem] font-semibold border-b text-[#d8d8d8] border-[#363636] hover:text-purple-400 py-1 text-left truncate disabled:text-[#c1c1c1] w-full transition-colors"
+            className="text-[0.78rem] font-semibold border-b text-[#f2f2f2] border-[#363636] hover:text-purple-400 py-1 text-left truncate disabled:text-[#f2f2f2] w-full transition-colors"
           >
             {project?.name ?? 'No project'}
           </button>
@@ -80,7 +80,7 @@ export default function MenuSideBar() {
           <button
             disabled={disabled}
             onClick={() => setSizeOpen(v => !v)}
-            className="flex items-center justify-between w-full text-[0.78rem] text-[#d8d8d8] hover:text-purple-400 py-1.5 transition-colors disabled:text-[#c1c1c1]"
+            className="flex items-center justify-between w-full text-[0.78rem] text-[#f2f2f2] hover:text-purple-400 py-1.5 transition-colors disabled:text-[#f2f2f2]"
           >
             <div className="flex items-center gap-2">
               <Monitor size={15} />
@@ -98,7 +98,7 @@ export default function MenuSideBar() {
                   className={cn(
                     'w-full text-left px-3 py-2 text-[0.78rem] hover:bg-editor-hover transition-colors flex items-center justify-between',
                     p.width === project.width && p.height === project.height
-                      ? 'text-purple-400' : 'text-[#d8d8d8]'
+                      ? 'text-purple-400' : 'text-[#f2f2f2]'
                   )}
                 >
                   <span>{p.label}</span>
@@ -113,7 +113,7 @@ export default function MenuSideBar() {
           <button
             onClick={undo}
             disabled={!canUndo}
-            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
+            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-[#f2f2f2] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#f2f2f2] disabled:bg-transparent"
             title="Undo"
           >
             <Undo2 size={15} />
@@ -121,7 +121,7 @@ export default function MenuSideBar() {
           <button
             onClick={redo}
             disabled={!canRedo}
-            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
+            className="flex-1 flex justify-center items-center py-1.5 rounded transition-colors text-[#f2f2f2] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#f2f2f2] disabled:bg-transparent"
             title="Redo"
           >
             <Redo2 size={15} />
@@ -133,7 +133,7 @@ export default function MenuSideBar() {
           <button
             disabled={disabled}
             onClick={() => setPreviewOpen(true)}
-            className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
+            className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-[#f2f2f2] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#f2f2f2] disabled:bg-transparent"
           >
             <Play size={15} />
             <span>Preview</span>
@@ -141,7 +141,7 @@ export default function MenuSideBar() {
           <button
             disabled={disabled}
             onClick={() => setExportOpen(true)}
-            className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#c1c1c1] disabled:bg-transparent"
+            className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-[#f2f2f2] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#f2f2f2] disabled:bg-transparent"
           >
             <Download size={15} />
             <span>Export</span>
@@ -151,7 +151,7 @@ export default function MenuSideBar() {
 
       {/* Menu Bar Tools Grid (2 items per row) */}
       <div className="p-3">
-        <div className="text-[0.75rem] text-[#c1c1c1] uppercase tracking-wider mb-3 px-1 font-semibold">Tools</div>
+        <div className="text-[0.75rem] text-[#f2f2f2] uppercase tracking-wider mb-3 px-1 font-semibold">Tools</div>
 
         {/* Free cursor */}
         <button
@@ -164,10 +164,10 @@ export default function MenuSideBar() {
           }}
           className={cn(
             'w-full flex items-center gap-2 px-3 py-2 rounded mb-2 transition-all text-[0.78rem]',
-            disabled ? 'text-[#c1c1c1] cursor-not-allowed' :
+            disabled ? 'text-[#f2f2f2] cursor-not-allowed' :
               activeTool === 'select' && activePanel === null
                 ? 'bg-purple-900/30 text-purple-400'
-                : 'text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover'
+                : 'text-[#f2f2f2] hover:text-purple-400 hover:bg-editor-hover'
           )}
         >
           <MousePointerBan size={15} />
@@ -188,8 +188,8 @@ export default function MenuSideBar() {
                 }}
                 className={cn(
                   'flex flex-col items-center justify-center gap-1.5 p-2 rounded transition-all',
-                  disabled ? 'text-[#c1c1c1] cursor-not-allowed' :
-                    isActive ? 'bg-purple-900/30 text-purple-400' : 'text-[#d8d8d8] hover:text-purple-400 hover:bg-editor-hover'
+                  disabled ? 'text-editor-accent cursor-not-allowed' :
+                    isActive ? 'bg-editor-accent/10 text-editor-accent' : 'text-[#f2f2f2] hover:bg-editor-hover'
                 )}
               >
                 {item.icon}

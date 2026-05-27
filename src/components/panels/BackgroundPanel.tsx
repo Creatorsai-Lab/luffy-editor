@@ -19,7 +19,7 @@ export default function BackgroundPanel() {
 
   if (!scene) return (
     <div className="flex-1 flex items-center justify-center p-4">
-      <p className="text-xs text-[#c1c1c1]">No scene selected.</p>
+      <p className="text-xs text-[#f2f2f2]">No scene selected.</p>
     </div>
   )
 
@@ -47,10 +47,10 @@ export default function BackgroundPanel() {
       {bg.type === 'image' && (
         <div className="px-3 py-2 border-b border-editor-border flex flex-col gap-2">
           <p className="text-xs text-editor-accent">Image background active</p>
-          <p className="text-2xs text-[#c1c1c1]">Set via right-click → Set Background on an image element.</p>
+          <p className="text-2xs text-[#f2f2f2]">Set via right-click → Set Background on an image element.</p>
           <button
             onClick={() => setBackground(scene.id, { type: 'solid', color: '#1a1a2e' })}
-            className="text-xs px-2 py-1 rounded bg-editor-elevated border border-editor-border text-[#c1c1c1] hover:text-editor-text transition-colors"
+            className="text-xs px-2 py-1 rounded bg-editor-elevated border border-editor-border text-[#f2f2f2] hover:text-editor-text transition-colors"
           >
             Reset to Solid
           </button>
@@ -69,7 +69,7 @@ export default function BackgroundPanel() {
                 'text-xs px-2 py-1 rounded border transition-colors',
                 bg.type === t.value
                   ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
-                  : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text'
+                  : 'bg-editor-elevated border-editor-border text-[#f2f2f2] hover:text-editor-text'
               )}
             >
               {t.label}

@@ -119,7 +119,7 @@ export default function App() {
       <div className="h-screen w-screen flex items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-3">
           <div className="w-5 h-5 border-2 border-editor-accent border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-[#c1c1c1]">Loading project…</span>
+          <span className="text-xs text-[#f2f2f2]">Loading project…</span>
         </div>
       </div>
     )

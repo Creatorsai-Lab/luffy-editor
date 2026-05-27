@@ -36,14 +36,14 @@ export default function TextEffectsPanel() {
 
       <div className="flex-1 overflow-y-auto">
         {!el && (
-          <p className="text-xs text-[#c1c1c1] px-3 py-3">
+          <p className="text-xs text-[#f2f2f2] px-3 py-3">
             Select a text element to add effects.
           </p>
         )}
 
         {el && (
           <div className="flex flex-col gap-0 px-3 py-2">
-            <p className="text-xs text-[#c1c1c1] mb-2">
+            <p className="text-xs text-[#f2f2f2] mb-2">
               Click to toggle effects on/off
             </p>
 
@@ -73,7 +73,7 @@ export default function TextEffectsPanel() {
                         <div className="w-2 h-2 rounded-full bg-editor-accent" />
                       )}
                     </div>
-                    <span className="text-2xs text-[#c1c1c1]">
+                    <span className="text-2xs text-[#f2f2f2]">
                       {effect.description}
                     </span>
                   </button>
@@ -87,7 +87,7 @@ export default function TextEffectsPanel() {
               </div>
             )}
 
-            <div className="mt-3 p-2 bg-editor-elevated rounded text-2xs text-[#c1c1c1]">
+            <div className="mt-3 p-2 bg-editor-elevated rounded text-2xs text-[#f2f2f2]">
               <strong>Note:</strong> Effects are visual enhancements. Some effects may require additional rendering implementation.
             </div>
           </div>

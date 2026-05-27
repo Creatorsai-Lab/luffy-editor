@@ -27,13 +27,13 @@ export default function IconCollectionPanel() {
       {/* Search */}
       <div className="px-3 py-2 border-b border-editor-border">
         <div className="flex items-center gap-2 bg-editor-elevated border border-editor-border rounded px-2 py-1">
-          <Search size={11} className="text-[#c1c1c1] flex-none" />
+          <Search size={11} className="text-[#f2f2f2] flex-none" />
           <input
             type="text"
             placeholder="Search icons…"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            className="flex-1 bg-transparent text-xs text-editor-text outline-none placeholder-[#c1c1c1] nodrag"
+            className="flex-1 bg-transparent text-xs text-editor-text outline-none placeholder-[#f2f2f2] nodrag"
           />
         </div>
       </div>
@@ -47,7 +47,7 @@ export default function IconCollectionPanel() {
             className={`flex-none text-[10px] px-2 py-0.5 rounded transition-colors whitespace-nowrap ${
               category === cat
                 ? 'bg-editor-accent text-white'
-                : 'bg-editor-elevated text-[#c1c1c1] hover:text-editor-text'
+                : 'bg-editor-elevated text-[#f2f2f2] hover:text-editor-text'
             }`}
           >
             {cat}
@@ -71,13 +71,13 @@ export default function IconCollectionPanel() {
                 <Comp
                   size={20}
                   strokeWidth={1.75}
-                  className="text-[#d8d8d8] group-hover:text-editor-accent transition-colors"
+                  className="text-[#f2f2f2] group-hover:text-editor-accent transition-colors"
                 />
               </button>
             )
           })}
           {filteredIcons.length === 0 && (
-            <p className="col-span-5 text-xs text-[#c1c1c1] text-center py-4">No icons found.</p>
+            <p className="col-span-5 text-xs text-[#f2f2f2] text-center py-4">No icons found.</p>
           )}
         </div>
       </div>

@@ -19,7 +19,7 @@ export default function CanvasToolbar() {
             'p-1.5 rounded transition-colors',
             showGrid
               ? 'bg-red text-white'
-              : 'text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover'
+              : 'text-[#f2f2f2] hover:text-editor-text hover:bg-editor-hover'
           )}
         >
           <Grid3x3 size={14} />
@@ -34,7 +34,7 @@ export default function CanvasToolbar() {
             'p-1.5 rounded transition-colors',
             showSafeArea
               ? 'bg-editor-accent text-white'
-              : 'text-[#c1c1c1] hover:text-editor-text hover:bg-editor-hover'
+              : 'text-[#f2f2f2] hover:text-editor-text hover:bg-editor-hover'
           )}
         >
           {showSafeArea ? <Eye size={14} /> : <EyeOff size={14} />}

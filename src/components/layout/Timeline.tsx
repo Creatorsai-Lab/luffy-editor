@@ -342,7 +342,7 @@ export default function Timeline() {
   if (!project) return (
     <div className="flex flex-col bg-orange flex-none" style={{ height: 120 }}>
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-editor-border">
-        <span className="text-xs text-[#c1c1c1]">Timeline</span>
+        <span className="text-xs text-[#f2f2f2]">Timeline</span>
       </div>
     </div>
   )
@@ -469,7 +469,7 @@ export default function Timeline() {
       {/* Controls row */}
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-editor-border flex-none min-w-0 overflow-hidden">
         <Tooltip text="Stop (Home)">
-          <button onClick={stop} className="text-[#c1c1c1] hover:text-editor-text transition-colors flex-none">
+          <button onClick={stop} className="text-[#f2f2f2] hover:text-editor-text transition-colors flex-none">
             <SkipBack size={12} />
           </button>
         </Tooltip>
@@ -483,30 +483,30 @@ export default function Timeline() {
           </button>
         </Tooltip>
 
-        <span className="text-xs text-[#c1c1c1] tabular-nums ml-1 flex-none">
+        <span className="text-xs text-[#f2f2f2] tabular-nums ml-1 flex-none">
           {fmtTime(playhead)} / {fmtTime(totalDur)}
         </span>
 
         <div className="w-px h-4 bg-editor-border mx-1 flex-none" />
 
         <Tooltip text="Zoom Out (Ctrl -)">
-          <button onClick={() => setTimelineZoom(Math.max(0.1, timelineZoom / 1.2))} className="text-[#c1c1c1] hover:text-editor-text transition-colors flex-none">
+          <button onClick={() => setTimelineZoom(Math.max(0.1, timelineZoom / 1.2))} className="text-[#f2f2f2] hover:text-editor-text transition-colors flex-none">
             <ZoomOut size={12} />
           </button>
         </Tooltip>
 
-        <span className="text-xs text-[#c1c1c1] tabular-nums min-w-[36px] text-center flex-none">
+        <span className="text-xs text-[#f2f2f2] tabular-nums min-w-[36px] text-center flex-none">
           {Math.round(timelineZoom * 100)}%
         </span>
 
         <Tooltip text="Zoom In (Ctrl +)">
-          <button onClick={() => setTimelineZoom(Math.min(5, timelineZoom * 1.2))} className="text-[#c1c1c1] hover:text-editor-text transition-colors flex-none">
+          <button onClick={() => setTimelineZoom(Math.min(5, timelineZoom * 1.2))} className="text-[#f2f2f2] hover:text-editor-text transition-colors flex-none">
             <ZoomIn size={12} />
           </button>
         </Tooltip>
 
         <Tooltip text="Reset Zoom (Ctrl 0)">
-          <button onClick={() => setTimelineZoom(1)} className="text-xs text-[#c1c1c1] hover:text-editor-text transition-colors px-1 flex-none">
+          <button onClick={() => setTimelineZoom(1)} className="text-xs text-[#f2f2f2] hover:text-editor-text transition-colors px-1 flex-none">
             1:1
           </button>
         </Tooltip>
@@ -516,7 +516,7 @@ export default function Timeline() {
             onClick={() => setSnapEnabled(!snapEnabled)}
             className={cn(
               'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors flex-none',
-              snapEnabled ? 'bg-editor-accent-dim text-editor-accent' : 'text-[#c1c1c1] hover:text-editor-text'
+              snapEnabled ? 'bg-editor-accent-dim text-editor-accent' : 'text-[#f2f2f2] hover:text-editor-text'
             )}
           >
             <Magnet size={11} />
@@ -529,14 +529,14 @@ export default function Timeline() {
             <Music size={13} className="text-[#79443e] flex-none" />
 
             <div className="flex items-center gap-1 flex-none">
-              <Volume2 size={13} className="text-[#c1c1c1]" />
+              <Volume2 size={13} className="text-[#f2f2f2]" />
               <input
                 type="range" min={0} max={1} step={0.01}
                 value={selectedAudio.volume ?? 1}
                 onChange={e => updateElement(selectedAudio!.id, { volume: parseFloat(e.target.value) })}
                 className="w-20 accent-[#79443e]"
               />
-              <span className="text-[10px] text-[#c1c1c1] w-10 flex-none">
+              <span className="text-[10px] text-[#f2f2f2] w-10 flex-none">
                 {Math.round((selectedAudio.volume ?? 1) * 100)}%
               </span>
             </div>
@@ -555,7 +555,7 @@ export default function Timeline() {
             </select>
 
             <div className="flex items-center gap-1 flex-none">
-              <span className="text-[10px] text-[#c1c1c1]">FI</span>
+              <span className="text-[10px] text-[#f2f2f2]">FI</span>
               <input
                 type="number" min={0} max={10} step={0.1}
                 value={selectedAudio.fadeIn}
@@ -563,11 +563,11 @@ export default function Timeline() {
                 className="w-10 bg-editor-elevated border border-editor-border rounded text-[10px] text-editor-text px-1 py-0.5 nodrag"
                 title="Fade in (seconds)"
               />
-              <span className="text-[10px] text-[#c1c1c1]">s</span>
+              <span className="text-[10px] text-[#f2f2f2]">s</span>
             </div>
 
             <div className="flex items-center gap-1 flex-none">
-              <span className="text-[10px] text-[#c1c1c1]">FO</span>
+              <span className="text-[10px] text-[#f2f2f2]">FO</span>
               <input
                 type="number" min={0} max={10} step={0.1}
                 value={selectedAudio.fadeOut}
@@ -575,7 +575,7 @@ export default function Timeline() {
                 className="w-10 bg-editor-elevated border border-editor-border rounded text-[10px] text-editor-text px-1 py-0.5 nodrag"
                 title="Fade out (seconds)"
               />
-              <span className="text-[10px] text-[#c1c1c1]">s</span>
+              <span className="text-[10px] text-[#f2f2f2]">s</span>
             </div>
 
             <div className="w-px h-4 bg-editor-border mx-0.5 flex-none" />
@@ -583,7 +583,7 @@ export default function Timeline() {
             <Tooltip text="Trim after playhead (cut end)">
               <button
                 onClick={trimAtPlayhead}
-                className="flex items-center gap-1 px-2 py-1 text-[10px] rounded bg-editor-elevated border border-editor-border text-[#c1c1c1] hover:text-editor-text hover:border-editor-text/40 transition-colors flex-none"
+                className="flex items-center gap-1 px-2 py-1 text-[10px] rounded bg-editor-elevated border border-editor-border text-[#f2f2f2] hover:text-editor-text hover:border-editor-text/40 transition-colors flex-none"
               >
                 <Scissors size={10} /> Trim ▶
               </button>
@@ -592,7 +592,7 @@ export default function Timeline() {
             <Tooltip text="Split at playhead">
               <button
                 onClick={splitAtPlayhead}
-                className="flex items-center gap-1 px-2 py-1 text-[10px] rounded bg-editor-elevated border border-editor-border text-[#c1c1c1] hover:text-editor-text hover:border-editor-text/40 transition-colors flex-none"
+                className="flex items-center gap-1 px-2 py-1 text-[10px] rounded bg-editor-elevated border border-editor-border text-[#f2f2f2] hover:text-editor-text hover:border-editor-text/40 transition-colors flex-none"
               >
                 <Split size={10} /> Split
               </button>
@@ -600,7 +600,7 @@ export default function Timeline() {
 
             <button
               onClick={() => setSelectedAudioId(null)}
-              className="text-[#c1c1c1] hover:text-editor-text transition-colors flex-none"
+              className="text-[#f2f2f2] hover:text-editor-text transition-colors flex-none"
               title="Deselect audio"
             >
               <X size={10} />
@@ -609,7 +609,7 @@ export default function Timeline() {
         ) : (
           <>
             <div className="flex-1" />
-            <span className="text-2xs text-[#c1c1c1]">Drag scene edges • Drag playhead • Right-click to add marker</span>
+            <span className="text-sm text-[#f2f2f2]">Drag scene edges • Drag playhead • Right-click to add marker</span>
           </>
         )}
 
@@ -618,7 +618,7 @@ export default function Timeline() {
         <Tooltip text="Add Scene">
           <button
             onClick={addScene}
-            className="flex items-center gap-1 text-xs text-editor-accent hover:text-white px-2 py-1 rounded border border-editor-accent hover:bg-editor-accent transition-colors flex-none"
+            className="flex items-center gap-1 text-xs text-[#f2f2f2] bg-editor-accent px-2 py-1 rounded"
           >
             <Plus size={11} /> Scene
           </button>
@@ -639,7 +639,7 @@ export default function Timeline() {
             {Array.from({ length: Math.ceil(totalDur) + 1 }, (_, i) => (
               <div key={i} className="absolute flex flex-col items-start" style={{ left: i * PX_PER_SEC }}>
                 <div className="w-px h-2 bg-editor-border-strong" />
-                <span className="text-[#c1c1c1]" style={{ fontSize: 9 }}>{fmtTime(i)}</span>
+                <span className="text-[#f2f2f2]" style={{ fontSize: 9 }}>{fmtTime(i)}</span>
               </div>
             ))}
           </div>

@@ -93,7 +93,7 @@ export default function TextPanel() {
             if (!project) return
             addElement(makeText(project.width / 2 - 250, project.height / 2 - 30))
           }}
-          className="w-full text-xs py-2 bg-editor-accent-dim text-editor-accent border border-editor-accent rounded hover:bg-editor-accent hover:text-white transition-colors disabled:opacity-50"
+          className="w-full text-xs py-2 text-[#f2f2f2] bg-editor-accent rounded"
         >
           + Add Text
         </button>

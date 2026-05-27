@@ -153,7 +153,7 @@ export default function ExportModal() {
             <Download size={14} className="text-editor-accent" />
             <span className="text-sm font-medium text-editor-text">Export Video</span>
           </div>
-          <button onClick={handleClose} className="text-[#c1c1c1] hover:text-editor-text transition-colors">
+          <button onClick={handleClose} className="text-[#f2f2f2] hover:text-editor-text transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -220,7 +220,7 @@ export default function ExportModal() {
               </div>
 
               {/* Estimated output info */}
-              <div className="text-2xs text-[#c1c1c1]">
+              <div className="text-2xs text-[#f2f2f2]">
                 Output: {exportW} × {exportH} · ~{estimatedSizeMB} MB
               </div>
 
@@ -252,13 +252,13 @@ export default function ExportModal() {
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className="text-xs text-[#c1c1c1] text-right">{progress}%</span>
+              <span className="text-xs text-[#f2f2f2] text-right">{progress}%</span>
             </div>
           )}
 
           {/* Note about rendering */}
           {phase === 'exporting' && (
-            <p className="text-xs text-[#c1c1c1] bg-editor-elevated rounded px-3 py-2">
+            <p className="text-xs text-[#f2f2f2] bg-editor-elevated rounded px-3 py-2">
               Do not interact with the canvas during export — frames are being captured in sequence.
             </p>
           )}

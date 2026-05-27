@@ -19,11 +19,11 @@ export default function LayersPanel() {
       <div className="flex items-center gap-2 px-3 py-2 border-b border-editor-border">
         <Layers size={15} className="text-editor-accent" />
         <span className="text-xs font-medium text-editor-text">Layers</span>
-        <span className="text-xs text-[#c1c1c1] ml-auto">{scene.elements.length}</span>
+        <span className="text-xs text-[#f2f2f2] ml-auto">{scene.elements.length}</span>
       </div>
 
       {sorted.length === 0 && (
-        <p className="text-xs text-[#c1c1c1] px-3 py-4 text-center">No elements in this scene.</p>
+        <p className="text-xs text-[#f2f2f2] px-3 py-4 text-center">No elements in this scene.</p>
       )}
 
       {sorted.map(el => {
@@ -40,7 +40,7 @@ export default function LayersPanel() {
             {/* Type indicator */}
             <span className={cn(
               'text-xs font-mono w-4 text-center flex-none',
-              isSelected ? 'text-editor-accent' : 'text-[#c1c1c1]'
+              isSelected ? 'text-editor-accent' : 'text-[#f2f2f2]'
             )}>
               {el.type[0].toUpperCase()}
             </span>
@@ -57,35 +57,35 @@ export default function LayersPanel() {
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={e => { e.stopPropagation(); bringForward(el.id) }}
-                className="text-[#c1c1c1] hover:text-editor-text p-0.5"
+                className="text-[#f2f2f2] hover:text-editor-text p-0.5"
                 title="Bring forward"
               >
                 <ArrowUp size={14} />
               </button>
               <button
                 onClick={e => { e.stopPropagation(); sendBackward(el.id) }}
-                className="text-[#c1c1c1] hover:text-editor-text p-0.5"
+                className="text-[#f2f2f2] hover:text-editor-text p-0.5"
                 title="Send backward"
               >
                 <ArrowDown size={14} />
               </button>
               <button
                 onClick={e => { e.stopPropagation(); updateElement(el.id, { visible: !el.visible }) }}
-                className="text-[#c1c1c1] hover:text-editor-text p-0.5"
+                className="text-[#f2f2f2] hover:text-editor-text p-0.5"
                 title={el.visible ? 'Hide' : 'Show'}
               >
                 {el.visible ? <Eye size={13} /> : <EyeOff size={13} />}
               </button>
               <button
                 onClick={e => { e.stopPropagation(); updateElement(el.id, { locked: !el.locked }) }}
-                className="text-[#c1c1c1] hover:text-editor-text p-0.5"
+                className="text-[#f2f2f2] hover:text-editor-text p-0.5"
                 title={el.locked ? 'Unlock' : 'Lock'}
               >
                 {el.locked ? <Lock size={15} /> : <Unlock size={13} />}
               </button>
               <button
                 onClick={e => { e.stopPropagation(); removeElement(el.id) }}
-                className="text-[#c1c1c1] hover:text-red-400 p-0.5"
+                className="text-[#f2f2f2] hover:text-red-400 p-0.5"
                 title="Delete"
               >
                 <Trash2 size={13} />

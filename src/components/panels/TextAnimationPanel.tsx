@@ -50,7 +50,7 @@ export default function TextAnimationPanel() {
 
       <div className="flex-1 overflow-y-auto">
         {!el && (
-          <p className="text-xs text-[#c1c1c1] px-3 py-3">
+          <p className="text-xs text-[#f2f2f2] px-3 py-3">
             Select a text element to add animations.
           </p>
         )}
@@ -108,14 +108,14 @@ function AnimSection({
         <span className={cn('text-[10px] font-semibold uppercase tracking-wider', color)}>{label}</span>
         <button
           onClick={onAdd}
-          className="flex items-center gap-1 text-[10px] px-2 py-0.5 bg-editor-elevated text-[#c1c1c1] border border-editor-border rounded hover:text-editor-text transition-colors"
+          className="flex items-center gap-1 text-[10px] px-2 py-0.5 bg-editor-elevated text-[#f2f2f2] border border-editor-border rounded hover:text-editor-text transition-colors"
         >
           <Plus size={8} /> Add
         </button>
       </div>
 
       {anims.length === 0 && (
-        <p className="text-[10px] text-[#595959] px-3 pb-2">None — click Add to create one.</p>
+        <p className="text-[10px] text-[#d9d9d9] px-3 pb-2">None — click Add to create one.</p>
       )}
 
       {anims.map((anim, i) => (
@@ -142,7 +142,7 @@ function AnimBlock({
     <div className="border-t border-editor-border px-3 py-2 flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <span className="text-[10px] text-editor-secondary font-medium">#{index + 1}</span>
-        <button onClick={() => removeAnimation(elId, anim.id)} className="text-[#595959] hover:text-red-400 transition-colors">
+        <button onClick={() => removeAnimation(elId, anim.id)} className="text-[#d9d9d9] hover:text-red-400 transition-colors">
           <Trash2 size={10} />
         </button>
       </div>

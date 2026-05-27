@@ -122,7 +122,7 @@ export default function ChartPanel() {
         </div>
 
         {!el && (
-          <p className="text-xs text-[#c1c1c1] px-3 py-3">
+          <p className="text-xs text-[#f2f2f2] px-3 py-3">
             Click above, then click the canvas to place a chart.
           </p>
         )}
@@ -142,7 +142,7 @@ export default function ChartPanel() {
                       'flex flex-col items-center justify-center gap-1 py-2 rounded border transition-colors',
                       el.chartType === ct.type
                         ? 'bg-editor-accent border-editor-accent text-white'
-                        : 'bg-editor-elevated border-editor-border text-[#c1c1c1] hover:text-editor-text hover:border-editor-text/40'
+                        : 'bg-editor-elevated border-editor-border text-[#f2f2f2] hover:text-editor-text hover:border-editor-text/40'
                     )}
                   >
                     {ct.icon}
@@ -179,14 +179,14 @@ export default function ChartPanel() {
                   <input type="checkbox" checked={el.showLegend}
                     onChange={e => upd({ showLegend: e.target.checked })}
                     className="w-3.5 h-3.5 accent-editor-accent" />
-                  <span className="text-xs text-[#c1c1c1]">Legend</span>
+                  <span className="text-xs text-[#f2f2f2]">Legend</span>
                 </label>
                 {el.chartType !== 'pie' && el.chartType !== 'doughnut' && (
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input type="checkbox" checked={el.showGrid}
                       onChange={e => upd({ showGrid: e.target.checked })}
                       className="w-3.5 h-3.5 accent-editor-accent" />
-                    <span className="text-xs text-[#c1c1c1]">Grid</span>
+                    <span className="text-xs text-[#f2f2f2]">Grid</span>
                   </label>
                 )}
               </div>
@@ -211,7 +211,7 @@ export default function ChartPanel() {
                     />
                     <button onClick={() => removeLabel(i)}
                       disabled={el.data.labels.length <= 1}
-                      className="p-1 text-[#c1c1c1] hover:text-red-400 disabled:opacity-30">
+                      className="p-1 text-[#f2f2f2] hover:text-red-400 disabled:opacity-30">
                       <Trash2 size={10} />
                     </button>
                   </div>
@@ -243,7 +243,7 @@ export default function ChartPanel() {
                       <ColorInput value={ds.color} onChange={v => updateDatasetColor(dsIdx, v)} />
                       <button onClick={() => removeDataset(dsIdx)}
                         disabled={el.data.datasets.length <= 1}
-                        className="p-0.5 text-[#c1c1c1] hover:text-red-400 disabled:opacity-30">
+                        className="p-0.5 text-[#f2f2f2] hover:text-red-400 disabled:opacity-30">
                         <Trash2 size={10} />
                       </button>
                     </div>
@@ -251,7 +251,7 @@ export default function ChartPanel() {
                     <div className="flex flex-col gap-1">
                       {ds.data.map((val, valIdx) => (
                         <div key={valIdx} className="flex items-center gap-1">
-                          <span className="text-[10px] text-[#c1c1c1] w-14 truncate">
+                          <span className="text-[10px] text-[#f2f2f2] w-14 truncate">
                             {el.data.labels[valIdx] ?? `#${valIdx + 1}`}:
                           </span>
                           <input
@@ -286,7 +286,7 @@ export default function ChartPanel() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-editor-secondary">Enter</span>
                     <button onClick={() => removeAnimation(el.id, enterAnim.id)}
-                      className="text-[#c1c1c1] hover:text-red-400">
+                      className="text-[#f2f2f2] hover:text-red-400">
                       <Trash2 size={10} />
                     </button>
                   </div>

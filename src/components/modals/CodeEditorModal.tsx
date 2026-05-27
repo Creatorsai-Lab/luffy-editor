@@ -56,7 +56,7 @@ export default function CodeEditorModal() {
             </button>
             <button
               onClick={closeCodeModal}
-              className="text-[#c1c1c1] hover:text-editor-text transition-colors"
+              className="text-[#f2f2f2] hover:text-editor-text transition-colors"
             >
               <X size={16} />
             </button>
@@ -65,7 +65,7 @@ export default function CodeEditorModal() {
 
         {/* Editor */}
         <div className="flex-1 overflow-hidden">
-          <Suspense fallback={<div className="flex-1 flex items-center justify-center text-xs text-[#c1c1c1]">Loading editor…</div>}>
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center text-xs text-[#f2f2f2]">Loading editor…</div>}>
             <MonacoEditor
               height="100%"
               language={language}

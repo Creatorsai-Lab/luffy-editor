@@ -86,6 +86,6 @@ export default function OptionsSidebar() {
 
 function HintPanel({ text }: { text: string }) {
   return (
-    <div className="flex-1 flex mx-5 my-2 items-center text-center text-[#d8d8d8] justify-center">{text}</div>
+    <div className="flex-1 flex mx-5 my-2 items-center text-center text-[#f2f2f2] justify-center">{text}</div>
   )
 }

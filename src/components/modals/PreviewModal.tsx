@@ -226,7 +226,7 @@ export default function PreviewModal() {
         <div className="flex items-center gap-3 bg-editor-panel/90 backdrop-blur-sm border border-editor-border rounded-xl px-4 py-2.5">
           <button
             onClick={() => { setPlayhead(0); setIsPlaying(false) }}
-            className="text-[#c1c1c1] hover:text-editor-text transition-colors"
+            className="text-[#f2f2f2] hover:text-editor-text transition-colors"
           >
             <SkipBack size={14} />
           </button>
@@ -243,13 +243,13 @@ export default function PreviewModal() {
             onChange={e => { const v = Number(e.target.value); playheadRef.current = v; setPlayhead(v) }}
             className="w-52 accent-editor-accent"
           />
-          <span className="text-xs text-[#c1c1c1] tabular-nums w-24">
+          <span className="text-xs text-[#f2f2f2] tabular-nums w-24">
             {playhead.toFixed(1)}s / {totalDur.toFixed(1)}s
           </span>
 
           <button
             onClick={() => setPreviewOpen(false)}
-            className="text-[#c1c1c1] hover:text-editor-text transition-colors ml-1"
+            className="text-[#f2f2f2] hover:text-editor-text transition-colors ml-1"
           >
             <X size={16} />
           </button>

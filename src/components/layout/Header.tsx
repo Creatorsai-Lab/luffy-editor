@@ -99,7 +99,7 @@ export default function Header() {
             {/* Project list */}
             <div className="max-h-64 overflow-y-auto">
               {projects.length === 0 && (
-                <p className="text-xs text-[#c1c1c1] px-3 py-3 text-center">No saved projects.</p>
+                <p className="text-xs text-[#f2f2f2] px-3 py-3 text-center">No saved projects.</p>
               )}
               {projects.map(p => (
                 <div
@@ -117,7 +117,7 @@ export default function Header() {
                   <span className="flex-1 text-xs truncate">{p.name}</span>
                   <button
                     onClick={e => deleteProject(e, p.id)}
-                    className="opacity-0 group-hover:opacity-100 text-[#c1c1c1] hover:text-red-400 transition-all"
+                    className="opacity-0 group-hover:opacity-100 text-[#f2f2f2] hover:text-red-400 transition-all"
                   >
                     <Trash2 size={10} />
                   </button>
