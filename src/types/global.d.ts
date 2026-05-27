@@ -40,6 +40,7 @@ declare global {
       dialog: {
         openFile:  (filters: { name: string; extensions: string[] }[]) => Promise<string | null>
         saveVideo: (defaultName: string)                                => Promise<string | null>
+        saveImage: (defaultName: string)                                => Promise<string | null>
       }
       fs: {
         writeFile: (path: string, data: Uint8Array) => Promise<void>

@@ -169,6 +169,18 @@ function createWindow(): void {
     return r.canceled ? null : r.filePath
   })
 
+  ipcMain.handle('dialog:save-image', async (_, defaultName: string) => {
+    const ext = (defaultName.split('.').pop() ?? 'png').toLowerCase()
+    const filters: Electron.FileFilter[] = ext === 'webp'
+      ? [{ name: 'WebP Image', extensions: ['webp'] }, { name: 'All Files', extensions: ['*'] }]
+      : [{ name: 'PNG Image', extensions: ['png'] }, { name: 'All Files', extensions: ['*'] }]
+    const r = await dialog.showSaveDialog(win, {
+      defaultPath: join(app.getPath('downloads'), defaultName),
+      filters
+    })
+    return r.canceled ? null : r.filePath
+  })
+
   ipcMain.handle('shell:open-path', (_e, path: string) => shell.openPath(path))
 
   // File system

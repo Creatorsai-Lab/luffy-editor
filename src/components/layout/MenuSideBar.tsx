@@ -47,7 +47,7 @@ export default function MenuSideBar() {
 
   const disabled = !project
   const preset = project ? CANVAS_PRESETS.find(p => p.width === project.width && p.height === project.height) : null
-  const sizeLabel = project ? (preset?.label ?? `${project.width}×${project.height}`) : '—'
+  const sizeLabel = project ? (preset?.label ?? `${project.width}x${project.height}`) : '—'
 
   return (
     <aside className="w-56 flex-none bg-[#171717] flex flex-col h-full overflow-y-auto no-scrollbar border-r border-editor-border">
