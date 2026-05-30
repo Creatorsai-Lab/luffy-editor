@@ -171,10 +171,10 @@ export function makeChart(x: number, y: number): ChartElement {
   }
 }
 
-export function makeVideo(x: number, y: number, src: string, assetId: string): VideoElement {
+export function makeVideo(x: number, y: number, src: string, assetId: string, width = 640, height = 360): VideoElement {
   return {
     id: uuid(), type: 'video', name: 'Video',
-    x, y, width: 640, height: 360,
+    x, y, width, height,
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     src, assetId, cornerRadius: 0,

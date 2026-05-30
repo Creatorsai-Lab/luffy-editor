@@ -3,6 +3,20 @@ import { Shape, Rect, Group, Text } from 'react-konva'
 import type { ImageElement, SlideDir } from '../../../types/editor'
 import { toFileUrl } from '../../../utils/pathUtils'
 import { drawPerspectiveWarp } from '../../../engine/perspectiveUtils'
+import { buildCssFilter, applyCanvasAdjustments } from '../../../engine/imageFilters'
+
+function drawCropped(ctx: CanvasRenderingContext2D, img: HTMLImageElement, el: ImageElement) {
+  if (el.crop) {
+    ctx.drawImage(
+      img,
+      el.crop.x * img.naturalWidth,  el.crop.y * img.naturalHeight,
+      el.crop.w * img.naturalWidth,  el.crop.h * img.naturalHeight,
+      0, 0, el.width, el.height
+    )
+  } else {
+    ctx.drawImage(img, 0, 0, el.width, el.height)
+  }
+}
 
 interface Props {
   el: ImageElement
@@ -60,20 +74,17 @@ export default function ImageKonva({ el, konvaProps, textProgress = 1, wipeProgr
       ctx.beginPath(); ctx.moveTo(r, 0); ctx.arcTo(W,0,W,H,r); ctx.arcTo(W,H,0,H,r)
       ctx.arcTo(0,H,0,0,r); ctx.arcTo(0,0,W,0,r); ctx.closePath(); ctx.clip()
     }
-    const parts: string[] = []
-    if ((el.brightness ?? 100) !== 100) parts.push(`brightness(${(el.brightness??100)/100})`)
-    if ((el.contrast   ?? 100) !== 100) parts.push(`contrast(${(el.contrast??100)/100})`)
-    if ((el.saturation ?? 100) !== 100) parts.push(`saturate(${(el.saturation??100)/100})`)
-    if ((el.hueRotate  ?? 0)   !== 0)   parts.push(`hue-rotate(${el.hueRotate??0}deg)`)
-    if ((el.blur       ?? 0)   !== 0)   parts.push(`blur(${el.blur??0}px)`)
-    if (el.glass) parts.push('blur(8px)')
-    ctx.filter = parts.length ? parts.join(' ') : 'none'
-    ctx.drawImage(img, 0, 0, el.width, el.height)
+    ctx.filter = buildCssFilter(el) || 'none'
+    drawCropped(ctx, img, el)
     if (el.glass) { ctx.filter = 'none'; ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(0,0,el.width,el.height) }
+    applyCanvasAdjustments(ctx, el)
     ctx.restore()
     setOffscreen(canvas)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [img, el.width, el.height, el.cornerRadius, el.brightness, el.contrast, el.saturation, el.hueRotate, el.blur, el.glass, !!el.perspectivePts])
+  }, [img, el.width, el.height, el.cornerRadius, el.crop,
+      el.brightness, el.contrast, el.saturation, el.hueRotate, el.blur, el.glass,
+      el.exposure, el.highlights, el.shadows, el.whites, el.blacks,
+      el.temperature, el.tint, el.vibrance, !!el.perspectivePts])
 
   // Perspective warp rendering
   if (el.perspectivePts && offscreen) {
@@ -184,30 +195,14 @@ export default function ImageKonva({ el, konvaProps, textProgress = 1, wipeProgr
           raw.clip()
         }
 
-        // Build CSS filter string
-        const parts: string[] = []
-        const brightness = el.brightness ?? 100
-        const contrast   = el.contrast   ?? 100
-        const saturation = el.saturation ?? 100
-        const hueRotate  = el.hueRotate  ?? 0
-        const blur       = el.blur       ?? 0
-
-        if (brightness !== 100) parts.push(`brightness(${brightness / 100})`)
-        if (contrast   !== 100) parts.push(`contrast(${contrast / 100})`)
-        if (saturation !== 100) parts.push(`saturate(${saturation / 100})`)
-        if (hueRotate  !== 0)   parts.push(`hue-rotate(${hueRotate}deg)`)
-        if (blur       !== 0)   parts.push(`blur(${blur}px)`)
-        if (el.glass)           parts.push('blur(8px)')
-
-        raw.filter = parts.length > 0 ? parts.join(' ') : 'none'
-
-        raw.drawImage(img, 0, 0, el.width, el.height)
-
+        raw.filter = buildCssFilter(el) || 'none'
+        drawCropped(raw, img, el)
         if (el.glass) {
           raw.filter = 'none'
           raw.fillStyle = 'rgba(255,255,255,0.18)'
           raw.fillRect(0, 0, el.width, el.height)
         }
+        applyCanvasAdjustments(raw, el)
 
         raw.restore()
 

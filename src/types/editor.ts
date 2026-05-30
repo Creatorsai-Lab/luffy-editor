@@ -20,7 +20,7 @@ export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'push
 export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated'
 export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
 export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'shape-pentagon' | 'shape-hexagon' | 'shape-octagon' | 'shape-diamond' | 'shape-oval' | 'shape-speechBubble' | 'shape-roundedSpeech' | 'shape-cone' | 'shape-cube' | 'shape-rect-hand' | 'shape-circle-hand' | 'shape-square-hand' | 'arrow' | 'code' | 'table' | 'image' | 'chart' | 'video'
-export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'icons' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | 'perspective' | null
+export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'video' | 'icons' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | 'perspective' | null
 
 // ─── Animation ───────────────────────────────────────────────────────────────
 
@@ -124,12 +124,25 @@ export interface ImageElement extends BaseElement {
   src: string
   assetId: string
   cornerRadius: number
-  brightness?: number   // 0-200, default 100 (normal)
-  contrast?: number     // 0-200, default 100 (normal)
-  saturation?: number   // 0-200, default 100 (normal)
-  hueRotate?: number    // 0-360 degrees, default 0
-  blur?: number         // 0-20 px, default 0
-  glass?: boolean       // glassmorphism overlay
+  lockRatio?: boolean
+  crop?: { x: number; y: number; w: number; h: number }  // normalized 0-1
+  // Basic
+  brightness?: number   // 0-200, default 100
+  contrast?: number     // 0-200, default 100
+  saturation?: number   // 0-200, default 100
+  hueRotate?: number    // 0-360
+  blur?: number         // 0-20 px
+  glass?: boolean
+  // Light (all -100 to 100, default 0)
+  exposure?: number
+  highlights?: number
+  shadows?: number
+  whites?: number
+  blacks?: number
+  // Color
+  temperature?: number
+  tint?: number
+  vibrance?: number
 }
 
 export interface TableElement extends BaseElement {
@@ -176,10 +189,27 @@ export interface VideoElement extends BaseElement {
   src: string
   assetId: string
   cornerRadius: number
+  lockRatio?: boolean
+  crop?: { x: number; y: number; w: number; h: number }
   volume: number
   playbackRate: number
   loop: boolean
   muted: boolean
+  // Adjustments (same as ImageElement)
+  brightness?: number
+  contrast?: number
+  saturation?: number
+  hueRotate?: number
+  blur?: number
+  glass?: boolean
+  exposure?: number
+  highlights?: number
+  shadows?: number
+  whites?: number
+  blacks?: number
+  temperature?: number
+  tint?: number
+  vibrance?: number
 }
 
 export interface IconElement extends BaseElement {

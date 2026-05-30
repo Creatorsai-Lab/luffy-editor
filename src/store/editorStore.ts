@@ -24,6 +24,7 @@ interface EditorState {
   isDirty:           boolean
   codeModalOpen:     boolean
   codeModalElemId:   string | null
+  cropElementId:     string | null
   previewOpen:       boolean
   exportOpen:        boolean
   exportProgress:    number
@@ -81,6 +82,7 @@ interface EditorActions {
   setPendingChartType: (ct: 'bar' | 'line' | 'pie' | 'doughnut' | 'area') => void
   openCodeModal:    (elemId?: string) => void
   closeCodeModal:   () => void
+  setCropElement:   (id: string | null) => void
   setPreviewOpen:   (v: boolean) => void
   setExportOpen:    (v: boolean) => void
   setExportProgress:(v: number) => void
@@ -130,6 +132,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       isDirty:          false,
       codeModalOpen:    false,
       codeModalElemId:  null,
+      cropElementId:    null,
       previewOpen:      false,
       exportOpen:       false,
       exportProgress:   0,
@@ -390,6 +393,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       setPendingChartType: (ct) => set(s => { s.pendingChartType = ct }),
       openCodeModal:    (id) => set(s => { s.codeModalOpen = true; s.codeModalElemId = id ?? null }),
       closeCodeModal:   ()  => set(s => { s.codeModalOpen = false; s.codeModalElemId = null }),
+      setCropElement:   (id) => set(s => { s.cropElementId = id }),
       setPreviewOpen:   (v) => set(s => { s.previewOpen = v }),
       setExportOpen:    (v) => set(s => { s.exportOpen = v }),
       setExportProgress:(v) => set(s => { s.exportProgress = v }),

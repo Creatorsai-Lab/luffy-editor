@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useEditorStore } from '../../store/editorStore'
 import { FONT_FAMILIES } from '../../types/editor'
 import type { TextElement, FontWeight, AlignType, AnimationType, EasingType, SlideDir, ElementAnimation, TextEffectType } from '../../types/editor'
@@ -304,6 +305,15 @@ export function NumberInput({ value, min, max, onChange, step = 1 }: {
 export function Slider({ value, min, max, step, onChange, display }: {
   value: number; min: number; max: number; step: number; display: string; onChange: (v: number) => void
 }) {
+  const [editing, setEditing] = useState(false)
+  const [editVal, setEditVal] = useState('')
+
+  function commit() {
+    const n = parseFloat(editVal)
+    if (!isNaN(n)) onChange(Math.min(max, Math.max(min, n)))
+    setEditing(false)
+  }
+
   return (
     <div className="flex items-center gap-2">
       <input
@@ -312,7 +322,24 @@ export function Slider({ value, min, max, step, onChange, display }: {
         onChange={e => onChange(Number(e.target.value))}
         className="flex-1 accent-editor-accent h-1"
       />
-      <span className="text-xs text-[#c1c1c1] w-9 text-right tabular-nums">{display}</span>
+      {editing ? (
+        <input
+          type="number" autoFocus
+          value={editVal}
+          step={step}
+          onChange={e => setEditVal(e.target.value)}
+          onBlur={commit}
+          onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
+          className="text-xs text-[#c1c1c1] w-12 text-right bg-editor-elevated border border-editor-accent rounded px-1 nodrag"
+        />
+      ) : (
+        <span
+          onClick={() => { setEditing(true); setEditVal(String(value)) }}
+          className="text-xs text-[#c1c1c1] w-9 text-right tabular-nums cursor-text hover:text-white"
+        >
+          {display}
+        </span>
+      )}
     </div>
   )
 }

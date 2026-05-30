@@ -10,7 +10,7 @@ protocol.registerSchemesAsPrivileged([{
 }])
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { mkdir, readFile, writeFile, copyFile, readdir, rm } from 'fs/promises'
+import { mkdir, readFile, writeFile, copyFile, readdir, rm, stat, open } from 'fs/promises'
 import { existsSync } from 'fs'
 
 const USER_DATA   = app.getPath('userData')
@@ -193,23 +193,52 @@ app.whenReady().then(async () => {
   await ensureDir(PROJECTS_DIR)
   electronApp.setAppUserModelId('com.luffy.editor')
 
-  // Serve local assets with Cross-Origin-Resource-Policy: cross-origin so COEP allows them
+  // Serve local assets with range-request support (required for <video>/<audio> seeking)
   protocol.handle('localasset', async (request) => {
     const raw = decodeURIComponent(request.url.replace('localasset:///', ''))
     // Strip leading slash on Windows paths like /C:/...
     const filePath = raw.match(/^\/[A-Za-z]:/) ? raw.slice(1) : raw
     try {
-      const data = await readFile(filePath)
       const ext  = filePath.split('.').pop()?.toLowerCase() ?? ''
       const mime: Record<string, string> = {
         png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', gif:'image/gif',
         webp:'image/webp', svg:'image/svg+xml', bmp:'image/bmp',
-        mp4:'video/mp4', webm:'video/webm', mov:'video/quicktime',
+        mp4:'video/mp4', webm:'video/webm', mov:'video/quicktime', avi:'video/x-msvideo', mkv:'video/x-matroska',
         mp3:'audio/mpeg', wav:'audio/wav', ogg:'audio/ogg', m4a:'audio/mp4'
       }
+      const contentType = mime[ext] ?? 'application/octet-stream'
+      const rangeHeader = request.headers.get('Range')
+
+      if (rangeHeader) {
+        const { size } = await stat(filePath)
+        const match = rangeHeader.match(/bytes=(\d*)-(\d*)/)
+        const start = match?.[1] ? parseInt(match[1]) : 0
+        const end   = match?.[2] ? Math.min(parseInt(match[2]), size - 1) : size - 1
+        const chunkSize = end - start + 1
+
+        const fh  = await open(filePath, 'r')
+        const buf = Buffer.alloc(chunkSize)
+        await fh.read(buf, 0, chunkSize, start)
+        await fh.close()
+
+        return new Response(buf, {
+          status: 206,
+          headers: {
+            'Content-Type':   contentType,
+            'Content-Range':  `bytes ${start}-${end}/${size}`,
+            'Accept-Ranges':  'bytes',
+            'Content-Length': String(chunkSize),
+            'Cross-Origin-Resource-Policy': 'cross-origin'
+          }
+        })
+      }
+
+      const data = await readFile(filePath)
       return new Response(data, {
         headers: {
-          'Content-Type': mime[ext] ?? 'application/octet-stream',
+          'Content-Type':   contentType,
+          'Accept-Ranges':  'bytes',
+          'Content-Length': String(data.byteLength),
           'Cross-Origin-Resource-Policy': 'cross-origin'
         }
       })

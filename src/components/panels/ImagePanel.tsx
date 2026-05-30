@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Image as ImageIcon, Lock, Unlock, RotateCcw, Plus, Trash2 } from 'lucide-react'
+import { useRef, useEffect } from 'react'
+import { Scissors, Lock, Unlock, RotateCcw, Plus, Trash2, X } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ImageElement, AnimationType, EasingType, SlideDir, ElementAnimation } from '../../types/editor'
 import { PanelHeader, Row, Slider, NumberInput } from './TextPanel'
@@ -48,37 +48,50 @@ const LOOP_TYPE_SET = new Set<string>(['pulse', 'bounceLoop', 'rotateLoop', 'flo
 const isLoopAnim = (a: ElementAnimation) => LOOP_TYPE_SET.has(a.type) || a.timing === 'loop'
 
 export default function ImagePanel() {
-  const { getSelectedEls, updateElement, addAnimation } = useEditorStore()
+  const { getSelectedEls, updateElement, addAnimation, setCropElement } = useEditorStore()
   const selected = getSelectedEls()
   const el = selected.find(e => e.type === 'image') as ImageElement | undefined
 
-  const [lockRatio, setLockRatio] = useState(true)
+  const ratioRef = useRef(1)
+
+  useEffect(() => {
+    if (el) ratioRef.current = el.width / el.height
+  }, [el?.id])
+
+  const lockRatio = el?.lockRatio ?? true
 
   function upd(patch: Partial<ImageElement>) {
     if (el) updateElement(el.id, patch)
   }
 
-  const ratio = el ? el.width / el.height : 1
+  function toggleLock() {
+    if (!lockRatio && el) ratioRef.current = el.width / el.height
+    upd({ lockRatio: !lockRatio })
+  }
 
   function handleWidth(newW: number) {
     if (!el) return
-    if (lockRatio) upd({ width: newW, height: Math.round(newW / ratio) })
+    if (lockRatio) upd({ width: newW, height: Math.round(newW / ratioRef.current) })
     else upd({ width: newW })
   }
 
   function handleHeight(newH: number) {
     if (!el) return
-    if (lockRatio) upd({ height: newH, width: Math.round(newH * ratio) })
+    if (lockRatio) upd({ height: newH, width: Math.round(newH * ratioRef.current) })
     else upd({ height: newH })
   }
 
   function resetFilters() {
-    upd({ brightness: 100, contrast: 100, saturation: 100, hueRotate: 0, blur: 0, glass: false })
+    upd({
+      brightness: 100, contrast: 100, saturation: 100, hueRotate: 0, blur: 0, glass: false,
+      exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0,
+      temperature: 0, tint: 0, vibrance: 0
+    })
   }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <PanelHeader icon={<ImageIcon size={12} />} title="Image" />
+      <PanelHeader icon={<Scissors size={12} />} title="Image" />
 
       <div className="flex-1 overflow-y-auto">
         {!el && (
@@ -105,7 +118,7 @@ export default function ImagePanel() {
 
                 <Row label="Lock Ratio">
                   <button
-                    onClick={() => setLockRatio(v => !v)}
+                    onClick={toggleLock}
                     className={cn(
                       'flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors',
                       lockRatio
@@ -128,6 +141,27 @@ export default function ImagePanel() {
                 </Row>
               </div>
 
+              {/* ── Crop ────────────────────────────────────────────── */}
+              <div className="pb-2 mb-1 border-b border-editor-border">
+                <span className="text-xs font-medium text-editor-text block mb-1">Crop</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCropElement(el.id)}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded text-xs bg-editor-elevated text-[#f2f2f2] border border-editor-border hover:text-editor-text transition-colors"
+                  >
+                    <Scissors size={10} /> Edit Crop
+                  </button>
+                  {el.crop && (
+                    <button
+                      onClick={() => upd({ crop: undefined })}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-red-900/30 text-red-400 border border-red-900/50 hover:bg-red-900/50 transition-colors"
+                    >
+                      <X size={10} /> Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* ── Adjustments ─────────────────────────────────────── */}
               <div className="pb-2 mb-1 border-b border-editor-border">
                 <span className="text-xs font-medium text-editor-text block mb-1">Adjustments</span>
@@ -136,20 +170,52 @@ export default function ImagePanel() {
                   <Slider value={Math.round((el.opacity ?? 1) * 100)} min={0} max={100} step={1}
                     onChange={v => upd({ opacity: v / 100 })} display={`${Math.round((el.opacity ?? 1) * 100)}%`} />
                 </Row>
+                <Row label="Exposure">
+                  <Slider value={el.exposure ?? 0} min={-100} max={100} step={1}
+                    onChange={v => upd({ exposure: v })} display={`${el.exposure ?? 0}`} />
+                </Row>
                 <Row label="Brightness">
                   <Slider value={el.brightness ?? 100} min={0} max={200} step={1}
-                    onChange={v => upd({ brightness: v })} display={`${el.brightness ?? 100}%`} />
+                    onChange={v => upd({ brightness: v })} display={`${el.brightness ?? 100}`} />
                 </Row>
                 <Row label="Contrast">
                   <Slider value={el.contrast ?? 100} min={0} max={200} step={1}
-                    onChange={v => upd({ contrast: v })} display={`${el.contrast ?? 100}%`} />
+                    onChange={v => upd({ contrast: v })} display={`${el.contrast ?? 100}`} />
+                </Row>
+                <Row label="Highlights">
+                  <Slider value={el.highlights ?? 0} min={-100} max={100} step={1}
+                    onChange={v => upd({ highlights: v })} display={`${el.highlights ?? 0}`} />
+                </Row>
+                <Row label="Shadows">
+                  <Slider value={el.shadows ?? 0} min={-100} max={100} step={1}
+                    onChange={v => upd({ shadows: v })} display={`${el.shadows ?? 0}`} />
+                </Row>
+                <Row label="Whites">
+                  <Slider value={el.whites ?? 0} min={-100} max={100} step={1}
+                    onChange={v => upd({ whites: v })} display={`${el.whites ?? 0}`} />
+                </Row>
+                <Row label="Blacks">
+                  <Slider value={el.blacks ?? 0} min={-100} max={100} step={1}
+                    onChange={v => upd({ blacks: v })} display={`${el.blacks ?? 0}`} />
                 </Row>
                 <Row label="Saturation">
                   <Slider value={el.saturation ?? 100} min={0} max={200} step={1}
-                    onChange={v => upd({ saturation: v })} display={`${el.saturation ?? 100}%`} />
+                    onChange={v => upd({ saturation: v })} display={`${el.saturation ?? 100}`} />
+                </Row>
+                <Row label="Vibrance">
+                  <Slider value={el.vibrance ?? 0} min={-100} max={100} step={1}
+                    onChange={v => upd({ vibrance: v })} display={`${el.vibrance ?? 0}`} />
+                </Row>
+                <Row label="Temperature">
+                  <Slider value={el.temperature ?? 0} min={-100} max={100} step={1}
+                    onChange={v => upd({ temperature: v })} display={`${el.temperature ?? 0}`} />
+                </Row>
+                <Row label="Tint">
+                  <Slider value={el.tint ?? 0} min={-100} max={100} step={1}
+                    onChange={v => upd({ tint: v })} display={`${el.tint ?? 0}`} />
                 </Row>
                 <Row label="Hue Rotate">
-                  <Slider value={el.hueRotate ?? 0} min={0} max={360} step={1}
+                  <Slider value={el.hueRotate ?? 0} min={-180} max={180} step={1}
                     onChange={v => upd({ hueRotate: v })} display={`${el.hueRotate ?? 0}°`} />
                 </Row>
                 <Row label="Blur">

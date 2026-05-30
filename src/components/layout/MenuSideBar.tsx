@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Type, Square, ArrowRight, Code2, Table2, Layers, Shuffle, ImagePlus, BarChart3, Music,
-  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointerBan, SquareDashedMousePointer
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointerBan, SquareDashedMousePointer, Film
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { useHistoryStore } from '../../store/historyStore'
@@ -27,6 +27,7 @@ const TOOLS: ToolItem[] = [
   { icon: <BarChart3 size={15} />, label: 'Charts', tool: 'chart', panel: 'charts' },
   { icon: <Shapes size={15} />, label: 'Icons', panel: 'icons' },
   { icon: <ImagePlus size={15} />, label: 'Images', tool: 'image', panel: 'upload' },
+  { icon: <Film size={15} />, label: 'Video', tool: 'video', panel: 'video' },
   { icon: <Music size={15} />, label: 'Audio', panel: 'audio' },
   { icon: <SquareDashedMousePointer size={15} />, label: 'Perspective', panel: 'perspective' },
 ]

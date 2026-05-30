@@ -15,6 +15,8 @@ import ImagePanel from '../panels/ImagePanel'
 import IconCollectionPanel from '../panels/IconCollectionPanel'
 import IconEditPanel from '../panels/IconEditPanel'
 import PerspectivePanel from '../panels/PerspectivePanel'
+import VideoUploadPanel from '../panels/VideoUploadPanel'
+import VideoPanel from '../panels/VideoPanel'
 
 // When an element is selected and the sidebar panel matches the element's "home" panel,
 // show the element's property panel instead of the generic tool panel.
@@ -26,6 +28,7 @@ const ELEMENT_PANEL: Record<string, string> = {
   table: 'table',
   chart: 'charts',
   image: 'upload',
+  video: 'video',
   icon:  'icons',
   audio: 'audio',
 }
@@ -53,6 +56,7 @@ export default function OptionsSidebar() {
         if (firstEl.type === 'table')  return <TablePanel />
         if (firstEl.type === 'chart')  return <ChartPanel />
         if (firstEl.type === 'image')  return <ImagePanel />
+        if (firstEl.type === 'video')  return <VideoPanel />
         if (firstEl.type === 'icon')   return <IconEditPanel />
         if (firstEl.type === 'audio')  return <AudioPropertiesPanel element={firstEl} />
       }
@@ -66,6 +70,7 @@ export default function OptionsSidebar() {
       case 'table':      return <TablePanel />
       case 'charts':     return <ChartPanel />
       case 'upload':     return <ImageUploadPanel />
+      case 'video':      return <VideoUploadPanel />
       case 'audio':      return <AudioPanel />
       case 'icons':      return <IconCollectionPanel />
       case 'background': return <BackgroundPanel />

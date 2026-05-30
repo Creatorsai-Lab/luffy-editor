@@ -1,12 +1,13 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { Stage, Layer, Shape, Transformer, Circle, Path } from 'react-konva'
 import type Konva from 'konva'
-import { Clipboard, Copy, Trash2, ImageIcon } from 'lucide-react'
+import { Clipboard, Copy, Trash2, ImageIcon, Play, Pause, Check, X } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
 import { registerStage } from '../../engine/stageRegistry'
+import { videoRegistry } from '../../engine/videoRegistry'
 import { makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from '../../utils/defaults'
-import type { Background, ImageBg, ImageElement, ShapeType, EditorElement } from '../../types/editor'
+import type { Background, ImageBg, ImageElement, VideoElement, ShapeType, EditorElement } from '../../types/editor'
 import { toFileUrl } from '../../utils/pathUtils'
 import CanvasElement from './CanvasElement'
 import PerspectiveHandles from './PerspectiveHandles'
@@ -32,13 +33,17 @@ export default function EditorCanvas() {
 
   const [drawingArrow, setDrawingArrow] = useState<{x1:number;y1:number;x2:number;y2:number}|null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; elementId: string } | null>(null)
+  const [localPlayingIds, setLocalPlayingIds] = useState<Set<string>>(new Set())
+  const [cropState, setCropState] = useState<{ elId: string; pendingCrop: { x: number; y: number; w: number; h: number } } | null>(null)
+  const [cropDrag, setCropDrag] = useState<{ handle: string; startX: number; startY: number; startCrop: { x: number; y: number; w: number; h: number } } | null>(null)
   const clipboardRef  = useRef<EditorElement[]>([])
 
   const {
     project, currentSceneId, selectedIds,
     playhead, isPlaying, activeTool, activePanel, pendingChartType,
+    cropElementId, setCropElement,
     addElement, selectElement, deselectAll,
-    removeElement, updateScene, setActiveTool, openCodeModal,
+    removeElement, updateElement, updateScene, setActiveTool, openCodeModal,
     undo, redo, duplicateElement
   } = useEditorStore()
 
@@ -182,6 +187,103 @@ export default function EditorCanvas() {
     return () => window.removeEventListener('keydown', onKey)
   }, [selectedIds, removeElement, deselectAll, setActiveTool, undo, redo])
 
+  // Reset local video plays when preview starts (VideoKonva takes over)
+  useEffect(() => {
+    if (isPlaying) setLocalPlayingIds(new Set())
+  }, [isPlaying])
+
+  // ── Crop mode: initialize pendingCrop from store trigger ──────────────────────
+  useEffect(() => {
+    if (!cropElementId) { setCropState(null); return }
+    const el = currentScene?.elements.find(e => e.id === cropElementId) as (ImageElement | VideoElement) | undefined
+    if (!el) { setCropElement(null); return }
+    setCropState({
+      elId: cropElementId,
+      pendingCrop: el.crop ? { ...el.crop } : { x: 0, y: 0, w: 1, h: 1 }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cropElementId])
+
+  // ── Crop drag mouse tracking ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!cropDrag || !cropState) return
+    const cropEl = currentScene?.elements.find(e => e.id === cropState.elId)
+    if (!cropEl) return
+    const ew = cropEl.width, eh = cropEl.height
+
+    const onMove = (e: MouseEvent) => {
+      const dx = (e.clientX - cropDrag.startX) / scale / ew
+      const dy = (e.clientY - cropDrag.startY) / scale / eh
+      const sc = cropDrag.startCrop
+      const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
+      const MIN = 0.05
+      let { x, y, w, h } = sc
+
+      switch (cropDrag.handle) {
+        case 'move': x = clamp(sc.x + dx, 0, 1 - sc.w); y = clamp(sc.y + dy, 0, 1 - sc.h); break
+        case 'tl':   x = clamp(sc.x + dx, 0, sc.x + sc.w - MIN); y = clamp(sc.y + dy, 0, sc.y + sc.h - MIN); w = sc.w - (x - sc.x); h = sc.h - (y - sc.y); break
+        case 'tc':   y = clamp(sc.y + dy, 0, sc.y + sc.h - MIN); h = sc.h - (y - sc.y); break
+        case 'tr':   w = clamp(sc.w + dx, MIN, 1 - sc.x); y = clamp(sc.y + dy, 0, sc.y + sc.h - MIN); h = sc.h - (y - sc.y); break
+        case 'ml':   x = clamp(sc.x + dx, 0, sc.x + sc.w - MIN); w = sc.w - (x - sc.x); break
+        case 'mr':   w = clamp(sc.w + dx, MIN, 1 - sc.x); break
+        case 'bl':   x = clamp(sc.x + dx, 0, sc.x + sc.w - MIN); w = sc.w - (x - sc.x); h = clamp(sc.h + dy, MIN, 1 - sc.y); break
+        case 'bc':   h = clamp(sc.h + dy, MIN, 1 - sc.y); break
+        case 'br':   w = clamp(sc.w + dx, MIN, 1 - sc.x); h = clamp(sc.h + dy, MIN, 1 - sc.y); break
+      }
+      setCropState(prev => prev ? { ...prev, pendingCrop: { x, y, w, h } } : null)
+    }
+    const onUp = () => setCropDrag(null)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup',   onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [cropDrag, scale, currentScene])
+
+  // ── Crop keyboard handler ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!cropState) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter')  { e.preventDefault(); applyAndExitCrop(); }
+      if (e.key === 'Escape') { e.preventDefault(); exitCropMode(); }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [cropState]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function applyAndExitCrop() {
+    if (!cropState || !currentScene) return
+    const c = cropState.pendingCrop
+    const full = c.x < 0.001 && c.y < 0.001 && c.w > 0.999 && c.h > 0.999
+    const cropEl = currentScene.elements.find(e => e.id === cropState.elId) as (ImageElement | VideoElement) | undefined
+    if (!cropEl) { setCropElement(null); setCropState(null); return }
+
+    const newW = Math.round(cropEl.width  * c.w)
+    const newH = Math.round(cropEl.height * c.h)
+    const newX = Math.round(cropEl.x + c.x * cropEl.width)
+    const newY = Math.round(cropEl.y + c.y * cropEl.height)
+
+    const existing = cropEl.crop
+    let finalCrop: typeof c | undefined
+    if (!full) {
+      if (existing) {
+        finalCrop = {
+          x: existing.x + c.x * existing.w,
+          y: existing.y + c.y * existing.h,
+          w: c.w * existing.w,
+          h: c.h * existing.h,
+        }
+      } else {
+        finalCrop = c
+      }
+    }
+
+    updateElement(cropState.elId, {
+      x: newX, y: newY, width: newW, height: newH,
+      crop: finalCrop,
+    } as Partial<EditorElement>)
+    setCropElement(null); setCropState(null)
+  }
+  function exitCropMode() { setCropElement(null); setCropState(null) }
+
   // ── Coordinate helper: client → project space ─────────────────────────────────
   // Uses the stage canvas DOM element's own bounding rect (handles CSS offset correctly)
   function toProjectCoords(clientX: number, clientY: number) {
@@ -214,6 +316,7 @@ export default function EditorCanvas() {
     setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, elementId: id })
   }
   function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
+    if (cropState) { exitCropMode(); return }
     if (e.target === e.target.getStage() || e.target.name() === 'bg') {
       deselectAll()
     }
@@ -304,6 +407,15 @@ export default function EditorCanvas() {
 
   const sortedEls = [...currentScene.elements].sort((a, b) => a.zIndex - b.zIndex)
 
+  // Lock aspect ratio in transformer when single image/video has lockRatio enabled
+  const keepRatioInTransform = (() => {
+    if (selectedIds.length !== 1) return false
+    const sel = currentScene.elements.find(e => e.id === selectedIds[0])
+    if (!sel) return false
+    return (sel.type === 'image' || sel.type === 'video') &&
+      ((sel as ImageElement | VideoElement).lockRatio ?? true)
+  })()
+
   return (
     <div
       ref={containerRef}
@@ -365,7 +477,10 @@ export default function EditorCanvas() {
                   animProps={shouldApplyAnim ? animProps : null}
                   isSelected={selectedIds.includes(el.id)}
                   onSelect={multi => { if (!el.locked) selectElement(el.id, multi) }}
-                  onDblClick={() => { if (el.type === 'code') openCodeModal(el.id) }}
+                  onDblClick={() => {
+                    if (el.type === 'code') openCodeModal(el.id)
+                    else if (el.type === 'image' || el.type === 'video') setCropElement(el.id)
+                  }}
                   stageScale={scale}
                 />
               )
@@ -376,10 +491,10 @@ export default function EditorCanvas() {
           <Layer>
             <Transformer
               ref={trRef}
-              visible={activePanel !== 'perspective'}
+              visible={activePanel !== 'perspective' && !cropState}
               rotateEnabled
               enabledAnchors={['top-left','top-center','top-right','middle-right','bottom-right','bottom-center','bottom-left','middle-left']}
-              keepRatio={false}
+              keepRatio={keepRatioInTransform}
               boundBoxFunc={(_old, box) => ({
                 ...box,
                 width:  Math.max(10, box.width),
@@ -434,6 +549,99 @@ export default function EditorCanvas() {
           </Layer>
         </Stage>
       </div>
+
+      {/* Crop overlay — HTML, not Konva, excluded from export */}
+      {cropState && (() => {
+        const cropEl = currentScene.elements.find(e => e.id === cropState.elId)
+        if (!cropEl) return null
+        const ex = offsetX + cropEl.x * scale
+        const ey = offsetY + cropEl.y * scale
+        const ew = cropEl.width  * scale
+        const eh = cropEl.height * scale
+        const { x: cx, y: cy, w: cw, h: ch } = cropState.pendingCrop
+        const sl = cx * ew, st = cy * eh, sw = cw * ew, sh = ch * eh
+        const HS = 8
+        const handles = [
+          { id: 'tl', l: sl - HS/2, t: st - HS/2, cursor: 'nwse-resize' },
+          { id: 'tc', l: sl + sw/2 - HS/2, t: st - HS/2, cursor: 'ns-resize' },
+          { id: 'tr', l: sl + sw - HS/2, t: st - HS/2, cursor: 'nesw-resize' },
+          { id: 'ml', l: sl - HS/2, t: st + sh/2 - HS/2, cursor: 'ew-resize' },
+          { id: 'mr', l: sl + sw - HS/2, t: st + sh/2 - HS/2, cursor: 'ew-resize' },
+          { id: 'bl', l: sl - HS/2, t: st + sh - HS/2, cursor: 'nesw-resize' },
+          { id: 'bc', l: sl + sw/2 - HS/2, t: st + sh - HS/2, cursor: 'ns-resize' },
+          { id: 'br', l: sl + sw - HS/2, t: st + sh - HS/2, cursor: 'nwse-resize' },
+        ]
+        const MASK = 'rgba(0,0,0,0.55)'
+        const startDrag = (handle: string, e: React.MouseEvent) => {
+          e.stopPropagation()
+          setCropDrag({ handle, startX: e.clientX, startY: e.clientY, startCrop: { ...cropState.pendingCrop } })
+        }
+        return (
+          <div style={{ position: 'absolute', left: ex, top: ey, width: ew, height: eh, zIndex: 25, userSelect: 'none' }}>
+            {/* Dark masks */}
+            {st > 0    && <div style={{ position: 'absolute', left: 0, top: 0, width: ew, height: st, background: MASK, pointerEvents: 'none' }} />}
+            {st+sh < eh && <div style={{ position: 'absolute', left: 0, top: st+sh, width: ew, height: eh-st-sh, background: MASK, pointerEvents: 'none' }} />}
+            {sl > 0    && <div style={{ position: 'absolute', left: 0, top: st, width: sl, height: sh, background: MASK, pointerEvents: 'none' }} />}
+            {sl+sw < ew && <div style={{ position: 'absolute', left: sl+sw, top: st, width: ew-sl-sw, height: sh, background: MASK, pointerEvents: 'none' }} />}
+            {/* Crop border + move handle */}
+            <div
+              style={{ position: 'absolute', left: sl, top: st, width: sw, height: sh, border: '1px solid rgba(255,255,255,0.85)', boxSizing: 'border-box', cursor: 'move', pointerEvents: 'all' }}
+              onMouseDown={e => startDrag('move', e)}
+            >
+              <div style={{ position: 'absolute', left: '33.33%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.22)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', left: '66.66%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.22)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', left: 0, right: 0, top: '33.33%', height: 1, background: 'rgba(255,255,255,0.22)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', left: 0, right: 0, top: '66.66%', height: 1, background: 'rgba(255,255,255,0.22)', pointerEvents: 'none' }} />
+            </div>
+            {/* Resize handles */}
+            {handles.map(h => (
+              <div
+                key={h.id}
+                style={{ position: 'absolute', left: h.l, top: h.t, width: HS, height: HS, background: 'white', border: '1px solid rgba(0,0,0,0.35)', cursor: h.cursor, zIndex: 26, pointerEvents: 'all' }}
+                onMouseDown={e => startDrag(h.id, e)}
+              />
+            ))}
+            {/* Apply / Cancel */}
+            <div style={{ position: 'absolute', left: sl, top: Math.min(st + sh + 8, eh - 32), display: 'flex', gap: 4, zIndex: 27, pointerEvents: 'all' }}>
+              <button onClick={applyAndExitCrop} title="Apply crop (Enter)" style={{ width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--editor-accent, #6c63ff)', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer' }}><Check size={13} /></button>
+              <button onClick={exitCropMode} title="Cancel crop (Escape)" style={{ width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#2a282b', color: '#f2f2f2', border: '1px solid #3a3a3a', borderRadius: 5, cursor: 'pointer' }}><X size={13} /></button>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Video play/pause buttons — HTML overlay, not part of Konva, excluded from export */}
+      {!isPlaying && sortedEls
+        .filter(el => el.type === 'video' && el.visible)
+        .map(el => {
+          const v = el as VideoElement
+          const isLocalPlaying = localPlayingIds.has(v.id)
+          const cx = offsetX + (v.x + v.width  / 2) * scale
+          const cy = offsetY + (v.y + v.height / 2) * scale
+          return (
+            <button
+              key={v.id}
+              style={{ position: 'absolute', left: cx - 18, top: cy - 18, width: 36, height: 36, zIndex: 10 }}
+              className="flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors opacity-60 hover:opacity-100"
+              onMouseDown={e => e.stopPropagation()}
+              onClick={e => {
+                e.stopPropagation()
+                const vid = videoRegistry.get(v.id)
+                if (!vid) return
+                if (isLocalPlaying) {
+                  vid.pause()
+                  setLocalPlayingIds(prev => { const s = new Set(prev); s.delete(v.id); return s })
+                } else {
+                  vid.play().catch(() => {})
+                  setLocalPlayingIds(prev => new Set([...prev, v.id]))
+                }
+              }}
+            >
+              {isLocalPlaying ? <Pause size={16} /> : <Play size={16} />}
+            </button>
+          )
+        })
+      }
 
       {/* Scale indicator */}
       <div className="absolute bottom-2 right-3 text-xs text-white bg-black px-2 py-0.5 ">
