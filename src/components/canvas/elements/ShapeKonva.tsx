@@ -32,11 +32,28 @@ function sideFaceColor(fill: string, faceColor?: string): string {
   return faceColor ? adjustHex(faceColor, -0.25) : adjustHex(fill, -0.35)
 }
 
+// ─── Flow helpers ─────────────────────────────────────────────────────────────
+
+function flowStroke(el: ShapeElement, hasFlow: boolean): string {
+  if (!hasFlow) return el.stroke
+  return el.stroke && el.stroke !== 'transparent' && el.strokeWidth > 0 ? el.stroke : '#888888'
+}
+
+function flowStrokeWidth(el: ShapeElement, hasFlow: boolean): number {
+  if (!hasFlow) return el.strokeWidth
+  return el.strokeWidth > 0 ? el.strokeWidth : 3
+}
+
+function flowDash(sw: number): number[] {
+  return [Math.max(4, sw * 3), Math.max(3, sw * 2)]
+}
+
 interface Props {
   el: ShapeElement
   konvaProps: Record<string, unknown>
   wipeProgress?: number
   wipeDir?: SlideDir
+  dashOffset?: number
 }
 
 function addWave(x: number, y: number, seed: number = 0): [number, number] {
@@ -44,7 +61,7 @@ function addWave(x: number, y: number, seed: number = 0): [number, number] {
   return [x + wave * (0.5 + (seed % 10) * 0.05), y + wave * (0.3 + (seed % 7) * 0.05)]
 }
 
-export default function ShapeKonva({ el, konvaProps, wipeProgress = 1, wipeDir }: Props) {
+export default function ShapeKonva({ el, konvaProps, wipeProgress = 1, wipeDir, dashOffset = 0 }: Props) {
   const [offscreen, setOffscreen] = useState<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
@@ -78,14 +95,20 @@ export default function ShapeKonva({ el, konvaProps, wipeProgress = 1, wipeDir }
   const h = el.height
   const radius = Math.min(w, h) / 2
 
+  const hasFlow    = dashOffset !== 0
+  const fStroke    = flowStroke(el, hasFlow)
+  const fStrokeW   = flowStrokeWidth(el, hasFlow)
+  const fDash      = hasFlow ? flowDash(fStrokeW) : undefined
+
   const wipeActive = wipeProgress < 1 && wipeDir != null
 
   // When wipe is active, Group owns konvaProps; inner shapes use only visual props
   const shared = {
     ...(wipeActive ? {} : konvaProps),
     fill:        el.fill,
-    stroke:      el.stroke,
-    strokeWidth: el.strokeWidth,
+    stroke:      fStroke,
+    strokeWidth: fStrokeW,
+    ...(fDash ? { dash: fDash, dashOffset } : {}),
     perfectDrawEnabled: false,
   }
 
@@ -215,6 +238,22 @@ export default function ShapeKonva({ el, konvaProps, wipeProgress = 1, wipeDir }
             raw.stroke()
             raw.setLineDash([])
 
+            if (hasFlow) {
+              const fsw = fStrokeW
+              raw.setLineDash(flowDash(fsw))
+              raw.lineDashOffset = dashOffset
+              raw.strokeStyle = fStroke
+              raw.lineWidth = fsw
+              // Outline: triangle + base ellipse
+              raw.beginPath()
+              raw.moveTo(w / 2, 0)
+              raw.lineTo(0, baseY)
+              raw.ellipse(w / 2, baseY, w / 2, baseRY, 0, Math.PI, 0, false)
+              raw.closePath()
+              raw.stroke()
+              raw.setLineDash([])
+            }
+
             raw.restore()
           }}
         />
@@ -258,6 +297,27 @@ export default function ShapeKonva({ el, konvaProps, wipeProgress = 1, wipeDir }
             drawFace([0, oy, fw, oy, fw, h, 0, h], frontFill)
             drawFace([ox, 0, w, 0, fw, oy, 0, oy], topFill)
             drawFace([fw, oy, w, 0, w, fh, fw, h], rightFill)
+
+            if (hasFlow) {
+              const fsw = fStrokeW
+              raw.setLineDash(flowDash(fsw))
+              raw.lineDashOffset = dashOffset
+              raw.strokeStyle = fStroke
+              raw.lineWidth = fsw
+              // Front face outline
+              raw.beginPath()
+              raw.moveTo(0, oy); raw.lineTo(fw, oy); raw.lineTo(fw, h); raw.lineTo(0, h); raw.closePath()
+              raw.stroke()
+              // Top face outline
+              raw.beginPath()
+              raw.moveTo(ox, 0); raw.lineTo(w, 0); raw.lineTo(fw, oy); raw.lineTo(0, oy); raw.closePath()
+              raw.stroke()
+              // Right face outline
+              raw.beginPath()
+              raw.moveTo(fw, oy); raw.lineTo(w, 0); raw.lineTo(w, fh); raw.lineTo(fw, h); raw.closePath()
+              raw.stroke()
+              raw.setLineDash([])
+            }
 
             raw.restore()
           }}

@@ -16,6 +16,7 @@ const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
   { label: 'Pulse',  value: 'pulse' },
   { label: 'Bounce', value: 'bounceLoop' },
   { label: 'Rotate', value: 'rotateLoop' },
+  { label: 'Flow',   value: 'flowLoop'   },
 ]
 
 const EXIT_ANIMS: { label: string; value: AnimationType }[] = [

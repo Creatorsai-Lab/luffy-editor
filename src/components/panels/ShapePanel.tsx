@@ -35,6 +35,7 @@ const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
   { label: 'Bounce',    value: 'bounceLoop' },
   { label: 'Rotate',    value: 'rotateLoop' },
   { label: 'Fade Loop', value: 'fadeLoop'   },
+  { label: 'Flow',      value: 'flowLoop'   },
 ]
 
 const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
