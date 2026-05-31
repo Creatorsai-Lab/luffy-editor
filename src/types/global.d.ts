@@ -56,6 +56,9 @@ declare global {
       shell: {
         openPath: (path: string) => Promise<string>
       }
+      ffmpeg: {
+        getPaths: () => Promise<{ coreJs: string; coreWasm: string }>
+      }
     }
   }
 }

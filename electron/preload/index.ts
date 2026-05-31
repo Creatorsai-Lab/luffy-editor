@@ -29,6 +29,9 @@ const api = {
   },
   shell: {
     openPath: (path: string) => ipcRenderer.invoke('shell:open-path', path)
+  },
+  ffmpeg: {
+    getPaths: () => ipcRenderer.invoke('ffmpeg:get-paths') as Promise<{ coreJs: string; coreWasm: string }>
   }
 }
 

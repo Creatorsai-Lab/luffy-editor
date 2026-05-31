@@ -187,6 +187,24 @@ function createWindow(): void {
   ipcMain.handle('fs:write-file', async (_e, path: string, data: Uint8Array) => {
     await writeFile(path, Buffer.from(data))
   })
+
+  // FFmpeg core — return absolute file paths so renderer can fetch via localasset://
+  // Tries production location (extraResources) first, falls back to dev node_modules.
+  ipcMain.handle('ffmpeg:get-paths', () => {
+    const prodDir = join(process.resourcesPath, 'ffmpeg-core')
+    if (existsSync(join(prodDir, 'ffmpeg-core.js'))) {
+      return {
+        coreJs:   join(prodDir, 'ffmpeg-core.js'),
+        coreWasm: join(prodDir, 'ffmpeg-core.wasm'),
+      }
+    }
+    // Dev: node_modules relative to app root
+    const appRoot = app.getAppPath()
+    return {
+      coreJs:   join(appRoot, 'node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.js'),
+      coreWasm: join(appRoot, 'node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm'),
+    }
+  })
 }
 
 app.whenReady().then(async () => {

@@ -1,5 +1,5 @@
 {
-  "name": "luffy-app",
+  "name": "luffy-create",
   "version": "1.0.0",
   "description": "Opensource fast and lightweight video creation and editor app",
   "private": true,
@@ -66,11 +66,18 @@
   },
   "build": {
     "appId": "com.luffy.app",
-    "productName": "Luffy App",
+    "productName": "Luffy Create",
     "directories": {
       "buildResources": "build"
     },
     "files": ["out/**"],
+    "extraResources": [
+      {
+        "from": "node_modules/@ffmpeg/core/dist/esm",
+        "to": "ffmpeg-core",
+        "filter": ["ffmpeg-core.js", "ffmpeg-core.wasm"]
+      }
+    ],
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico"
@@ -82,13 +89,6 @@
     "linux": {
       "target": "AppImage",
       "icon": "build/icon.png"
-    },
-    "extraResources": [
-      {
-        "from": "node_modules/@ffmpeg/core/dist/esm",
-        "to": "ffmpeg-core",
-        "filter": ["ffmpeg-core.js", "ffmpeg-core.wasm"]
-      }
-    ]
+    }
   }
   }

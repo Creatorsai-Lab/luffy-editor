@@ -35,33 +35,22 @@ async function loadFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> {
   if (!ffmpegLoaded) {
     onLog?.('Loading FFmpeg...')
 
-    // Try loading from local node_modules first (works offline),
-    // then fall back to CDN if local files aren't available.
-    const cdnBaseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm'
-
+    // Get absolute file paths from main process (IPC returns strings, not binaries).
+    // Renderer fetches via localasset:// — same CORP headers as video/audio assets,
+    // COEP-safe, works in both dev and packaged app.
     try {
-      // Attempt CDN load (most reliable for wasm cross-origin requirements)
-      onLog?.('Fetching FFmpeg core from CDN...')
+      const { coreJs, coreWasm } = await window.api.ffmpeg.getPaths()
+      const toUrl = (p: string) => `localasset:///${p.replace(/\\/g, '/')}`
+      onLog?.('Loading FFmpeg core...')
       await ffmpegInstance.load({
-        coreURL: await toBlobURL(`${cdnBaseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${cdnBaseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        coreURL: await toBlobURL(toUrl(coreJs),   'text/javascript'),
+        wasmURL: await toBlobURL(toUrl(coreWasm), 'application/wasm'),
       })
-    } catch (cdnError) {
-      console.error('[FFmpeg] CDN load failed:', cdnError)
-      onLog?.('CDN load failed, trying local fallback...')
-
-      // Attempt local load as fallback
-      try {
-        await ffmpegInstance.load({
-          coreURL: new URL('/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.js', window.location.origin).href,
-          wasmURL: new URL('/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm', window.location.origin).href,
-        })
-      } catch (localError) {
-        console.error('[FFmpeg] Local load also failed:', localError)
-        const msg = 'FFmpeg failed to load. Check your internet connection or ensure @ffmpeg/core is installed.'
-        onLog?.(msg)
-        throw new Error(msg)
-      }
+    } catch (err) {
+      const msg = `FFmpeg failed to load: ${err instanceof Error ? err.message : String(err)}`
+      onLog?.(msg)
+      console.error('[FFmpeg]', msg)
+      throw new Error(msg)
     }
 
     ffmpegLoaded = true
