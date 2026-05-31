@@ -38,6 +38,7 @@ export default function MenuSideBar() {
     setActiveTool, setActivePanel,
     setProjectName, setCanvasSize,
     setPreviewOpen, setExportOpen,
+    openCodeModal,
     deselectAll,
     undo, redo
   } = useEditorStore()
@@ -184,6 +185,7 @@ export default function MenuSideBar() {
                 disabled={disabled}
                 onClick={() => {
                   if (disabled) return
+                  if (item.tool === 'code') { openCodeModal(); setActivePanel('code'); return }
                   if (item.tool) setActiveTool(item.tool)
                   setActivePanel(activePanel === item.panel ? null : item.panel)
                 }}

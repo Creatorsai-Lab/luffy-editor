@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { Minus, Square, X, Clapperboard, FolderOpen, Plus, Trash2, Check } from 'lucide-react'
+import { Minus, Square, X, FolderOpen, Plus, Trash2, Check } from 'lucide-react'
+import luffyLogo from '../../../assets/luffy_app_logo.webp'
 import { useEditorStore } from '../../store/editorStore'
 import { makeProject } from '../../utils/defaults'
 import type { ProjectRecord } from '../../types/global'
@@ -65,7 +66,7 @@ export default function Header() {
     <header className="drag flex items-center justify-between h-8 bg-black px-3 flex-none relative z-50">
       {/* Left: logo + project switcher */}
       <div className="nodrag flex items-center gap-2" ref={panelRef}>
-        <Clapperboard size={16} className="text-editor-accent flex-none" />
+        <img src={luffyLogo} alt="Luffy" className="w-7 h-7 rounded-sm flex-none object-cover" />
         <span className="text-xs font-semibold text-white tracking-wide">Luffy Editor</span>
 
         {/* Project button */}
@@ -90,16 +91,16 @@ export default function Header() {
             <button
               onClick={createProject}
               disabled={creating}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-editor-accent hover:bg-editor-hover transition-colors border-b border-editor-border"
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-white hover:bg-editor-hover transition-colors border-b border-editor-border"
             >
               <Plus size={12} />
-              {creating ? 'Creating…' : 'New Project (Vertical HD)'}
+              {creating ? 'Creating…' : 'New Project'}
             </button>
 
             {/* Project list */}
             <div className="max-h-64 overflow-y-auto">
               {projects.length === 0 && (
-                <p className="text-xs text-[#f2f2f2] px-3 py-3 text-center">No saved projects.</p>
+                <p className="text-xs text-red px-3 py-3 text-center">No saved projects.</p>
               )}
               {projects.map(p => (
                 <div

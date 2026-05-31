@@ -1,4 +1,5 @@
-import { useState, useEffect, Suspense, lazy } from 'react'
+import { useState, Suspense, lazy } from 'react'
+import type { editor as MonacoEditorNS } from 'monaco-editor'
 import { X, Save } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { LANGUAGES } from '../../types/editor'
@@ -33,7 +34,10 @@ export default function CodeEditorModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      onKeyDown={e => e.stopPropagation()}
+    >
       <div className="w-[720px] max-w-[90vw] h-[520px] bg-editor-panel border border-editor-border rounded-lg shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-editor-border">
@@ -72,6 +76,7 @@ export default function CodeEditorModal() {
               value={code}
               onChange={v => setCode(v ?? '')}
               theme="vs-dark"
+              onMount={(editor: MonacoEditorNS.IStandaloneCodeEditor) => editor.focus()}
               options={{
                 fontSize: 13,
                 fontFamily: "Cascadia Code, Consolas, 'Courier New', monospace",
