@@ -25,7 +25,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
       return (
         <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0f0f0f] gap-4">
           <p className="text-red-400 text-sm font-medium">Something went wrong</p>
-          <p className="text-[#888] text-xs max-w-sm text-center">{this.state.error.message}</p>
+          <p className="text-[#888] text-xs max-w-sm text-center">{(this.state.error as Error).message}</p>
           <button
             onClick={() => this.setState({ error: null })}
             className="px-4 py-2 bg-editor-accent text-white text-xs rounded hover:bg-editor-accent-hover transition-colors"

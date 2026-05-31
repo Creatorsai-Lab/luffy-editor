@@ -2,7 +2,7 @@
   "compilerOptions": {
     "composite": true,
     "module": "CommonJS",
-    "moduleResolution": "Node",
+    // "moduleResolution": "Node",
     "target": "ES2022",
     "lib": ["ES2022"],
     "outDir": "out",

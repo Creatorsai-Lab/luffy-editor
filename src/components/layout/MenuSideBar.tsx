@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Type, Square, ArrowRight, Code2, Table2, Layers, Shuffle, ImagePlus, BarChart3, Music,
-  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointerBan, SquareDashedMousePointer, Film
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointerBan, SquareDashedMousePointer, SquarePlay
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { useHistoryStore } from '../../store/historyStore'
@@ -27,7 +27,7 @@ const TOOLS: ToolItem[] = [
   { icon: <BarChart3 size={15} />, label: 'Charts', tool: 'chart', panel: 'charts' },
   { icon: <Shapes size={15} />, label: 'Icons', panel: 'icons' },
   { icon: <ImagePlus size={15} />, label: 'Images', tool: 'image', panel: 'upload' },
-  { icon: <Film size={15} />, label: 'Video', tool: 'video', panel: 'video' },
+  { icon: <SquarePlay size={15} />, label: 'Video', tool: 'video', panel: 'video' },
   { icon: <Music size={15} />, label: 'Audio', panel: 'audio' },
   { icon: <SquareDashedMousePointer size={15} />, label: 'Perspective', panel: 'perspective' },
 ]
@@ -155,28 +155,26 @@ export default function MenuSideBar() {
       <div className="p-3">
         <div className="text-[0.75rem] text-[#f2f2f2] uppercase tracking-wider mb-3 px-1 font-semibold">Tools</div>
 
-        {/* Free cursor */}
-        <button
-          disabled={disabled}
-          onClick={() => {
-            if (disabled) return
-            setActiveTool('select')
-            deselectAll()
-            setActivePanel(null)
-          }}
-          className={cn(
-            'w-full flex items-center gap-2 px-3 py-2 rounded mb-2 transition-all text-[0.78rem]',
-            disabled ? 'text-[#f2f2f2] cursor-not-allowed' :
-              activeTool === 'select' && activePanel === null
-                ? 'bg-purple-900/30 text-purple-400'
-                : 'text-[#f2f2f2] hover:text-purple-400 hover:bg-editor-hover'
-          )}
-        >
-          <MousePointerBan size={15} />
-          <span>Free Cursor</span>
-        </button>
-
         <div className="grid grid-cols-2 gap-2">
+          <button
+            disabled={disabled}
+            onClick={() => {
+              if (disabled) return
+              setActiveTool('select')
+              deselectAll()
+              setActivePanel(null)
+            }}
+            className={cn(
+              'flex flex-col items-center justify-center gap-1.5 p-2 rounded transition-all',
+              disabled ? 'text-editor-accent cursor-not-allowed' :
+                activeTool === 'select' && activePanel === null
+                  ? 'bg-editor-accent/10 text-editor-accent'
+                  : 'text-[#f2f2f2] hover:bg-editor-hover'
+            )}
+          >
+            <MousePointerBan size={15} />
+            <span className="text-[0.78rem] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">Free Cursor</span>
+          </button>
           {TOOLS.map((item, i) => {
             const isActive = activePanel === item.panel
             return (
