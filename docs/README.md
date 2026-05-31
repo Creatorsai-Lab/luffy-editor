@@ -6,15 +6,14 @@
 
 **Everything you need to go from a blank canvas to a polished, animated MP4.**
 
-[🌐 Website](https://creatorsai-lab.github.io/luffy-editor/) · [⬇ Download](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest) · [🐙 Repository](https://github.com/Creatorsai-Lab/luffy-editor)
+[🌏︎ Website](https://creatorsai-lab.github.io/luffy-editor/) · [⇊ Download](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest) · [ 🖿 Repository](https://github.com/Creatorsai-Lab/luffy-editor)
 
 </div>
 
----
 
 Welcome to the Luffy Create documentation. The guides below are organized by topic — pick a card to jump in. New here? Start with **Overview**, then **Elements**, then **Animations**.
 
-## 📚 Documentation
+##  Documentation
 
 <table>
 <tr>

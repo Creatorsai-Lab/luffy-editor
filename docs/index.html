@@ -439,8 +439,8 @@
       <p>Learn every feature with our built-in guide. Click any topic to read it right here — no need to leave the page.</p>
     </div>
     <div class="docs-grid">
-      <button class="doc-card reveal" data-doc="index.md" data-title="Overview">
-        <div class="doc-top"><span class="doc-ico">🚀</span><h3>Overview</h3></div>
+      <button class="doc-card reveal" data-doc="editor.md" data-title="Overview">
+        <div class="doc-top"><span class="doc-ico">🚀</span><h3>Editor UI</h3></div>
         <p>Interface tour, projects, scenes, and a quick-start walkthrough.</p>
         <span class="doc-open">Read guide →</span>
       </button>
@@ -537,7 +537,7 @@
     <div class="foot-links">
       <a href="https://github.com/Creatorsai-Lab/luffy-editor">GitHub</a>
       <a href="https://github.com/Creatorsai-Lab/luffy-editor/releases/latest">Releases</a>
-      <a href="https://github.com/Creatorsai-Lab/luffy-editor/blob/main/docs/index.md">Docs</a>
+      <a href="https://github.com/Creatorsai-Lab/luffy-editor/tree/main/docs#readme">Docs</a>
       <a href="https://github.com/Creatorsai-Lab/luffy-editor/issues">Report a Bug</a>
     </div>
     <div class="copyright">© 2026 Creatorsai-Lab · Released under the MIT License</div>
@@ -568,7 +568,7 @@
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
   // ── Inline doc viewer ──────────────────────────────────────
-  const GH_BLOB = 'https://github.com/Creatorsai-Lab/luffy-editor/blob/main/docs/';
+  const GH_BLOB = 'https://github.com/Creatorsai-Lab/luffy-editor/tree/main/docs#readme';
   const viewer  = document.getElementById('viewer');
   const vTitle  = document.getElementById('viewer-title');
   const vMd     = document.getElementById('viewer-md');
