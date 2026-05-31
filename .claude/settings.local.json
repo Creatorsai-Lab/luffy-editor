@@ -17,7 +17,8 @@
       "Bash(cd /d D:\\\\luffy-editor\\\\src)",
       "Bash(findstr /R \"textProgress\\\\|pathProgress\\\\|dashOffset\" *.tsx components\\\\**\\\\*.tsx engine\\\\*.ts)",
       "Bash(echo \"exit:$?\")",
-      "Bash(del /q tsconfig.web.tsbuildinfo)"
+      "Bash(del /q tsconfig.web.tsbuildinfo)",
+      "Bash(xxd)"
     ]
   }
 }
