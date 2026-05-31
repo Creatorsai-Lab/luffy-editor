@@ -12,7 +12,7 @@ Code walkthroughs, system-design diagrams, and slide-based animations — with f
 [![License](https://img.shields.io/github/license/Creatorsai-Lab/luffy-editor?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-blue?style=flat-square)](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest)
 
-[🌏︎ Website](https://creatorsai-lab.github.io/luffy-editor/) · [⇊ Download](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest) · [ 🖿 User GUIDE](https://github.com/Creatorsai-Lab/luffy-editor/tree/main/docs#readme)
+[🌏︎ Website](https://creatorsai-lab.github.io/luffy-create/) · [⇊ Download](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest) · [ 🖿 User GUIDE](https://github.com/Creatorsai-Lab/luffy-editor/tree/main/docs#readme)
 </div>
 
 ---

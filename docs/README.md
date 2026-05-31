@@ -6,7 +6,7 @@
 
 **Everything you need to go from a blank canvas to a professional video**
 
-[🌏︎ Website](https://creatorsai-lab.github.io/luffy-editor/) · [⇊ Download](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest) · [ 🖿 Repository](https://github.com/Creatorsai-Lab/luffy-editor)
+[🌏︎ Website](https://creatorsai-lab.github.io/luffy-create/) · [⇊ Download](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest) · [ 🖿 Repository](https://github.com/Creatorsai-Lab/luffy-editor)
 
 </div>
 
