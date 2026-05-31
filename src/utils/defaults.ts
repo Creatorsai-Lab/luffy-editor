@@ -55,7 +55,7 @@ export function makeText(x: number, y: number): TextElement {
 
 export function makeShape(type: ShapeType, x: number, y: number): ShapeElement {
   const is3D = type === 'cube' || type === 'cone'
-  const size = type === 'cube' ? 140 : 120
+  const size = type === 'cube' ? 300 : 280
   return {
     id: uuid(), type: 'shape', name: type.charAt(0).toUpperCase() + type.slice(1),
     x, y,
@@ -112,17 +112,17 @@ export function makeTable(x: number, y: number): TableElement {
   const rows = 3, cols = 3
   return {
     id: uuid(), type: 'table', name: 'Table',
-    x, y, width: cols * 120, height: rows * 40,
+    x, y, width: cols * 150, height: rows * 110,
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     rows, cols,
     cells: Array.from({ length: rows }, (_, r) =>
       Array.from({ length: cols }, (_, c) => r === 0 ? `Header ${c + 1}` : '')
     ),
-    cellWidth: 120, cellHeight: 40,
-    borderColor: '#5c5c5c', borderWidth: 1,
-    headerBg: '#555555', cellBg: '#141414',
-    textColor: '#303030', fontSize: 13, showHeader: true
+    cellWidth: 250, cellHeight: 150,
+    borderColor: '#aaaaaa', borderWidth: 1,
+    headerBg: '#383838', cellBg: '#6e6e6e',
+    textColor: '#f2f4fd', fontSize: 36, showHeader: true
   }
 }
 

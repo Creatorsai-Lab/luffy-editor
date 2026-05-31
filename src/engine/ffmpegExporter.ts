@@ -118,8 +118,11 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
   for (let i = 0; i < project.scenes.length; i++) {
     const scene = project.scenes[i]
     const hasNext = i < project.scenes.length - 1
-    // Transition belongs to THIS scene (from this scene -> next scene).
-    const transitionDuration = hasNext ? (scene.transition?.duration ?? 0) : 0
+    // Transition is stored on the ENTERING (next) scene — read from scene[i+1]
+    const nextScene = hasNext ? project.scenes[i + 1] : null
+    const transitionDuration = (nextScene && nextScene.transition?.type !== 'none')
+      ? (nextScene.transition?.duration ?? 0)
+      : 0
 
     sceneTimeline.push({
       sceneId: scene.id,
@@ -218,8 +221,8 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
           width: w,
           height: h,
           progress,
-          type: fromScene.transition.type,
-          direction: fromScene.transition.direction,
+          type: toScene.transition.type,
+          direction: toScene.transition.direction,
           fromCanvas,
           toCanvas
         })

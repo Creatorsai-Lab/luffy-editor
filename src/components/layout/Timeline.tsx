@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect, useState, useMemo } from 'react'
-import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Music, Trash2, Copy, Scissors, Split, X, Volume2, Bookmark } from 'lucide-react'
+import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Music, Trash2, Copy, Scissors, Split, X, Volume2, Bookmark, Shuffle } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { cn } from '../../utils/cn'
 import { toFileUrl } from '../../utils/pathUtils'
@@ -649,8 +649,6 @@ export default function Timeline() {
             {project.scenes.map((sc, index) => {
               const startPx    = sceneStarts[sc.id] * PX_PER_SEC
               const widthPx    = sc.duration * PX_PER_SEC
-              const hasTrans   = sc.transition && sc.transition.type !== 'none'
-              const transColor = hasTrans ? (TRANS_COLORS[sc.transition.type] ?? '#6366f1') : null
               const isResizing  = resizingScene?.id === sc.id
               const isDragging  = draggedSceneIndex === index
               const isDropTarget = dropTargetIndex === index
@@ -680,20 +678,16 @@ export default function Timeline() {
                     isDragging && 'opacity-50',
                     isDropTarget && 'ring-2 ring-editor-accent',
                     isResizing && 'ring-2 ring-white',
-                    isActive && 'ring-2 ring-white shadow-lg'
+                    isActive && 'ring-2 ring-red shadow-lg'
                   )}
                   style={{
-                    left: startPx, width: Math.max(widthPx - 2, 8),
+                    left: startPx + 3, width: Math.max(widthPx - 6, 8),
                     height: SCENE_HEIGHT - 4, top: 2,
                     background: sceneColor, color: 'white',
                     fontWeight: isActive ? 600 : 400,
                     paddingBottom: 14,
                   }}
                 >
-                  {transColor && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-md" style={{ background: transColor }} />
-                  )}
-
                   <div
                     className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-white/30 rounded-l-md z-10"
                     onMouseDown={e => handleSceneEdgeMouseDown(sc.id, 'start', e)}
@@ -712,6 +706,37 @@ export default function Timeline() {
               )
             })}
           </div>
+
+          {/* Transition blocks — straddle scene boundaries */}
+          {project.scenes.map((sc, index) => {
+            if (index === 0) return null
+            if (!sc.transition || sc.transition.type === 'none') return null
+            const startPx = sceneStarts[sc.id] * PX_PER_SEC
+            const color   = TRANS_COLORS[sc.transition.type] ?? '#6366f1'
+            const BLOCK_W = 20
+            const BLOCK_H = 20
+            const BLOCK_TOP = RULER_HEIGHT + 2 + Math.round(((SCENE_HEIGHT - 4) - BLOCK_H) / 2)
+            return (
+              <div
+                key={`trans-${sc.id}`}
+                className="absolute z-20 flex items-center justify-center rounded select-none pointer-events-none"
+                style={{
+                  left: startPx - BLOCK_W / 2,
+                  top: BLOCK_TOP,
+                  width: BLOCK_W,
+                  height: BLOCK_H,
+                  background: color + '66',
+                  border: `1.5px solid ${color}`,
+                  boxShadow: '0 1px 6px rgba(0,0,0,0.45)',
+                  borderRadius: 5,
+                  backdropFilter: 'blur(1px)',
+                }}
+                title={`${sc.transition.type} · ${sc.transition.duration}s`}
+              >
+                <Shuffle size={9} color="white" strokeWidth={2.5} />
+              </div>
+            )
+          })}
 
           {/* Audio tracks */}
           <div className="absolute left-0 right-0" style={{ top: RULER_HEIGHT + SCENE_HEIGHT, height: 'auto' }}>

@@ -38,6 +38,17 @@ export default function EditorCanvas() {
   const [cropDrag, setCropDrag] = useState<{ handle: string; startX: number; startY: number; startCrop: { x: number; y: number; w: number; h: number } } | null>(null)
   const clipboardRef  = useRef<EditorElement[]>([])
 
+  // ── Live transition overlay ───────────────────────────────────────────────────
+  const [transOverlay, setTransOverlay] = useState<{
+    snap: string
+    type: string
+    direction?: string
+    toSceneId: string
+    transitionStart: number
+    duration: number
+  } | null>(null)
+  const transActiveRef = useRef(false)
+
   const {
     project, currentSceneId, selectedIds,
     playhead, isPlaying, activeTool, activePanel, pendingChartType,
@@ -194,6 +205,46 @@ export default function EditorCanvas() {
   useEffect(() => {
     if (isPlaying) setLocalPlayingIds(new Set())
   }, [isPlaying])
+
+  // ── Detect transition windows and capture FROM-scene snapshot ─────────────────
+  useEffect(() => {
+    if (!project || !isPlaying) {
+      if (transActiveRef.current) { transActiveRef.current = false; setTransOverlay(null) }
+      return
+    }
+    let elapsed = 0
+    let found = false
+    for (let i = 0; i < project.scenes.length - 1; i++) {
+      const toSc = project.scenes[i + 1]
+      const transD = toSc.transition?.type !== 'none' ? (toSc.transition?.duration ?? 0) : 0
+      const fromEnd = elapsed + project.scenes[i].duration
+      if (transD > 0) {
+        const tStart = fromEnd - transD
+        if (playhead >= tStart && playhead < fromEnd) {
+          found = true
+          if (!transActiveRef.current && stageRef.current) {
+            transActiveRef.current = true
+            const ratio = 1 / (stageRef.current.scaleX() || 1)
+            const snap = stageRef.current.toDataURL({ pixelRatio: ratio })
+            setTransOverlay({
+              snap,
+              type: toSc.transition!.type,
+              direction: toSc.transition!.direction,
+              toSceneId: toSc.id,
+              transitionStart: tStart,
+              duration: transD,
+            })
+          }
+          break
+        }
+      }
+      elapsed += project.scenes[i].duration
+    }
+    if (!found && transActiveRef.current) {
+      transActiveRef.current = false
+      setTransOverlay(null)
+    }
+  }, [project, playhead, isPlaying])
 
   // ── Crop mode: initialize pendingCrop from store trigger ──────────────────────
   useEffect(() => {
@@ -398,9 +449,15 @@ export default function EditorCanvas() {
     )
   }
 
+  // During live transition, render the TO scene; otherwise the current scene
+  const activeSceneId = transOverlay ? transOverlay.toSceneId : currentSceneId
+  const activeScene   = project.scenes.find(s => s.id === activeSceneId) ?? currentScene
+
   // Compute scene-local time for animations
   let localTime = 0
-  {
+  if (transOverlay) {
+    localTime = Math.max(0, playhead - transOverlay.transitionStart)
+  } else {
     let acc = 0
     for (const sc of project.scenes) {
       if (sc.id === currentSceneId) { localTime = playhead - acc; break }
@@ -408,7 +465,7 @@ export default function EditorCanvas() {
     }
   }
 
-  const sortedEls = [...currentScene.elements].sort((a, b) => a.zIndex - b.zIndex)
+  const sortedEls = [...(activeScene ?? currentScene).elements].sort((a, b) => a.zIndex - b.zIndex)
 
   // Lock aspect ratio in transformer when single image/video has lockRatio enabled
   const keepRatioInTransform = (() => {
@@ -455,7 +512,7 @@ export default function EditorCanvas() {
           <Layer>
             <BackgroundShape
               ref={bgShapeRef}
-              bg={currentScene.background}
+              bg={(activeScene ?? currentScene).background}
               w={project.width}
               h={project.height}
               time={playhead}
@@ -552,6 +609,50 @@ export default function EditorCanvas() {
           </Layer>
         </Stage>
       </div>
+
+      {/* Transition overlay — FROM-scene snapshot fades/slides out while TO scene plays under */}
+      {transOverlay && (() => {
+        const p = Math.min(1, (playhead - transOverlay.transitionStart) / transOverlay.duration)
+        const dir = transOverlay.direction
+        let overlayStyle: React.CSSProperties = {}
+        switch (transOverlay.type) {
+          case 'fade':
+            overlayStyle = { opacity: 1 - p }
+            break
+          case 'slide':
+          case 'push':
+            if (dir === 'right') overlayStyle = { transform: `translateX(${p * 100}%)` }
+            else if (dir === 'left') overlayStyle = { transform: `translateX(-${p * 100}%)` }
+            else if (dir === 'down') overlayStyle = { transform: `translateY(${p * 100}%)` }
+            else overlayStyle = { transform: `translateY(-${p * 100}%)` }
+            break
+          case 'zoom':
+            overlayStyle = { opacity: 1 - p, transform: `scale(${1 + p * 0.5})`, transformOrigin: 'center center' }
+            break
+          case 'wipe':
+            if (dir === 'right') overlayStyle = { clipPath: `inset(0 0 0 ${p * 100}%)` }
+            else if (dir === 'left') overlayStyle = { clipPath: `inset(0 ${p * 100}% 0 0)` }
+            else if (dir === 'down') overlayStyle = { clipPath: `inset(${p * 100}% 0 0 0)` }
+            else overlayStyle = { clipPath: `inset(0 0 ${p * 100}% 0)` }
+            break
+          case 'morph':
+            overlayStyle = { opacity: 1 - p, transform: `scale(${1 + p * 0.15})`, transformOrigin: 'center center' }
+            break
+        }
+        return (
+          <img
+            src={transOverlay.snap}
+            style={{
+              position: 'absolute',
+              left: offsetX, top: offsetY,
+              width: canvasW, height: canvasH,
+              pointerEvents: 'none',
+              zIndex: 40,
+              ...overlayStyle,
+            }}
+          />
+        )
+      })()}
 
       {/* Crop overlay — HTML, not Konva, excluded from export */}
       {cropState && (() => {

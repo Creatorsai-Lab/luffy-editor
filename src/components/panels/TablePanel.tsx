@@ -71,7 +71,7 @@ export default function TablePanel() {
             <ColorInput value={el.textColor} onChange={v => upd({ textColor: v })} />
           </Row>
           <Row label="Font Size">
-            <NumberInput value={el.fontSize} min={8} max={32} onChange={v => upd({ fontSize: v })} />
+            <NumberInput value={el.fontSize} min={15} max={50} onChange={v => upd({ fontSize: v })} />
           </Row>
 
           {/* Cell editor */}
