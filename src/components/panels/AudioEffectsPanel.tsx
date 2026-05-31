@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Settings2, Volume2, Zap, Filter, Waveform, X, ChevronDown } from 'lucide-react'
+import { Settings2, Volume2, Zap, Filter, AudioWaveform, X, ChevronDown } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { AudioElement } from '../../types/editor'
 
@@ -87,7 +87,7 @@ export default function AudioEffectsPanel({ element, onClose }: AudioEffectsPane
         {/* EQ & Tone */}
         <EffectSection
           title="EQ & Tone"
-          icon={<Waveform size={13} />}
+          icon={<AudioWaveform size={13} />}
           expanded={expandedSection === 'eq'}
           onToggle={() => toggleSection('eq')}
         >

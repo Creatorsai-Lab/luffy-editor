@@ -15,7 +15,9 @@
       "Bash(ConvertTo-Json)",
       "PowerShell(Get-ChildItem -Path \"D:\\\\luffy-editor\\\\src\" -Recurse -Force | Select-Object FullName | ForEach-Object { $_.FullName })",
       "Bash(cd /d D:\\\\luffy-editor\\\\src)",
-      "Bash(findstr /R \"textProgress\\\\|pathProgress\\\\|dashOffset\" *.tsx components\\\\**\\\\*.tsx engine\\\\*.ts)"
+      "Bash(findstr /R \"textProgress\\\\|pathProgress\\\\|dashOffset\" *.tsx components\\\\**\\\\*.tsx engine\\\\*.ts)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(del /q tsconfig.web.tsbuildinfo)"
     ]
   }
 }

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
@@ -25,7 +25,9 @@ const api = {
     saveImage: (defaultName: string)                                => ipcRenderer.invoke('dialog:save-image', defaultName)
   },
   fs: {
-    writeFile: (path: string, data: Uint8Array) => ipcRenderer.invoke('fs:write-file', path, data)
+    writeFile: (path: string, data: Uint8Array) => ipcRenderer.invoke('fs:write-file', path, data),
+    // Electron 32 removed File.path — resolve a dropped File's absolute path here.
+    getPathForFile: (file: File) => webUtils.getPathForFile(file)
   },
   shell: {
     openPath: (path: string) => ipcRenderer.invoke('shell:open-path', path)

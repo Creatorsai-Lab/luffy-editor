@@ -44,7 +44,7 @@ export default function ImageUploadPanel() {
       const files = Array.from(e.dataTransfer?.files || [])
       for (const file of files) {
         const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
-        if (['png','jpg','jpeg','gif','webp'].includes(ext)) await uploadFile(file.path)
+        if (['png','jpg','jpeg','gif','webp'].includes(ext)) await uploadFile(window.api.fs.getPathForFile(file))
       }
     }
 

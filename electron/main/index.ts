@@ -3,12 +3,22 @@ import { app, BrowserWindow, ipcMain, dialog, shell, protocol } from 'electron'
 // Suppress GPU shader-cache permission errors on Windows
 app.commandLine.appendSwitch('disable-gpu-shader-cache')
 
-// Must be called before app.whenReady() — serves local assets through COEP
-protocol.registerSchemesAsPrivileged([{
-  scheme: 'localasset',
-  privileges: { secure: true, supportFetchAPI: true, corsEnabled: true, stream: true }
-}])
-import { join } from 'path'
+// Must be called before app.whenReady().
+// - localasset: serves user media + ffmpeg core to the renderer
+// - app:        serves the built renderer in production. We CANNOT load the
+//               renderer over file:// because Web Workers (used by ffmpeg.wasm)
+//               cannot be constructed from a file:// origin in Chromium.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'localasset',
+    privileges: { secure: true, supportFetchAPI: true, corsEnabled: true, stream: true }
+  },
+  {
+    scheme: 'app',
+    privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true }
+  }
+])
+import { join, normalize } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { mkdir, readFile, writeFile, copyFile, readdir, rm, stat, open } from 'fs/promises'
 import { existsSync } from 'fs'
@@ -16,6 +26,21 @@ import { existsSync } from 'fs'
 const USER_DATA   = app.getPath('userData')
 const PROJECTS_DIR = join(USER_DATA, 'projects')
 const INDEX_FILE   = join(USER_DATA, 'projects.json')
+
+// Production renderer location (electron-vite output).
+const RENDERER_DIR = join(__dirname, '../renderer')
+
+const MIME: Record<string, string> = {
+  html:'text/html', htm:'text/html', js:'text/javascript', mjs:'text/javascript',
+  css:'text/css', json:'application/json', wasm:'application/wasm', map:'application/json',
+  svg:'image/svg+xml', png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg',
+  gif:'image/gif', webp:'image/webp', ico:'image/x-icon', bmp:'image/bmp',
+  woff:'font/woff', woff2:'font/woff2', ttf:'font/ttf', otf:'font/otf', eot:'application/vnd.ms-fontobject'
+}
+
+function mimeFor(p: string): string {
+  return MIME[p.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream'
+}
 
 interface ProjectRecord {
   id: string
@@ -38,6 +63,10 @@ async function writeIndex(records: ProjectRecord[]) {
   await writeFile(INDEX_FILE, JSON.stringify(records, null, 2), 'utf-8')
 }
 
+function focusedWindow(): BrowserWindow | null {
+  return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null
+}
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1440,
@@ -55,29 +84,27 @@ function createWindow(): void {
     }
   })
 
-  // Enable SharedArrayBuffer for FFmpeg.wasm
-  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Cross-Origin-Embedder-Policy': ['require-corp'],
-        'Cross-Origin-Opener-Policy':   ['same-origin']
-      }
-    })
-  })
-
   win.on('ready-to-show', () => win.show())
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    win.loadFile(join(__dirname, '../renderer/index.html'))
+    // Served through the custom `app://` scheme (NOT file://) so ffmpeg.wasm
+    // can spawn its Web Worker.
+    win.loadURL('app://bundle/index.html')
   }
+}
 
+// Registered once (NOT per-window) — re-registering throws
+// "Attempted to register a second handler for ...".
+function registerIpcHandlers() {
   // Window controls
-  ipcMain.handle('win:minimize', () => win.minimize())
-  ipcMain.handle('win:maximize', () => win.isMaximized() ? win.unmaximize() : win.maximize())
-  ipcMain.handle('win:close',    () => win.close())
+  ipcMain.handle('win:minimize', () => focusedWindow()?.minimize())
+  ipcMain.handle('win:maximize', () => {
+    const w = focusedWindow()
+    if (w) w.isMaximized() ? w.unmaximize() : w.maximize()
+  })
+  ipcMain.handle('win:close', () => focusedWindow()?.close())
 
   // Projects CRUD
   ipcMain.handle('projects:list', () => readIndex())
@@ -128,12 +155,13 @@ function createWindow(): void {
   })
 
   // Assets
+  let assetCounter = 0
   ipcMain.handle('assets:upload', async (_, projectId: string, sourcePath: string) => {
     const idx    = await readIndex()
     const record = idx.find(r => r.id === projectId)
     if (!record) throw new Error('Project not found')
     const ext      = sourcePath.split('.').pop() ?? 'bin'
-    const assetId  = `asset_${Date.now()}`
+    const assetId  = `asset_${Date.now()}_${assetCounter++}`
     const filename = `${assetId}.${ext}`
     const dest     = join(record.folder, 'assets', filename)
     await copyFile(sourcePath, dest)
@@ -152,7 +180,7 @@ function createWindow(): void {
 
   // Dialogs
   ipcMain.handle('dialog:open-file', async (_, filters: Electron.FileFilter[]) => {
-    const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters })
+    const r = await dialog.showOpenDialog(focusedWindow()!, { properties: ['openFile'], filters })
     return r.canceled ? null : r.filePaths[0]
   })
 
@@ -162,7 +190,7 @@ function createWindow(): void {
       ? [{ name: 'WebM Video', extensions: ['webm'] }, { name: 'All Files', extensions: ['*'] }]
       : [{ name: 'MP4 Video', extensions: ['mp4'] }, { name: 'All Files', extensions: ['*'] }]
 
-    const r = await dialog.showSaveDialog(win, {
+    const r = await dialog.showSaveDialog(focusedWindow()!, {
       defaultPath: join(app.getPath('downloads'), defaultName),
       filters
     })
@@ -174,7 +202,7 @@ function createWindow(): void {
     const filters: Electron.FileFilter[] = ext === 'webp'
       ? [{ name: 'WebP Image', extensions: ['webp'] }, { name: 'All Files', extensions: ['*'] }]
       : [{ name: 'PNG Image', extensions: ['png'] }, { name: 'All Files', extensions: ['*'] }]
-    const r = await dialog.showSaveDialog(win, {
+    const r = await dialog.showSaveDialog(focusedWindow()!, {
       defaultPath: join(app.getPath('downloads'), defaultName),
       filters
     })
@@ -211,20 +239,34 @@ app.whenReady().then(async () => {
   await ensureDir(PROJECTS_DIR)
   electronApp.setAppUserModelId('com.luffy.app')
 
+  // Serve the built renderer (production). Path-traversal guarded.
+  protocol.handle('app', async (request) => {
+    const url = new URL(request.url)
+    const rel = decodeURIComponent(url.pathname) === '/' ? 'index.html' : decodeURIComponent(url.pathname).slice(1)
+    const filePath = normalize(join(RENDERER_DIR, rel))
+    if (!filePath.startsWith(normalize(RENDERER_DIR))) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    try {
+      const data = await readFile(filePath)
+      return new Response(data, {
+        headers: {
+          'Content-Type': mimeFor(filePath),
+          'Cross-Origin-Resource-Policy': 'cross-origin'
+        }
+      })
+    } catch {
+      return new Response('Not found', { status: 404 })
+    }
+  })
+
   // Serve local assets with range-request support (required for <video>/<audio> seeking)
   protocol.handle('localasset', async (request) => {
     const raw = decodeURIComponent(request.url.replace('localasset:///', ''))
     // Strip leading slash on Windows paths like /C:/...
     const filePath = raw.match(/^\/[A-Za-z]:/) ? raw.slice(1) : raw
     try {
-      const ext  = filePath.split('.').pop()?.toLowerCase() ?? ''
-      const mime: Record<string, string> = {
-        png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', gif:'image/gif',
-        webp:'image/webp', svg:'image/svg+xml', bmp:'image/bmp',
-        mp4:'video/mp4', webm:'video/webm', mov:'video/quicktime', avi:'video/x-msvideo', mkv:'video/x-matroska',
-        mp3:'audio/mpeg', wav:'audio/wav', ogg:'audio/ogg', m4a:'audio/mp4'
-      }
-      const contentType = mime[ext] ?? 'application/octet-stream'
+      const contentType = mimeFor(filePath)
       const rangeHeader = request.headers.get('Range')
 
       if (rangeHeader) {
@@ -246,7 +288,8 @@ app.whenReady().then(async () => {
             'Content-Range':  `bytes ${start}-${end}/${size}`,
             'Accept-Ranges':  'bytes',
             'Content-Length': String(chunkSize),
-            'Cross-Origin-Resource-Policy': 'cross-origin'
+            'Cross-Origin-Resource-Policy': 'cross-origin',
+            'Access-Control-Allow-Origin': '*'
           }
         })
       }
@@ -257,13 +300,16 @@ app.whenReady().then(async () => {
           'Content-Type':   contentType,
           'Accept-Ranges':  'bytes',
           'Content-Length': String(data.byteLength),
-          'Cross-Origin-Resource-Policy': 'cross-origin'
+          'Cross-Origin-Resource-Policy': 'cross-origin',
+          'Access-Control-Allow-Origin': '*'
         }
       })
     } catch {
       return new Response('Not found', { status: 404 })
     }
   })
+
+  registerIpcHandlers()
   app.on('browser-window-created', (_, w) => optimizer.watchWindowShortcuts(w))
   createWindow()
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })

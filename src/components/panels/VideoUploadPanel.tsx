@@ -56,7 +56,7 @@ export default function VideoUploadPanel() {
       e.preventDefault(); e.stopPropagation(); setDragOver(false)
       for (const file of Array.from(e.dataTransfer?.files ?? [])) {
         if (VIDEO_EXTS.includes(file.name.split('.').pop()?.toLowerCase() ?? '')) {
-          await uploadFile((file as { path?: string }).path ?? '')
+          await uploadFile(window.api.fs.getPathForFile(file))
         }
       }
     }

@@ -18,6 +18,24 @@ export interface FFmpegExportOptions {
 let ffmpegInstance: FFmpeg | null = null
 let ffmpegLoaded = false
 
+// FFmpeg's worker reports failures asynchronously and the library registers no
+// onerror handler, so a worker that fails to start (e.g. blocked origin) leaves
+// load() pending forever. Cap it so the UI surfaces an error instead of hanging.
+const FFMPEG_LOAD_TIMEOUT_MS = 30_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms / 1000}s — the FFmpeg worker likely failed to start.`)),
+      ms
+    )
+    promise.then(
+      v => { clearTimeout(timer); resolve(v) },
+      e => { clearTimeout(timer); reject(e) }
+    )
+  })
+}
+
 async function loadFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> {
   if (ffmpegInstance && ffmpegLoaded) {
     return ffmpegInstance
@@ -37,19 +55,27 @@ async function loadFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> {
 
     // Get absolute file paths from main process (IPC returns strings, not binaries).
     // Renderer fetches via localasset:// — same CORP headers as video/audio assets,
-    // COEP-safe, works in both dev and packaged app.
+    // works in both dev and the packaged app (served over the app:// scheme).
     try {
       const { coreJs, coreWasm } = await window.api.ffmpeg.getPaths()
       const toUrl = (p: string) => `localasset:///${p.replace(/\\/g, '/')}`
       onLog?.('Loading FFmpeg core...')
-      await ffmpegInstance.load({
-        coreURL: await toBlobURL(toUrl(coreJs),   'text/javascript'),
-        wasmURL: await toBlobURL(toUrl(coreWasm), 'application/wasm'),
-      })
+      await withTimeout(
+        ffmpegInstance.load({
+          coreURL: await toBlobURL(toUrl(coreJs),   'text/javascript'),
+          wasmURL: await toBlobURL(toUrl(coreWasm), 'application/wasm'),
+        }),
+        FFMPEG_LOAD_TIMEOUT_MS,
+        'FFmpeg load'
+      )
     } catch (err) {
       const msg = `FFmpeg failed to load: ${err instanceof Error ? err.message : String(err)}`
       onLog?.(msg)
       console.error('[FFmpeg]', msg)
+      // Reset so a later attempt starts from a clean instance.
+      try { ffmpegInstance?.terminate() } catch {}
+      ffmpegInstance = null
+      ffmpegLoaded = false
       throw new Error(msg)
     }
 
@@ -386,9 +412,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
       try {
         await ffmpeg.exec(muxArgs)
         const finalData = await ffmpeg.readFile(finalFile) as Uint8Array
-        finalBlob = new Blob([finalData.buffer], {
-          type: 'video/mp4'
-        })
+        finalBlob = new Blob([finalData as BlobPart], { type: 'video/mp4' })
         try { await ffmpeg.deleteFile(finalFile) } catch {}
       } catch (err) {
         onLog?.(`Audio mixing failed, exporting video without audio: ${err}`)
@@ -402,9 +426,7 @@ export async function exportToMP4WithFFmpeg(opts: FFmpegExportOptions): Promise<
   // ── Fallback: video-only blob ─────────────────────────────────────────────────
   onProgress(95, 'Reading output file...')
   const data = await ffmpeg.readFile(outputFile) as Uint8Array
-  const blob = finalBlob ?? new Blob([data.buffer], {
-    type: 'video/mp4'
-  })
+  const blob = finalBlob ?? new Blob([data as BlobPart], { type: 'video/mp4' })
 
   onProgress(98, 'Cleaning up...')
 
@@ -428,12 +450,22 @@ function buildAtempoFilters(speed: number): string[] {
   return filters
 }
 
-export async function isFFmpegAvailable(): Promise<boolean> {
+export interface FFmpegStatus {
+  ok: boolean
+  error?: string
+}
+
+export async function checkFFmpeg(onLog?: (msg: string) => void): Promise<FFmpegStatus> {
   try {
-    await loadFFmpeg()
-    return true
+    await loadFFmpeg(onLog)
+    return { ok: true }
   } catch (error) {
-    console.error('FFmpeg not available:', error)
-    return false
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error('FFmpeg not available:', msg)
+    return { ok: false, error: msg }
   }
+}
+
+export async function isFFmpegAvailable(): Promise<boolean> {
+  return (await checkFFmpeg()).ok
 }

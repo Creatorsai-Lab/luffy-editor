@@ -80,8 +80,10 @@ export default function ExportModal() {
   }
 
   function sceneGlobalStart(sceneIdx: number): number {
+    const scenes = project?.scenes
+    if (!scenes) return 0
     let t = 0
-    for (let i = 0; i < sceneIdx; i++) t += project.scenes[i].duration
+    for (let i = 0; i < sceneIdx; i++) t += scenes[i].duration
     return t
   }
 
@@ -260,7 +262,7 @@ export default function ExportModal() {
                         <button
                           key={q}
                           onClick={() => setQuality(q)}
-                          className={`flex-1 px-3 py-2 text-ms rounded transition-colors ${
+                          className={`flex-1 px-3 py-2 text-sm rounded transition-colors ${
                             quality === q
                               ? 'bg-editor-accent text-white'
                               : 'bg-editor-panel text-editor-text hover:bg-editor-hover'
@@ -277,7 +279,7 @@ export default function ExportModal() {
                   </div>
                   {!ffmpegAvailable && (
                     <div className="text-2xs text-yellow-500 bg-yellow-900/20 rounded px-2 py-1.5">
-                      FFmpeg is loading... export will be available shortly.
+                       loading... export will be available shortly.
                     </div>
                   )}
                 </div>

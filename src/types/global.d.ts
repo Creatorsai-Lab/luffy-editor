@@ -1,10 +1,5 @@
-// Static asset imports
-declare module '*.webp' { const src: string; export default src }
-declare module '*.png'  { const src: string; export default src }
-declare module '*.jpg'  { const src: string; export default src }
-declare module '*.jpeg' { const src: string; export default src }
-declare module '*.svg'  { const src: string; export default src }
-declare module '*.gif'  { const src: string; export default src }
+// Static asset import declarations live in ./assets.d.ts (must stay a script
+// file so the wildcard module declarations remain global ambient).
 
 export interface ProjectRecord {
   id: string
@@ -52,6 +47,7 @@ declare global {
       }
       fs: {
         writeFile: (path: string, data: Uint8Array) => Promise<void>
+        getPathForFile: (file: File) => string
       }
       shell: {
         openPath: (path: string) => Promise<string>
