@@ -3,19 +3,67 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Luffy Create — Fast & Lightweight Video Creation App</title>
-<meta name="description" content="A free, open-source desktop app for making animated videos for technical and educational content. Code walkthroughs, diagrams, and slide animations with direct MP4 export." />
+<title>Luffy Create — Free Open-Source Animated Video Editor for Technical Content</title>
+<meta name="description" content="Luffy Create is a free, open-source desktop video editor for technical and educational content — code walkthroughs, system-design diagrams, and slide animations with frame-accurate timing and direct MP4 export. Offline, no account required." />
+<meta name="keywords" content="video editor, animated video, free video editor, open source video editor, code animation, technical video, educational video, MP4 export, screencast, slide animation, FFmpeg, desktop video editor, Luffy Create" />
+<meta name="author" content="Creatorsai-Lab" />
+<meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#6c4ff0" />
+<link rel="canonical" href="https://creatorsai-lab.github.io/luffy-editor/" />
 
 <!-- Open Graph -->
-<meta property="og:title" content="Luffy Create — Video Creation, Reimagined" />
-<meta property="og:description" content="Free, open-source, offline-first animated video editor for technical content." />
+<meta property="og:title" content="Luffy Create — Free Open-Source Animated Video Editor" />
+<meta property="og:description" content="Make animated videos for technical and educational content — code walkthroughs, diagrams, and slide animations with direct MP4 export. Free, offline, open source." />
 <meta property="og:image" content="https://raw.githubusercontent.com/Creatorsai-Lab/luffy-editor/main/assets/luffy_app_template.png" />
+<meta property="og:url" content="https://creatorsai-lab.github.io/luffy-editor/" />
 <meta property="og:type" content="website" />
+<meta property="og:site_name" content="Luffy Create" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Luffy Create — Free Open-Source Animated Video Editor" />
+<meta name="twitter:description" content="Animated videos for technical and educational content, with direct MP4 export. Free, offline, open source." />
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Creatorsai-Lab/luffy-editor/main/assets/luffy_app_template.png" />
 
 <link rel="icon" href="https://raw.githubusercontent.com/Creatorsai-Lab/luffy-editor/main/assets/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+<!-- Structured data: Software Application -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Luffy Create",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "Windows",
+  "description": "A free, open-source desktop app for making animated videos for technical and educational content with direct MP4 export.",
+  "url": "https://creatorsai-lab.github.io/luffy-editor/",
+  "downloadUrl": "https://github.com/Creatorsai-Lab/luffy-editor/releases/latest",
+  "softwareVersion": "1.0.0",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": { "@type": "Organization", "name": "Creatorsai-Lab" },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<!-- Structured data: FAQ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is Luffy Create free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Luffy Create is completely free and open source under the MIT License. There is no subscription, no paywall, and no account required." } },
+    { "@type": "Question", "name": "Which operating systems are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Version 1.0.0 ships a Windows installer. macOS and Linux builds are planned, and you can already run from source on any platform." } },
+    { "@type": "Question", "name": "Do I need an internet connection to use it?", "acceptedAnswer": { "@type": "Answer", "text": "No. Luffy Create is offline-first. Editing and MP4 export run entirely on your machine. There is no cloud upload and no telemetry." } },
+    { "@type": "Question", "name": "What video formats can I export?", "acceptedAnswer": { "@type": "Answer", "text": "You can export MP4 video at 720p or 1080p, and still images in PNG or WebP. Rendering is handled locally with FFmpeg." } },
+    { "@type": "Question", "name": "Is it good for code walkthroughs and tutorials?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Luffy Create includes syntax-highlighted code blocks, typewriter and draw-path animations, arrows, shapes, and charts — purpose-built for technical and educational content." } },
+    { "@type": "Question", "name": "Why does Windows show an 'Unknown publisher' warning?", "acceptedAnswer": { "@type": "Answer", "text": "The v1 installer is not yet code-signed. Click 'More info' then 'Run anyway'. The full source is public, so you can review or build it yourself." } },
+    { "@type": "Question", "name": "Is my data collected or sent anywhere?", "acceptedAnswer": { "@type": "Answer", "text": "No. Luffy Create collects no data and contains no telemetry. Your projects are stored locally on your computer." } }
+  ]
+}
+</script>
 
 <style>
   :root {
@@ -50,7 +98,7 @@
   }
 
   a { color: inherit; text-decoration: none; }
-  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+  .wrap { max-width: 1300px; margin: 0 auto; padding: 0 24px; }
 
   /* ── Nav ─────────────────────────────────────────────── */
   nav {
@@ -72,10 +120,10 @@
     cursor: pointer; border: none;
   }
   .btn-primary {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-    color: white; box-shadow: 0 8px 24px rgba(108,79,240,0.4);
+    background-color: white;
+    color: #411aad;
   }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(108,79,240,0.55); }
+  .btn-primary:hover { transform: translateY(-2px);}
   .btn-ghost { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); }
   .btn-ghost:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
   @media (max-width: 720px) { .nav-links a:not(.btn) { display: none; } }
@@ -144,7 +192,7 @@
 
   /* ── Download CTA band ───────────────────────────────── */
   .cta-band {
-    background: linear-gradient(135deg, var(--accent-deep), var(--accent));
+    background-color: white;
     border-radius: 24px; padding: 60px 40px; text-align: center;
     position: relative; overflow: hidden;
   }
@@ -152,10 +200,10 @@
     content: ''; position: absolute; inset: 0;
     background: radial-gradient(40vw 40vw at 80% 0%, rgba(255,255,255,0.18), transparent 60%);
   }
-  .cta-band h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 900; margin-bottom: 12px; position: relative; }
-  .cta-band p { color: rgba(255,255,255,0.85); margin-bottom: 30px; position: relative; }
+  .cta-band h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 900; margin-bottom: 12px; position: relative; color: var(--accent-deep) }
+  .cta-band p { color: #424274; margin-bottom: 30px; position: relative; }
   .cta-band .btn { position: relative; }
-  .btn-white { background: white; color: var(--accent-deep); }
+  .btn-white { background: var(--accent-deep); color: white; }
   .btn-white:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
   .platform-note { margin-top: 18px; font-size: 13px; color: rgba(255,255,255,0.75); position: relative; }
 
@@ -179,6 +227,92 @@
   .foot-links a:hover { color: var(--text); }
   .copyright { color: var(--muted); font-size: 13px; width: 100%; text-align: center; margin-top: 8px; }
 
+  /* ── Docs grid ───────────────────────────────────────── */
+  .docs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 880px) { .docs-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .docs-grid { grid-template-columns: 1fr; } }
+  .doc-card {
+    text-align: left; background: linear-gradient(180deg, var(--panel), var(--bg-2));
+    border: 1px solid var(--border); border-radius: 14px; padding: 22px;
+    cursor: pointer; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    display: flex; flex-direction: column; gap: 8px; width: 100%; color: inherit; font: inherit;
+  }
+  .doc-card:hover { transform: translateY(-4px); border-color: rgba(139,108,255,0.5); box-shadow: 0 14px 36px rgba(0,0,0,0.4); }
+  .doc-card .doc-top { display: flex; align-items: center; gap: 10px; }
+  .doc-card .doc-ico { font-size: 20px; }
+  .doc-card h3 { font-size: 16.5px; font-weight: 700; }
+  .doc-card p { color: var(--muted); font-size: 13.5px; }
+  .doc-card .doc-open { margin-top: 6px; font-size: 12.5px; color: var(--accent-2); font-weight: 600; }
+
+  /* ── SEO prose block + table ─────────────────────────── */
+  .prose-block { max-width: 820px; margin: 0 auto; }
+  .prose-block p { color: var(--muted); font-size: 16px; margin-bottom: 18px; }
+  .prose-block ul { list-style: none; margin: 0 0 26px; display: grid; gap: 12px; }
+  .prose-block li { position: relative; padding-left: 28px; color: var(--text); font-size: 15px; }
+  .prose-block li::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--accent-2); font-weight: 800; }
+  .seo-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; }
+  table.seo-table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 520px; }
+  table.seo-table th, table.seo-table td { text-align: left; padding: 13px 18px; border-bottom: 1px solid var(--border); }
+  table.seo-table thead th { background: rgba(108,79,240,0.14); color: var(--text); font-weight: 700; }
+  table.seo-table tbody tr:last-child td { border-bottom: none; }
+  table.seo-table td:first-child { color: var(--text); font-weight: 600; }
+  table.seo-table td { color: var(--muted); }
+
+  /* ── FAQ accordion ───────────────────────────────────── */
+  .faq { max-width: 800px; margin: 0 auto; display: grid; gap: 12px; }
+  .faq details {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; transition: border-color 0.2s;
+  }
+  .faq details[open] { border-color: rgba(139,108,255,0.45); }
+  .faq summary {
+    list-style: none; cursor: pointer; padding: 18px 22px; font-weight: 600; font-size: 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary .chev { transition: transform 0.25s; color: var(--accent-2); flex: none; font-size: 18px; }
+  .faq details[open] summary .chev { transform: rotate(45deg); }
+  .faq .faq-body { padding: 0 22px 20px; color: var(--muted); font-size: 15px; }
+
+  /* ── Doc viewer modal ────────────────────────────────── */
+  .viewer { position: fixed; inset: 0; z-index: 100; display: none; }
+  .viewer.open { display: block; }
+  .viewer-backdrop { position: absolute; inset: 0; background: rgba(8,4,18,0.75); backdrop-filter: blur(6px); }
+  .viewer-panel {
+    position: absolute; top: 5%; left: 50%; transform: translateX(-50%);
+    width: min(840px, 92vw); max-height: 90vh; display: flex; flex-direction: column;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.7); overflow: hidden;
+  }
+  .viewer-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 16px 22px; border-bottom: 1px solid var(--border); flex: none;
+  }
+  .viewer-head h3 { font-size: 17px; font-weight: 700; }
+  .viewer-head .vh-actions { display: flex; align-items: center; gap: 10px; }
+  .viewer-head a, .viewer-head button {
+    color: var(--muted); font-size: 13px; background: none; border: none; cursor: pointer; transition: color 0.2s;
+  }
+  .viewer-head a:hover, .viewer-head button:hover { color: var(--text); }
+  .viewer-body { padding: 26px 30px 40px; overflow-y: auto; }
+
+  /* ── Rendered markdown styling ───────────────────────── */
+  .md h1, .md h2, .md h3 { color: var(--text); font-weight: 800; line-height: 1.25; margin: 26px 0 12px; }
+  .md h1 { font-size: 28px; } .md h2 { font-size: 22px; } .md h3 { font-size: 18px; }
+  .md p { color: var(--muted); margin: 12px 0; }
+  .md ul, .md ol { color: var(--muted); margin: 12px 0 12px 22px; }
+  .md li { margin: 5px 0; }
+  .md a { color: var(--accent-2); text-decoration: underline; }
+  .md code { background: rgba(108,79,240,0.16); padding: 2px 6px; border-radius: 5px; font-size: 13px; color: #d9cdff; }
+  .md pre { background: #0e0820; border: 1px solid var(--border); border-radius: 10px; padding: 16px; overflow-x: auto; margin: 14px 0; }
+  .md pre code { background: none; padding: 0; }
+  .md table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  .md th, .md td { border: 1px solid var(--border); padding: 9px 13px; text-align: left; }
+  .md th { background: rgba(108,79,240,0.14); color: var(--text); }
+  .md td { color: var(--muted); }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+  .md blockquote { border-left: 3px solid var(--accent); padding-left: 14px; color: var(--muted); margin: 14px 0; }
+
   /* ── Scroll reveal ───────────────────────────────────── */
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
   .reveal.in { opacity: 1; transform: none; }
@@ -197,8 +331,8 @@
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#how">How it works</a>
-      <a href="https://github.com/Creatorsai-Lab/luffy-editor">GitHub</a>
-      <a class="btn btn-primary" href="https://github.com/Creatorsai-Lab/luffy-editor/releases/latest">Download</a>
+      <a href="#docs">Docs</a>
+      <a href="#faq">FAQ</a>
     </div>
   </div>
 </nav>
@@ -209,8 +343,8 @@
   <h1>Video creation,<br /><span class="grad">made lightweight.</span></h1>
   <p>A free, open-source desktop app for animated videos built for technical and educational content — code walkthroughs, diagrams, and slide animations. Fully offline, with direct MP4 export.</p>
   <div class="hero-cta">
-    <a class="btn btn-primary btn-lg" href="https://github.com/Creatorsai-Lab/luffy-editor/releases/latest">⬇ Download for Windows</a>
-    <a class="btn btn-ghost btn-lg" href="https://github.com/Creatorsai-Lab/luffy-editor">★ Star on GitHub</a>
+    <a class="btn btn-primary btn-lg" href="https://github.com/Creatorsai-Lab/luffy-editor/releases/latest">⤓ Download for Windows</a>
+    <a class="btn btn-ghost btn-lg" href="https://github.com/Creatorsai-Lab/luffy-editor">⭐ Star on GitHub</a>
   </div>
   <div class="hero-sub">Free forever · No account · No telemetry · Open source under MIT</div>
 
@@ -255,17 +389,143 @@
   </div>
 </section>
 
+<!-- WHY / SEO CONTENT -->
+<section id="why">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>Why creators choose Luffy Create</h2>
+      <p>Built for people who explain things — engineers, educators, and content creators who need clear, animated visuals fast.</p>
+    </div>
+    <div class="prose-block reveal">
+      <p>
+        Most video editors are built for filmmakers, not for technical storytelling. Luffy Create flips that.
+        It is a lightweight, <strong>open-source animated video editor</strong> designed around scenes, code, and diagrams —
+        so you can turn a concept into a polished MP4 without wrestling with a heavyweight timeline tool or paying for a subscription.
+      </p>
+      <ul>
+        <li><strong>Free and open source</strong> — MIT licensed, no subscription, no watermark, no locked features.</li>
+        <li><strong>Offline-first</strong> — every project and export runs locally; nothing is uploaded to a server.</li>
+        <li><strong>Made for technical content</strong> — syntax-highlighted code blocks, arrows, charts, and diagram-friendly shapes.</li>
+        <li><strong>Frame-accurate animation</strong> — enter, loop, and exit effects with precise timing on a scene timeline.</li>
+        <li><strong>Direct MP4 export</strong> — render 720p or 1080p video locally with FFmpeg, plus PNG and WebP stills.</li>
+        <li><strong>Lightweight</strong> — fast to install, fast to launch, low on system resources.</li>
+      </ul>
+
+      <div class="seo-table-wrap">
+        <table class="seo-table">
+          <thead>
+            <tr><th>Capability</th><th>Luffy Create</th><th>Typical online editors</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Price</td><td>Free &amp; open source</td><td>Paid / subscription</td></tr>
+            <tr><td>Works offline</td><td>Yes, fully</td><td>Usually requires internet</td></tr>
+            <tr><td>Account required</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Code-block animations</td><td>Built in</td><td>Rarely</td></tr>
+            <tr><td>Watermark on export</td><td>None</td><td>Common on free tiers</td></tr>
+            <tr><td>Data &amp; telemetry</td><td>None collected</td><td>Varies</td></tr>
+            <tr><td>MP4 / PNG / WebP export</td><td>Yes, local</td><td>Often limited</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOCS -->
+<section id="docs">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>User documentation</h2>
+      <p>Learn every feature with our built-in guide. Click any topic to read it right here — no need to leave the page.</p>
+    </div>
+    <div class="docs-grid">
+      <button class="doc-card reveal" data-doc="index.md" data-title="Overview">
+        <div class="doc-top"><span class="doc-ico">🚀</span><h3>Overview</h3></div>
+        <p>Interface tour, projects, scenes, and a quick-start walkthrough.</p>
+        <span class="doc-open">Read guide →</span>
+      </button>
+      <button class="doc-card reveal" data-doc="elements.md" data-title="Elements">
+        <div class="doc-top"><span class="doc-ico">🧩</span><h3>Elements</h3></div>
+        <p>Every element type — text, shapes, code, media, charts — and its properties.</p>
+        <span class="doc-open">Read guide →</span>
+      </button>
+      <button class="doc-card reveal" data-doc="animations.md" data-title="Animations">
+        <div class="doc-top"><span class="doc-ico">✨</span><h3>Animations</h3></div>
+        <p>Enter, loop, and exit effects, easing, and timing controls.</p>
+        <span class="doc-open">Read guide →</span>
+      </button>
+      <button class="doc-card reveal" data-doc="adjustments.md" data-title="Adjustments">
+        <div class="doc-top"><span class="doc-ico">🎨</span><h3>Adjustments</h3></div>
+        <p>Image &amp; video filters, cropping, and perspective warp.</p>
+        <span class="doc-open">Read guide →</span>
+      </button>
+      <button class="doc-card reveal" data-doc="export.md" data-title="Export">
+        <div class="doc-top"><span class="doc-ico">📤</span><h3>Export</h3></div>
+        <p>MP4, PNG, and WebP export workflow, quality, and settings.</p>
+        <span class="doc-open">Read guide →</span>
+      </button>
+      <button class="doc-card reveal" data-doc="shortcuts.md" data-title="Shortcuts">
+        <div class="doc-top"><span class="doc-ico">⌨️</span><h3>Shortcuts</h3></div>
+        <p>The complete keyboard reference for fast editing.</p>
+        <span class="doc-open">Read guide →</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2>Frequently asked questions</h2>
+      <p>Everything you might want to know before downloading.</p>
+    </div>
+    <div class="faq reveal">
+      <details>
+        <summary>Is Luffy Create free? <span class="chev">+</span></summary>
+        <div class="faq-body">Yes. Luffy Create is completely free and open source under the MIT License. There is no subscription, no paywall, and no account required.</div>
+      </details>
+      <details>
+        <summary>Which operating systems are supported? <span class="chev">+</span></summary>
+        <div class="faq-body">Version 1.0.0 ships a Windows installer. macOS and Linux builds are planned, and you can already run from source on any platform with Node.js installed.</div>
+      </details>
+      <details>
+        <summary>Do I need an internet connection to use it? <span class="chev">+</span></summary>
+        <div class="faq-body">No. Luffy Create is offline-first. Editing and MP4 export run entirely on your machine — there is no cloud upload and no telemetry.</div>
+      </details>
+      <details>
+        <summary>What video and image formats can I export? <span class="chev">+</span></summary>
+        <div class="faq-body">You can export MP4 video at 720p or 1080p, and still images in PNG or WebP. All rendering is handled locally with FFmpeg.</div>
+      </details>
+      <details>
+        <summary>Is it good for code walkthroughs and tutorials? <span class="chev">+</span></summary>
+        <div class="faq-body">Yes. Luffy Create includes syntax-highlighted code blocks, typewriter and draw-path animations, arrows, shapes, and charts — purpose-built for technical and educational content.</div>
+      </details>
+      <details>
+        <summary>Why does Windows show an "Unknown publisher" warning? <span class="chev">+</span></summary>
+        <div class="faq-body">The v1 installer is not yet code-signed. Click "More info" then "Run anyway". The full source code is public, so you can review or build it yourself.</div>
+      </details>
+      <details>
+        <summary>Is my data collected or sent anywhere? <span class="chev">+</span></summary>
+        <div class="faq-body">No. Luffy Create collects no data and contains no telemetry. Your projects are stored locally on your own computer.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
 <!-- DOWNLOAD CTA -->
 <section>
   <div class="wrap">
     <div class="cta-band reveal">
       <h2>Ready to create?</h2>
       <p>Download Luffy Create and start animating your ideas today — completely free.</p>
-      <a class="btn btn-white btn-lg" href="https://github.com/Creatorsai-Lab/luffy-editor/releases/latest">⬇ Download for Windows</a>
+      <a class="btn btn-white btn-lg" href="https://github.com/Creatorsai-Lab/luffy-editor/releases/latest">⤓ Download for Windows</a>
       <div class="platform-note">macOS and Linux builds coming soon · Or build from source on any platform</div>
     </div>
   </div>
 </section>
+
+<div class="wrap"><p style="text-align: center;">Author / Developer: Adya Prasad</p></div>
 
 <!-- FOOTER -->
 <footer>
@@ -284,12 +544,75 @@
   </div>
 </footer>
 
+<!-- DOC VIEWER MODAL -->
+<div class="viewer" id="viewer" aria-hidden="true">
+  <div class="viewer-backdrop" data-close></div>
+  <div class="viewer-panel" role="dialog" aria-modal="true">
+    <div class="viewer-head">
+      <h3 id="viewer-title">Guide</h3>
+      <div class="vh-actions">
+        <a id="viewer-gh" href="#" target="_blank" rel="noopener">View on GitHub ↗</a>
+        <button type="button" data-close aria-label="Close">✕ Close</button>
+      </div>
+    </div>
+    <div class="viewer-body"><div class="md" id="viewer-md">Loading…</div></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
   // Scroll reveal
   const io = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
   }, { threshold: 0.12 });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // ── Inline doc viewer ──────────────────────────────────────
+  const GH_BLOB = 'https://github.com/Creatorsai-Lab/luffy-editor/blob/main/docs/';
+  const viewer  = document.getElementById('viewer');
+  const vTitle  = document.getElementById('viewer-title');
+  const vMd     = document.getElementById('viewer-md');
+  const vGh     = document.getElementById('viewer-gh');
+
+  function openViewer(file, title) {
+    vTitle.textContent = title;
+    vGh.href = GH_BLOB + file;
+    vMd.innerHTML = 'Loading…';
+    viewer.classList.add('open');
+    viewer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    fetch('./' + file)
+      .then(r => { if (!r.ok) throw new Error('not found'); return r.text(); })
+      .then(text => {
+        vMd.innerHTML = window.marked ? marked.parse(text) : '<pre>' + text.replace(/</g, '&lt;') + '</pre>';
+        vMd.querySelectorAll('a[href$=".md"]').forEach(a => {
+          // Rewrite internal .md links to open in the viewer too
+          const href = a.getAttribute('href').replace(/^\.\//, '');
+          a.addEventListener('click', ev => {
+            ev.preventDefault();
+            const t = a.textContent.trim() || href;
+            openViewer(href, t);
+            document.querySelector('.viewer-body').scrollTop = 0;
+          });
+        });
+      })
+      .catch(() => {
+        vMd.innerHTML = '<p>Could not load this guide here. <a href="' + GH_BLOB + file + '" target="_blank" rel="noopener">Open it on GitHub ↗</a></p>';
+      });
+  }
+
+  function closeViewer() {
+    viewer.classList.remove('open');
+    viewer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.doc-card').forEach(card => {
+    card.addEventListener('click', () => openViewer(card.dataset.doc, card.dataset.title));
+  });
+  viewer.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeViewer));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeViewer(); });
 </script>
 </body>
 </html>
