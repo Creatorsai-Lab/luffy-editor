@@ -191,7 +191,7 @@ function createWindow(): void {
 
 app.whenReady().then(async () => {
   await ensureDir(PROJECTS_DIR)
-  electronApp.setAppUserModelId('com.luffy.editor')
+  electronApp.setAppUserModelId('com.luffy.app')
 
   // Serve local assets with range-request support (required for <video>/<audio> seeking)
   protocol.handle('localasset', async (request) => {
