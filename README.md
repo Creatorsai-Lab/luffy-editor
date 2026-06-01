@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/luffy_create_template.webp" alt="Luffy Create — fast and lightweight video creation and editor app" width="100%" />
+<img src="public/images//luffy_create_template.webp" alt="Luffy Create — fast and lightweight video creation and editor app" width="100%" />
 
 # Luffy Create
 
@@ -31,7 +31,7 @@ Code walkthroughs, system-design diagrams, and slide-based animations — with f
 
 <div align="center">
 
-<img src="assets/luffy-ui-screenshot.webp" alt="Luffy Create editor interface" width="100%" />
+<img src="public/images/luffy-ui-screenshot.webp" alt="Luffy Create editor interface" width="100%" />
 
 <sub>The Luffy Create editor — tools on the left, canvas in the center, properties on the right, timeline below.</sub>
 
