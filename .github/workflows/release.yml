@@ -1,0 +1,42 @@
+name: Build & Release
+
+# Triggers when you push a version tag like v1.0.1
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Allow the workflow to upload built installers to the GitHub Release
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      # Don't cancel the other OS builds if one fails
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and publish installer
+        # electron-builder reads the OS it runs on and builds that platform's
+        # target (win→.exe, mac→.dmg, linux→.AppImage). --publish always
+        # uploads the result to the GitHub Release for this tag.
+        run: npm run build && npx electron-builder --publish always
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

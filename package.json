@@ -4,6 +4,10 @@
   "description": "Opensource fast and lightweight video creation and editor app",
   "private": true,
   "main": "out/main/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Creatorsai-Lab/luffy-editor.git"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
@@ -88,7 +92,15 @@
     },
     "linux": {
       "target": "AppImage",
-      "icon": "build/icon.png"
-    }
+      "icon": "build/icon.png",
+      "category": "Graphics"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Creatorsai-Lab",
+        "repo": "luffy-editor"
+      }
+    ]
   }
   }

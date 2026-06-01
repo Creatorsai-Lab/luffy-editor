@@ -10,7 +10,7 @@ Code walkthroughs, system-design diagrams, and slide-based animations — with f
 
 [![Release](https://img.shields.io/github/v/release/Creatorsai-Lab/luffy-editor?label=download&style=flat-square)](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest)
 [![License](https://img.shields.io/github/license/Creatorsai-Lab/luffy-editor?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-blue?style=flat-square)](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?style=flat-square)](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest)
 
 [🌏︎ Website](https://creatorsai-lab.github.io/luffy-create/) · [⇊ Download](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest) · [ 🖿 User GUIDE](https://github.com/Creatorsai-Lab/luffy-editor/tree/main/docs#readme)
 </div>
@@ -47,9 +47,17 @@ Code walkthroughs, system-design diagrams, and slide-based animations — with f
 2. Run the installer. Windows SmartScreen may show an *"Unknown publisher"* warning — click **More info → Run anyway**. The app is unsigned for now and completely safe (source is public, build it yourself if you prefer).
 3. Launch **Luffy Create** from the Start Menu.
 
-### macOS & Linux
+### macOS
 
-Not yet packaged. You can run from source (see below) on any platform. Native builds are planned.
+1. Download the latest `.dmg` from the [**Releases page**](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest).
+2. Open it and drag **Luffy Create** into Applications.
+3. First launch: right-click the app → **Open** (the build is unsigned, so Gatekeeper requires this once).
+
+### Linux
+
+1. Download the latest `.AppImage` from the [**Releases page**](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest).
+2. Make it executable: `chmod +x Luffy*.AppImage`
+3. Run it: `./Luffy*.AppImage`
 
 ---
 
