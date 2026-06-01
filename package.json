@@ -1,12 +1,12 @@
 {
   "name": "luffy-create",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Opensource fast and lightweight video creation and editor app",
   "private": true,
   "main": "out/main/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Creatorsai-Lab/luffy-editor.git"
+    "url": "https://github.com/Creatorsai-Lab/luffy-create.git"
   },
   "scripts": {
     "dev": "electron-vite dev",
@@ -84,22 +84,25 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "artifactName": "Luffy-Create-Windows-Setup-${version}.${ext}"
     },
     "mac": {
       "target": "dmg",
-      "icon": "build/icon.icns"
+      "icon": "build/icon.icns",
+      "artifactName": "Luffy-Create-macOS-${version}-${arch}.${ext}"
     },
     "linux": {
       "target": "AppImage",
       "icon": "build/icon.png",
-      "category": "Graphics"
+      "category": "Graphics",
+      "artifactName": "Luffy-Create-Linux-${version}-${arch}.${ext}"
     },
     "publish": [
       {
         "provider": "github",
         "owner": "Creatorsai-Lab",
-        "repo": "luffy-editor"
+        "repo": "luffy-create"
       }
     ]
   }

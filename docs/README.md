@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Creatorsai-Lab/luffy-editor/main/public/images/luffy_app_logo.webp" alt="Luffy Create" width="84" />
+<img src="https://raw.githubusercontent.com/Creatorsai-Lab/luffy-create/main/public/images/luffy_app_logo.webp" alt="Luffy Create" width="84" />
 
 # Luffy Create Application User Guide
 
 **Everything you need to go from a blank canvas to a professional video**
 
-[🌏︎ Website](https://creatorsai-lab.github.io/luffy-create/) · [⇊ Download](https://github.com/Creatorsai-Lab/luffy-editor/releases/latest) · [ 🖿 Repository](https://github.com/Creatorsai-Lab/luffy-editor)
+[🌏︎ Website](https://creatorsai-lab.github.io/luffy-create/) · [⇊ Download](https://github.com/Creatorsai-Lab/luffy-create/releases/latest) · [ 🖿 Repository](https://github.com/Creatorsai-Lab/luffy-create)
 
 </div>
 
@@ -81,6 +81,6 @@ The complete keyboard reference for fast editing.
 
 <div align="center">
 
-Made with care for creators of technical content · [MIT License](https://github.com/Creatorsai-Lab/luffy-editor/blob/main/LICENSE)
+Made with care for creators of technical content · [MIT License](https://github.com/Creatorsai-Lab/luffy-create/blob/main/LICENSE)
 
 </div>
