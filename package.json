@@ -1,6 +1,6 @@
 {
   "name": "luffy-create",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Opensource fast and lightweight video creation and editor app",
   "private": true,
   "main": "out/main/index.js",
