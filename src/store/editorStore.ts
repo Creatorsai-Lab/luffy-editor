@@ -281,6 +281,10 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         const clone = JSON.parse(JSON.stringify(el))
         clone.id = uuid()
         clone.x += 16; clone.y += 16
+        // Arrows render from absolute endpoints — shift those too so the copy is visibly offset
+        if (clone.type === 'arrow') {
+          clone.x1 += 16; clone.y1 += 16; clone.x2 += 16; clone.y2 += 16
+        }
         clone.zIndex = sc.elements.length
         sc.elements.push(clone)
         s.selectedIds = [clone.id]

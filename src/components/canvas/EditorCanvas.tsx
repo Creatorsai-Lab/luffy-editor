@@ -168,6 +168,10 @@ export default function EditorCanvas() {
             const clone: EditorElement = { ...JSON.parse(JSON.stringify(el)), id: crypto.randomUUID() }
             clone.x += 20
             clone.y += 20
+            // Arrows render from absolute endpoints — shift those too
+            if (clone.type === 'arrow') {
+              clone.x1 += 20; clone.y1 += 20; clone.x2 += 20; clone.y2 += 20
+            }
             addElement(clone)
           })
         }

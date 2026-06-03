@@ -52,8 +52,10 @@ export default function ArrowKonva({ el, konvaProps, pathProgress = 1, dashOffse
   })()
 
   const headColor = el.arrowHeadColor && el.arrowHeadColor !== '' ? el.arrowHeadColor : el.stroke
-  const animX = konvaProps.x as number
-  const animY = konvaProps.y as number
+  // Points are absolute (x1..y2), so the node position must NOT add element.x/y again —
+  // it carries only the animation offset (konvaProps.x already = element.x + anim delta).
+  const animX = ((konvaProps.x as number) ?? 0) - el.x
+  const animY = ((konvaProps.y as number) ?? 0) - el.y
 
   const commonProps = {
     ...konvaProps,
