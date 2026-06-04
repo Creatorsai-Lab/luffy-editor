@@ -18,6 +18,8 @@ import '@fontsource/caveat/400.css'
 import '@fontsource/caveat/700.css'
 import '@fontsource/caveat-brush/400.css'
 import '@fontsource/chewy/400.css'
+import '@fontsource/eb-garamond/400.css'
+import '@fontsource/eb-garamond/700.css'
 import '@fontsource/fredoka/400.css'
 import '@fontsource/handlee/400.css'
 import '@fontsource/imperial-script/400.css'
@@ -40,6 +42,8 @@ import '@fontsource/raleway/700.css'
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/700.css'
 import '@fontsource/shadows-into-light/400.css'
+import '@fontsource/spectral/400.css'
+import '@fontsource/spectral/700.css'
 
 // ── Fonts that need explicit preloading (non-system only) ─────────────────────
 const CANVAS_FONTS: Array<{ family: string; weights: string[] }> = [
@@ -48,6 +52,7 @@ const CANVAS_FONTS: Array<{ family: string; weights: string[] }> = [
   { family: 'Caveat',             weights: ['400', '700'] },
   { family: 'Caveat Brush',       weights: ['400'] },
   { family: 'Chewy',              weights: ['400'] },
+  { family: 'EB Garamond',        weights: ['400', '700'] },
   { family: 'Fredoka',            weights: ['400'] },
   { family: 'Handlee',            weights: ['400'] },
   { family: 'Imperial Script',    weights: ['400'] },
@@ -62,6 +67,7 @@ const CANVAS_FONTS: Array<{ family: string; weights: string[] }> = [
   { family: 'Raleway',            weights: ['400', '700'] },
   { family: 'Roboto',             weights: ['400', '700'] },
   { family: 'Shadows Into Light', weights: ['400'] },
+  { family: 'Spectral',           weights: ['400', '700'] },
 ]
 
 let preloadPromise: Promise<void> | null = null

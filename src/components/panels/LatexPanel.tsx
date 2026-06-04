@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import { Sigma } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { LatexElement } from '../../types/editor'
-import { PanelHeader, Row, Slider, ColorInput } from './TextPanel'
-import { makeLatex } from '../../utils/defaults'
+import { PanelHeader, Row, Slider, ColorInput, AnimSection, ENTER_ANIMS, LOOP_ANIMS, EXIT_ANIMS, isLoopAnim } from './TextPanel'
+import { makeLatex, makeAnimation } from '../../utils/defaults'
 import { renderLatex } from '../../engine/latexRenderer'
 
 const SAMPLE = 'E = mc^2'
 
 export default function LatexPanel() {
-  const { getSelectedEls, updateElement, addElement, project } = useEditorStore()
+  const { getSelectedEls, updateElement, addElement, addAnimation, project } = useEditorStore()
   const el = getSelectedEls().find(e => e.type === 'latex') as LatexElement | undefined
 
   const [src, setSrc] = useState(el?.latex ?? SAMPLE)
@@ -107,6 +107,33 @@ export default function LatexPanel() {
           </button>
         )}
       </div>
+
+      {/* Animations — only for a placed equation, shown in the remaining space */}
+      {el && (
+        <div className="border-t border-editor-border overflow-y-auto">
+          <AnimSection
+            label="On Enter" color="text-green-400"
+            anims={el.animations.filter(a => !isLoopAnim(a) && a.timing === 'onEnter')}
+            types={ENTER_ANIMS}
+            onAdd={() => addAnimation(el.id, { ...makeAnimation(), type: 'fadeIn', timing: 'onEnter' })}
+            elId={el.id} isLoop={false}
+          />
+          <AnimSection
+            label="Loop" color="text-editor-accent"
+            anims={el.animations.filter(a => isLoopAnim(a))}
+            types={LOOP_ANIMS}
+            onAdd={() => addAnimation(el.id, { ...makeAnimation(), type: 'pulse', timing: 'loop', duration: 1 })}
+            elId={el.id} isLoop={true}
+          />
+          <AnimSection
+            label="On Exit" color="text-red-400"
+            anims={el.animations.filter(a => !isLoopAnim(a) && a.timing === 'onExit')}
+            types={EXIT_ANIMS}
+            onAdd={() => addAnimation(el.id, { ...makeAnimation(), type: 'fadeOut', timing: 'onExit' })}
+            elId={el.id} isLoop={false}
+          />
+        </div>
+      )}
     </div>
   )
 }

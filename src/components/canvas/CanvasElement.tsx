@@ -119,7 +119,7 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     case 'chart':  return <ChartKonva  el={element} konvaProps={props} animProgress={animProps?.chartAnimProgress ?? 1} />
     case 'video':  return <VideoKonva  el={element} konvaProps={props} />
     case 'icon':   return <IconKonva   el={element as import('../../types/editor').IconElement} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
-    case 'latex':  return <LatexKonva  el={element as import('../../types/editor').LatexElement} konvaProps={props} />
+    case 'latex':  return <LatexKonva  el={element as import('../../types/editor').LatexElement} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
     case 'audio':  return null
     default:       return null
   }

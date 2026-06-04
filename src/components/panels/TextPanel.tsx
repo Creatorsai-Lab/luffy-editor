@@ -22,7 +22,7 @@ const TEXT_EFFECTS: { label: string; value: TextEffectType }[] = [
   { label: 'Bubble',  value: 'bubble'  },
 ]
 
-const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
+export const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
   { label: 'Slide In',           value: 'slideIn'        },
   { label: 'Fade In',            value: 'fadeIn'         },
   { label: 'Scale In',           value: 'scaleIn'        },
@@ -32,14 +32,14 @@ const ENTER_ANIMS: { label: string; value: AnimationType }[] = [
   { label: 'Typewriter (Words)', value: 'typewriterWords'},
 ]
 
-const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
+export const LOOP_ANIMS: { label: string; value: AnimationType }[] = [
   { label: 'Pulse',     value: 'pulse'      },
   { label: 'Bounce',    value: 'bounceLoop' },
   { label: 'Rotate',    value: 'rotateLoop' },
   { label: 'Fade Loop', value: 'fadeLoop'   },
 ]
 
-const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
+export const EXIT_ANIMS: { label: string; value: AnimationType }[] = [
   { label: 'Slide Out', value: 'slideOut' },
   { label: 'Fade Out',  value: 'fadeOut'  },
   { label: 'Scale In',  value: 'scaleIn'  },
@@ -63,7 +63,7 @@ const EASINGS: { label: string; value: EasingType }[] = [
 ]
 
 const LOOP_TYPE_SET = new Set<string>(['pulse', 'bounceLoop', 'rotateLoop', 'flowLoop', 'fadeLoop'])
-const isLoopAnim = (a: ElementAnimation) => LOOP_TYPE_SET.has(a.type) || a.timing === 'loop'
+export const isLoopAnim = (a: ElementAnimation) => LOOP_TYPE_SET.has(a.type) || a.timing === 'loop'
 
 export default function TextPanel() {
   const { getSelectedEls, updateElement, addAnimation, addElement, project } = useEditorStore()
@@ -441,7 +441,7 @@ function ToggleBtn({ active, onClick, children }: {
   )
 }
 
-function AnimSection({
+export function AnimSection({
   label, color, anims, types, onAdd, elId, isLoop
 }: {
   label: string
