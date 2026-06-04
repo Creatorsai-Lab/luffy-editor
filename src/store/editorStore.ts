@@ -68,6 +68,8 @@ interface EditorActions {
   addAnimation:     (elId: string, anim: ElementAnimation) => void
   updateAnimation:  (elId: string, animId: string, patch: Partial<ElementAnimation>) => void
   removeAnimation:  (elId: string, animId: string) => void
+  clearSceneAnimations: (sceneId: string) => void
+  setGroupId:       (ids: string[], groupId: string | null) => void
 
   // Playback
   setPlayhead:      (t: number) => void
@@ -382,6 +384,26 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         if (!sc) return
         const el = sc.elements.find(e => e.id === elId)
         if (el) { el.animations = el.animations.filter(a => a.id !== animId); s.isDirty = true }
+      }),
+
+      // Clear every animation from all elements in one scene
+      clearSceneAnimations: (sceneId) => set(s => {
+        if (!s.project) return
+        const sc = s.project.scenes.find(x => x.id === sceneId)
+        if (!sc) return
+        sc.elements.forEach(el => { el.animations = [] })
+        s.isDirty = true
+      }),
+
+      // Assign (or clear) a shared groupId so elements move/lock together
+      setGroupId: (ids, groupId) => set(s => {
+        if (!s.project) return
+        for (const sc of s.project.scenes) {
+          sc.elements.forEach(el => {
+            if (ids.includes(el.id)) (el as { groupId?: string | null }).groupId = groupId ?? undefined
+          })
+        }
+        s.isDirty = true
       }),
 
       // ── Playback ──────────────────────────────────────────────────────────

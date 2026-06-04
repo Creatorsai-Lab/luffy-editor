@@ -17,7 +17,7 @@ export type AlignType     = 'left' | 'center' | 'right'
 export type ArrowHeadType = 'none' | 'end' | 'start' | 'both'
 export type SlideDir      = 'left' | 'right' | 'up' | 'down'
 export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'push' | 'morph'
-export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated'
+export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated' | 'transparent'
 export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
 export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'shape-pentagon' | 'shape-hexagon' | 'shape-octagon' | 'shape-diamond' | 'shape-oval' | 'shape-speechBubble' | 'shape-roundedSpeech' | 'shape-cone' | 'shape-cube' | 'shape-rect-hand' | 'shape-circle-hand' | 'shape-square-hand' | 'shape-heart' | 'shape-rect-sketch' | 'arrow' | 'code' | 'table' | 'image' | 'chart' | 'video' | 'latex'
 export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'video' | 'icons' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | 'perspective' | 'latex' | null
@@ -55,6 +55,7 @@ export interface BaseElement {
   name: string
   animations: ElementAnimation[]
   perspectivePts?: { tl: [number, number]; tr: [number, number]; br: [number, number]; bl: [number, number] }
+  groupId?: string   // elements sharing a groupId move together when group-locked
 }
 
 // ─── Concrete elements ────────────────────────────────────────────────────────
@@ -256,19 +257,23 @@ export interface AudioElement extends BaseElement {
   loop: boolean
   track: 'background' | 'voiceover'
   markers?: AudioMarker[]
+  lane?: number      // explicit vertical lane in the timeline (manual override)
 }
 
 export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElement | ImageElement | TableElement | ChartElement | VideoElement | AudioElement | IconElement | LatexElement
 
 // ─── Background ───────────────────────────────────────────────────────────────
 
+export type GradientKind = 'linear' | 'radial' | 'conic'
 export interface SolidBg     { type: 'solid';    color: string }
-export interface GradientBg  { type: 'gradient'; from: string; to: string; angle: number; fromStop: number; toStop: number }
+export interface GradientBg  { type: 'gradient'; from: string; to: string; angle: number; fromStop: number; toStop: number; gradientType?: GradientKind; via?: string }
 export interface GridBg      { type: 'grid';     bgColor: string; lineColor: string; cellSize: number }
 export interface DotsBg      { type: 'dots';     bgColor: string; dotColor: string; spacing: number; radius: number }
-export interface AnimatedBg  { type: 'animated'; variant: 'gradient-flow' | 'particles' | 'wave'; colors: string[]; speed: number }
+export type AnimatedVariant = 'gradient-flow' | 'particles' | 'wave' | 'aurora' | 'conic-rotate' | 'gradient-shift'
+export interface AnimatedBg  { type: 'animated'; variant: AnimatedVariant; colors: string[]; speed: number }
 export interface ImageBg     { type: 'image';    src: string; fit: 'cover' | 'fill' }
-export type Background = SolidBg | GradientBg | GridBg | DotsBg | AnimatedBg | ImageBg
+export interface TransparentBg { type: 'transparent' }
+export type Background = SolidBg | GradientBg | GridBg | DotsBg | AnimatedBg | ImageBg | TransparentBg
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
 

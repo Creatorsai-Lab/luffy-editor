@@ -22,9 +22,10 @@ interface Props {
   onSelect:   (multi: boolean) => void
   onDblClick: () => void
   stageScale: number
+  localTime?: number   // scene-local seconds — drives video seeking
 }
 
-export default function CanvasElement({ element, animProps, isSelected, onSelect, onDblClick, stageScale }: Props) {
+export default function CanvasElement({ element, animProps, isSelected, onSelect, onDblClick, stageScale, localTime = 0 }: Props) {
   const { updateElement } = useEditorStore()
 
   // Animation-driven scale from center: adjust x/y so the element scales around its center,
@@ -117,7 +118,7 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     case 'image':  return <ImageKonva  el={element} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
     case 'table':  return <TableKonva  el={element} konvaProps={props} />
     case 'chart':  return <ChartKonva  el={element} konvaProps={props} animProgress={animProps?.chartAnimProgress ?? 1} />
-    case 'video':  return <VideoKonva  el={element} konvaProps={props} />
+    case 'video':  return <VideoKonva  el={element} konvaProps={props} localTime={localTime} />
     case 'icon':   return <IconKonva   el={element as import('../../types/editor').IconElement} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
     case 'latex':  return <LatexKonva  el={element as import('../../types/editor').LatexElement} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
     case 'audio':  return null

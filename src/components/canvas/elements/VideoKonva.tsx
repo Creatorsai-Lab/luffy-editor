@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Group, Rect, Shape } from 'react-konva'
 import type Konva from 'konva'
-import { useEditorStore } from '../../../store/editorStore'
 import type { VideoElement } from '../../../types/editor'
 import { toFileUrl } from '../../../utils/pathUtils'
 import { videoRegistry } from '../../../engine/videoRegistry'
@@ -10,15 +9,14 @@ import { buildCssFilter, applyCanvasAdjustments } from '../../../engine/imageFil
 interface Props {
   el: VideoElement
   konvaProps: Record<string, unknown>
+  localTime?: number   // scene-local seconds — the video is seeked to this
 }
 
-export default function VideoKonva({ el, konvaProps }: Props) {
+export default function VideoKonva({ el, konvaProps, localTime = 0 }: Props) {
   const videoRef  = useRef<HTMLVideoElement | null>(null)
   const shapeRef  = useRef<Konva.Shape | null>(null)
   const rafRef    = useRef<number>(0)
   const [loaded, setLoaded] = useState(false)
-
-  const isPlaying = useEditorStore(s => s.isPlaying)
 
   function redraw() {
     requestAnimationFrame(() => {
@@ -95,22 +93,26 @@ export default function VideoKonva({ el, konvaProps }: Props) {
     }
   }, [loaded])
 
-  // Global preview: play/pause and seek-to-start
+  // Seek the video to the scene-local time. This is the single source of truth
+  // for the displayed frame, so it works identically in the editor timeline,
+  // the Preview modal, and frame-by-frame export — none of which rely on
+  // real-time play(). (The manual ▶ button still uses play() + the RAF loop above.)
   useEffect(() => {
     const v = videoRef.current
-    if (!v || !loaded) return
+    if (!v || !loaded || !v.paused) return   // don't fight a manual real-time play
+    const dur = v.duration || 0
+    if (!dur) { redraw(); return }
 
-    if (isPlaying) {
-      v.play().catch(() => {})
+    let target = localTime
+    if (el.loop) target = localTime % dur
+    target = Math.max(0, Math.min(target, dur - 0.03))
+
+    if (Math.abs(v.currentTime - target) > 0.015) {
+      v.currentTime = target   // fires 'seeked' → redraw
     } else {
-      v.pause()
-      if (v.readyState >= 2) {
-        v.currentTime = 0
-      } else {
-        redraw()
-      }
+      redraw()
     }
-  }, [isPlaying, loaded])
+  }, [localTime, loaded, el.loop])
 
   if (!loaded || !videoRef.current) {
     return (

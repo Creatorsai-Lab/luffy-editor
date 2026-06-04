@@ -106,11 +106,11 @@ export default function LatexPanel() {
             Add to Screen
           </button>
         )}
-      </div>
 
-      {/* Animations — only for a placed equation, shown in the remaining space */}
+      {/* Animations — only for a placed equation. Inside the scroll container so
+          it never overlays the controls; the whole panel scrolls as one. */}
       {el && (
-        <div className="border-t border-editor-border overflow-y-auto">
+        <div className="border-t border-editor-border -mx-3 mt-1">
           <AnimSection
             label="On Enter" color="text-green-400"
             anims={el.animations.filter(a => !isLoopAnim(a) && a.timing === 'onEnter')}
@@ -134,6 +134,7 @@ export default function LatexPanel() {
           />
         </div>
       )}
+      </div>
     </div>
   )
 }

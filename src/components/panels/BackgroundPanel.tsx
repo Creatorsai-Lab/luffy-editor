@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { Settings2 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import type { Background, BgType, AnimatedBg, GradientBg } from '../../types/editor'
+import type { Background, BgType, AnimatedBg, GradientBg, GradientKind } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
 import { cn } from '../../utils/cn'
 
 const BG_TYPES: { label: string; value: BgType }[] = [
-  { label: 'Solid',    value: 'solid' },
-  { label: 'Gradient', value: 'gradient' },
-  { label: 'Grid',     value: 'grid' },
-  { label: 'Dots',     value: 'dots' },
-  { label: 'Animated', value: 'animated' }
+  { label: 'Solid',       value: 'solid' },
+  { label: 'Gradient',    value: 'gradient' },
+  { label: 'Grid',        value: 'grid' },
+  { label: 'Dots',        value: 'dots' },
+  { label: 'Animated',    value: 'animated' },
+  { label: 'Transparent', value: 'transparent' },
 ]
 
 export default function BackgroundPanel() {
@@ -32,10 +33,11 @@ export default function BackgroundPanel() {
   function changeBgType(type: BgType) {
     const defaults: Record<BgType, Background> = {
       solid:    { type: 'solid', color: '#1a1a2e' },
-      gradient: { type: 'gradient', from: '#6366f1', to: '#f5f5ff', angle: 290, fromStop: 0, toStop: 1 },
+      gradient: { type: 'gradient', from: '#6366f1', to: '#f5f5ff', angle: 290, fromStop: 0, toStop: 1, gradientType: 'linear' },
       grid:     { type: 'grid', bgColor: '#0f0f1a', lineColor: '#2a2a2a', cellSize: 40 },
       dots:     { type: 'dots', bgColor: '#0f0f1a', dotColor: '#2a2a2a', spacing: 64, radius: 3.5 },
-      animated: { type: 'animated', variant: 'gradient-flow', colors: ['#6366f1', '#d6d6fc'], speed: 3 }
+      animated: { type: 'animated', variant: 'gradient-flow', colors: ['#6366f1', '#d6d6fc'], speed: 3 },
+      transparent: { type: 'transparent' },
     }
     setBackground(scene!.id, defaults[type])
   }
@@ -86,7 +88,32 @@ export default function BackgroundPanel() {
 
         {bg.type === 'gradient' && (
           <>
+            <Row label="Gradient Type">
+              <select
+                value={(bg as GradientBg).gradientType ?? 'linear'}
+                onChange={e => setBg({ gradientType: e.target.value as GradientKind } as Partial<GradientBg>)}
+                className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+              >
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
+                <option value="conic">Conic</option>
+              </select>
+            </Row>
             <Row label="From"><ColorInput value={bg.from} onChange={c => setBg({ from: c })} /></Row>
+            <Row label="Middle">
+              <div className="flex items-center gap-1">
+                <ColorInput value={(bg as GradientBg).via || '#ffffff'} onChange={c => setBg({ via: c } as Partial<GradientBg>)} disabled={!(bg as GradientBg).via} />
+                <button
+                  onClick={() => setBg({ via: (bg as GradientBg).via ? undefined : '#ffffff' } as Partial<GradientBg>)}
+                  className={cn('px-2 py-1 text-2xs rounded border transition-colors',
+                    (bg as GradientBg).via ? 'bg-editor-accent-dim border-editor-accent text-editor-accent'
+                      : 'bg-editor-elevated border-editor-border text-[#f2f2f2] hover:text-editor-text')}
+                  title="Toggle a middle color stop"
+                >
+                  {(bg as GradientBg).via ? 'On' : 'Off'}
+                </button>
+              </div>
+            </Row>
             <Row label="To"><ColorInput value={bg.to} onChange={c => setBg({ to: c })} /></Row>
             <Row label="Angle">
               <Slider value={bg.angle} min={0} max={360} step={1}
@@ -138,8 +165,10 @@ export default function BackgroundPanel() {
                 className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
               >
                 <option value="gradient-flow">Gradient Flow</option>
+                <option value="gradient-shift">Gradient Shift</option>
+                <option value="conic-rotate">Conic Rotate</option>
+                <option value="aurora">Aurora</option>
                 <option value="wave">Wave</option>
-                <option value="particles">Particles</option>
               </select>
             </Row>
             <Row label="Color 1">
@@ -157,6 +186,17 @@ export default function BackgroundPanel() {
                 onChange={v => setBg({ speed: v })} display={`${bg.speed}x`} />
             </Row>
           </>
+        )}
+
+        {bg.type === 'transparent' && (
+          <div className="flex flex-col gap-1.5 py-1">
+            <p className="text-xs text-editor-accent">Transparent background</p>
+            <p className="text-2xs text-[#a99fc9] leading-relaxed">
+              The checkerboard marks transparency — it is not part of the output.
+              PNG / WebP image export keeps the transparency. MP4 video cannot store
+              transparency (H.264 has no alpha channel); it will render on black.
+            </p>
+          </div>
         )}
       </div>
     </div>

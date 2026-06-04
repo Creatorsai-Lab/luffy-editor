@@ -3,6 +3,7 @@ import { X, Download, CheckCircle, AlertCircle, Loader2, Settings, Image, Film }
 import { useEditorStore } from '../../store/editorStore'
 import { exportToMP4WithFFmpeg, isFFmpegAvailable } from '../../engine/ffmpegExporter'
 import { getStage } from '../../engine/stageRegistry'
+import { videoRegistry } from '../../engine/videoRegistry'
 import type { Scene } from '../../types/editor'
 
 type Phase   = 'idle' | 'exporting' | 'done' | 'error'
@@ -60,11 +61,27 @@ export default function ExportModal() {
       await new Promise(r => setTimeout(r, 0))
     }
     setPlayhead(globalTime)
+    // Let React commit + the video-seek effect run.
     await new Promise(r => setTimeout(r, 0))
     await new Promise(r => requestAnimationFrame(r))
+    // Wait for any video elements to finish seeking to this frame, so the
+    // captured stage shows the correct video frame (not a stale one).
+    await waitForVideoSeeks()
     const stage = getStage()
     if (stage) stage.batchDraw()
     await new Promise(r => setTimeout(r, 8))
+  }
+
+  // Resolve once every registered video has finished seeking (or after a cap).
+  function waitForVideoSeeks(): Promise<void> {
+    const videos = videoRegistry.all().filter(v => v.seeking)
+    if (videos.length === 0) return Promise.resolve()
+    return Promise.all(videos.map(v => new Promise<void>(resolve => {
+      let done = false
+      const finish = () => { if (done) return; done = true; v.removeEventListener('seeked', finish); resolve() }
+      v.addEventListener('seeked', finish)
+      setTimeout(finish, 250)  // safety cap so export can't hang
+    }))).then(() => undefined)
   }
 
   function findSceneIdAtTime(t: number): string | null {
@@ -153,8 +170,15 @@ export default function ExportModal() {
       const stage = getStage()
       if (!stage) throw new Error('Canvas not ready')
 
+      // For a transparent background, hide the checkerboard so PNG/WebP keep real alpha.
+      const transparent = scene.background.type === 'transparent'
+      const bgNode = transparent ? stage.findOne('.bg') : null
+      if (bgNode) { bgNode.visible(false); stage.batchDraw(); await new Promise(r => requestAnimationFrame(r)) }
+
       const mimeType = imgFormat === 'webp' ? 'image/webp' : 'image/png'
       const dataUrl  = stage.toDataURL({ mimeType, quality: 0.95, pixelRatio: 1 })
+
+      if (bgNode) { bgNode.visible(true); stage.batchDraw() }
 
       // Convert dataURL to Uint8Array
       const base64 = dataUrl.split(',')[1]

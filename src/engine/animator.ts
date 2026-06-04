@@ -393,6 +393,18 @@ function applyAnim(
 
 // ─── Background animation helper ─────────────────────────────────────────────
 
+// Convert a #rgb / #rrggbb color to an rgba() string with the given alpha.
+function hexA(hex: string, a: number): string {
+  const m = hex.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i)
+  if (!m) return `rgba(99,102,241,${a})`
+  let s = m[1]
+  if (s.length === 3) s = s.split('').map(c => c + c).join('')
+  const r = parseInt(s.slice(0, 2), 16)
+  const g = parseInt(s.slice(2, 4), 16)
+  const b = parseInt(s.slice(4, 6), 16)
+  return `rgba(${r},${g},${b},${a})`
+}
+
 export function drawAnimatedBg(
   ctx: CanvasRenderingContext2D,
   time: number,
@@ -405,7 +417,7 @@ export function drawAnimatedBg(
   const t = (time * speed * 0.1) % 1
 
   if (variant === 'gradient-flow') {
-    const angle = t * Math.PI * 2
+    const angle = t * Math.PI * 3
     const cx = w / 2 + Math.cos(angle) * w * 0.3
     const cy = h / 2 + Math.sin(angle) * h * 0.3
     const grad = ctx.createRadialGradient(cx, cy, 0, w / 2, h / 2, Math.max(w, h) * 0.7)
@@ -416,24 +428,66 @@ export function drawAnimatedBg(
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, w, h)
   } else if (variant === 'wave') {
-    ctx.fillStyle = colors[1] ?? '#0f0f1a'
+    const c1 = colors[0] ?? '#6366f1'
+    const c2 = colors[1] ?? '#22d3ee'
+    // Faded blended base: soft vertical gradient between the two colors
+    const base = ctx.createLinearGradient(0, 0, 0, h)
+    base.addColorStop(0, c2)
+    base.addColorStop(1, c1)
+    ctx.fillStyle = base
     ctx.fillRect(0, 0, w, h)
-    ctx.fillStyle = colors[0] ?? '#6366f1'
-    ctx.globalAlpha = 0.4
-    ctx.beginPath()
-    ctx.moveTo(0, h * 0.5)
-    for (let x = 0; x <= w; x += 4) {
-      const y = h * 0.5 + Math.sin((x / w) * Math.PI * 4 + t * Math.PI * 2) * h * 0.1
-      ctx.lineTo(x, y)
+
+    const phase = t * Math.PI * 2
+    const bob   = Math.sin(phase * 0.5) * h * 0.04   // slow whole-wave up/down wiggle
+
+    // One soft, semi-transparent wave band, faded at the edges so the two colors blend.
+    const drawWave = (amp: number, freq: number, yBase: number, alpha: number, col: string, dir: number) => {
+      const g = ctx.createLinearGradient(0, 0, w, 0)
+      g.addColorStop(0,   hexA(col, 0))
+      g.addColorStop(0.5, hexA(col, alpha))
+      g.addColorStop(1,   hexA(col, 0))
+      ctx.fillStyle = g
+      ctx.beginPath()
+      ctx.moveTo(0, h)
+      for (let x = 0; x <= w; x += 4) {
+        // dir<0 ⇒ crest travels right→left; extra term adds gentle vertical wiggle
+        const y = yBase + bob
+          + Math.sin((x / w) * Math.PI * freq + dir * phase) * amp
+          + Math.sin((x / w) * Math.PI * (freq * 1.7) + dir * phase * 1.3) * amp * 0.35
+        x === 0 ? ctx.lineTo(0, y) : ctx.lineTo(x, y)
+      }
+      ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill()
     }
-    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill()
+
+    drawWave(h * 0.09, 4, h * 0.55, 0.35, c1, -1)
+  } else if (variant === 'aurora') {
+    // Two soft radial blobs drifting on a dark base — northern-lights feel
+    const c1 = colors[0] ?? '#6366f1'
+    const c2 = colors[1] ?? '#3d49ee'
+    ctx.fillStyle = '#0b1020'; ctx.fillRect(0, 0, w, h)
+    const blob = (cx: number, cy: number, col: string, r: number) => {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r)
+      g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h)
+    }
+    const a = t * Math.PI * 2
+    ctx.globalAlpha = 0.55
+    blob(w * (0.50 + 0.18 * Math.cos(a)),       h * (0.4 + 0.2 * Math.sin(a)),       c1, Math.max(w, h) * 0.5)
+    blob(w * (0.65 + 0.18 * Math.cos(a + 2.2)), h * (0.6 + 0.2 * Math.sin(a + 2.2)), c2, Math.max(w, h) * 0.5)
     ctx.globalAlpha = 1
-  } else {
-    const grad = ctx.createLinearGradient(0, 0, w, h)
+  } else if (variant === 'conic-rotate' && typeof ctx.createConicGradient === 'function') {
+    const g = ctx.createConicGradient(t * Math.PI * 2, w / 2, h / 2)
     const c1 = colors[0] ?? '#6366f1'
     const c2 = colors[1] ?? '#0f0f1a'
-    grad.addColorStop(0, c1)
-    grad.addColorStop(1, c2)
+    g.addColorStop(0, c1); g.addColorStop(0.5, c2); g.addColorStop(1, c1)
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h)
+  } else {
+    // gradient-shift (and fallback): linear gradient whose angle sweeps over time
+    const ang = t * Math.PI * 2
+    const dx = Math.cos(ang) * w / 2, dy = Math.sin(ang) * h / 2
+    const grad = ctx.createLinearGradient(w/2 - dx, h/2 - dy, w/2 + dx, h/2 + dy)
+    grad.addColorStop(0, colors[0] ?? '#6366f1')
+    grad.addColorStop(1, colors[1] ?? '#0f0f1a')
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, w, h)
   }

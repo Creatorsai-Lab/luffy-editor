@@ -3,7 +3,8 @@ import { Stage, Layer, Shape } from 'react-konva'
 import type Konva from 'konva'
 import { X, Play, Pause, SkipBack } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
+import { getAnimatedProps } from '../../engine/animator'
+import { drawBackground } from '../../engine/backgroundRenderer'
 import CanvasElement from '../canvas/CanvasElement'
 import type { Background, TransitionType, SlideDir, AudioElement } from '../../types/editor'
 import { toFileUrl } from '../../utils/pathUtils'
@@ -203,6 +204,7 @@ export default function PreviewModal() {
                     onSelect={() => {}}
                     onDblClick={() => {}}
                     stageScale={scale}
+                    localTime={localTime}
                   />
                 ))}
               </Layer>
@@ -262,30 +264,7 @@ export default function PreviewModal() {
 function BgShape({ bg, w, h, time }: { bg: Background; w: number; h: number; time: number }) {
   const sceneFunc = useCallback((ctx: Konva.Context) => {
     const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
-    if (bg.type === 'solid') {
-      raw.fillStyle = bg.color; raw.fillRect(0, 0, w, h)
-    } else if (bg.type === 'gradient') {
-      const ang = (bg.angle * Math.PI) / 180
-      const grd = raw.createLinearGradient(
-        w/2 - Math.cos(ang)*w/2, h/2 - Math.sin(ang)*h/2,
-        w/2 + Math.cos(ang)*w/2, h/2 + Math.sin(ang)*h/2
-      )
-      grd.addColorStop(bg.fromStop ?? 0, bg.from); grd.addColorStop(bg.toStop ?? 1, bg.to)
-      raw.fillStyle = grd; raw.fillRect(0, 0, w, h)
-    } else if (bg.type === 'grid') {
-      raw.fillStyle = bg.bgColor; raw.fillRect(0, 0, w, h)
-      raw.strokeStyle = bg.lineColor; raw.lineWidth = 1
-      for (let x = 0; x <= w; x += bg.cellSize) { raw.beginPath(); raw.moveTo(x,0); raw.lineTo(x,h); raw.stroke() }
-      for (let y = 0; y <= h; y += bg.cellSize) { raw.beginPath(); raw.moveTo(0,y); raw.lineTo(w,y); raw.stroke() }
-    } else if (bg.type === 'dots') {
-      raw.fillStyle = bg.bgColor; raw.fillRect(0, 0, w, h)
-      raw.fillStyle = bg.dotColor
-      for (let x = bg.spacing/2; x < w; x += bg.spacing)
-        for (let y = bg.spacing/2; y < h; y += bg.spacing)
-          { raw.beginPath(); raw.arc(x,y,bg.radius,0,Math.PI*2); raw.fill() }
-    } else if (bg.type === 'animated') {
-      drawAnimatedBg(raw, time, w, h, bg.colors, bg.variant, bg.speed)
-    }
+    drawBackground(raw, bg, w, h, time)
   }, [bg, w, h, time])
 
   return <Shape width={w} height={h} sceneFunc={sceneFunc} listening={false} />

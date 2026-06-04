@@ -3,7 +3,8 @@ import { Stage, Layer, Shape, Transformer, Circle, Path } from 'react-konva'
 import type Konva from 'konva'
 import { Clipboard, Copy, Trash2, ImageIcon, Play, Pause, Check, X } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import { getAnimatedProps, drawAnimatedBg } from '../../engine/animator'
+import { getAnimatedProps } from '../../engine/animator'
+import { drawBackground } from '../../engine/backgroundRenderer'
 import { registerStage } from '../../engine/stageRegistry'
 import { videoRegistry } from '../../engine/videoRegistry'
 import { makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from '../../utils/defaults'
@@ -548,6 +549,7 @@ export default function EditorCanvas() {
                     else if (el.type === 'image' || el.type === 'video') setCropElement(el.id)
                   }}
                   stageScale={scale}
+                  localTime={localTime}
                 />
               )
             })}
@@ -874,56 +876,7 @@ const BackgroundShape = React.forwardRef<Konva.Shape, {
 
   const sceneFunc = useCallback((ctx: Konva.Context, shape: Konva.Shape) => {
     const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
-
-    if (bg.type === 'solid') {
-      raw.fillStyle = bg.color
-      raw.fillRect(0, 0, w, h)
-    } else if (bg.type === 'gradient') {
-      const angle = (bg.angle * Math.PI) / 180
-      const cx = w / 2, cy = h / 2
-      const dx = Math.cos(angle) * w / 2, dy = Math.sin(angle) * h / 2
-      const grd = raw.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy)
-      grd.addColorStop(bg.fromStop ?? 0, bg.from)
-      grd.addColorStop(bg.toStop ?? 1, bg.to)
-      raw.fillStyle = grd
-      raw.fillRect(0, 0, w, h)
-    } else if (bg.type === 'grid') {
-      raw.fillStyle = bg.bgColor
-      raw.fillRect(0, 0, w, h)
-      raw.strokeStyle = bg.lineColor
-      raw.lineWidth = 1
-      for (let x = 0; x <= w; x += bg.cellSize) {
-        raw.beginPath(); raw.moveTo(x, 0); raw.lineTo(x, h); raw.stroke()
-      }
-      for (let y = 0; y <= h; y += bg.cellSize) {
-        raw.beginPath(); raw.moveTo(0, y); raw.lineTo(w, y); raw.stroke()
-      }
-    } else if (bg.type === 'dots') {
-      raw.fillStyle = bg.bgColor
-      raw.fillRect(0, 0, w, h)
-      raw.fillStyle = bg.dotColor
-      for (let x = bg.spacing / 2; x < w; x += bg.spacing)
-        for (let y = bg.spacing / 2; y < h; y += bg.spacing) {
-          raw.beginPath(); raw.arc(x, y, bg.radius, 0, Math.PI * 2); raw.fill()
-        }
-    } else if (bg.type === 'animated') {
-      drawAnimatedBg(raw, time, w, h, bg.colors, bg.variant, bg.speed)
-    } else if (bg.type === 'image' && bgImage) {
-      if ((bg as ImageBg).fit === 'fill') {
-        raw.drawImage(bgImage, 0, 0, w, h)
-      } else {
-        // cover: scale to fill, centered
-        const s  = Math.max(w / bgImage.width, h / bgImage.height)
-        const sw = bgImage.width  * s
-        const sh = bgImage.height * s
-        raw.drawImage(bgImage, (w - sw) / 2, (h - sh) / 2, sw, sh)
-      }
-    } else if (bg.type === 'image') {
-      // Image not yet loaded — show placeholder
-      raw.fillStyle = '#1a1a1a'
-      raw.fillRect(0, 0, w, h)
-    }
-
+    drawBackground(raw, bg, w, h, time, bgImage)
     ctx.fillStrokeShape(shape)
   }, [bg, w, h, time, bgImage])
 

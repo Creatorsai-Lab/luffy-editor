@@ -15,7 +15,15 @@ const SCENE_HEIGHT = 50
 const TRACK_HEIGHT = 32
 const PX_PER_SEC_BASE = 60
 
-const SCENE_COLORS = ['#3b82f6', '#0ea5e9', '#6366f1', '#4169e1']
+const SCENE_COLORS = ['#3b82f6', '#0ea5e9', '#6366f1', '#4169e1', '#8b5cf6', '#0891b2', '#2563eb', '#7c3aed']
+
+// Stable color from a scene id — stays the same after reordering, so a scene
+// keeps its color + name identity wherever it moves.
+function colorForId(id: string): string {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return SCENE_COLORS[h % SCENE_COLORS.length]
+}
 
 const SPEED_OPTIONS = [
   { label: '0.25×', value: 0.25 },
@@ -55,6 +63,35 @@ export default function Timeline() {
     x: number; y: number; audioId: string; clickTimeInAudio: number; sceneId: string; absoluteTime: number
   } | null>(null)
   const [timelineContextMenu, setTimelineContextMenu] = useState<{ x: number; y: number; time: number } | null>(null)
+  const [panelHeight, setPanelHeight] = useState(160)
+  const [shiftHeld, setShiftHeld] = useState(false)
+
+  // Track Shift so scene reorder only happens on Shift+drag (avoids accidental
+  // reordering while resizing a scene's duration from its edge).
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => { if (e.key === 'Shift') setShiftHeld(true) }
+    const up   = (e: KeyboardEvent) => { if (e.key === 'Shift') setShiftHeld(false) }
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up) }
+  }, [])
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const startY = e.clientY
+    const startH = panelHeight
+    const onMove = (mv: MouseEvent) => {
+      // drag up = taller (timeline sits at the bottom of the window)
+      const next = Math.max(120, Math.min(window.innerHeight - 160, startH + (startY - mv.clientY)))
+      setPanelHeight(next)
+    }
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [panelHeight])
 
   const containerRef    = useRef<HTMLDivElement>(null)
   const rafRef          = useRef<number>(0)
@@ -460,9 +497,43 @@ export default function Timeline() {
       .map((el, idx) => ({ audio: el as AudioElement, sc, scStart, idx }))
   })
 
+  // ── Lane packing for audio clips ──────────────────────────────────────────
+  // Explicit `lane` (set by Shift+click) is honored; the rest are greedily
+  // packed into the lowest lane with no time overlap. So a split/new clip that
+  // doesn't overlap reuses lane 0 instead of adding depth to the timeline.
+  const laneById = new Map<string, number>()
+  {
+    const laneEnds: number[] = []
+    const abs = allAudioClips.map(c => {
+      const s = c.scStart + (c.audio.x ?? 0)
+      return { id: c.audio.id, lane: c.audio.lane, s, e: s + (c.audio.duration ?? 30) }
+    })
+    for (const c of abs) {
+      if (c.lane != null) { laneById.set(c.id, c.lane); laneEnds[c.lane] = Math.max(laneEnds[c.lane] ?? -Infinity, c.e) }
+    }
+    for (const c of [...abs].sort((a, b) => a.s - b.s)) {
+      if (laneById.has(c.id)) continue
+      let lane = 0
+      while ((laneEnds[lane] ?? -Infinity) > c.s + 1e-6) lane++
+      laneById.set(c.id, lane)
+      laneEnds[lane] = Math.max(laneEnds[lane] ?? -Infinity, c.e)
+    }
+  }
+  const maxLane = laneById.size ? Math.max(...laneById.values()) : 0
+  const audioLaneOf = (id: string) => laneById.get(id) ?? 0
+
 
   return (
-    <div className="flex flex-col bg-[#171717] flex-none" style={{ height: 160 }}>
+    <div className="flex flex-col bg-[#171717] flex-none relative" style={{ height: panelHeight }}>
+      {/* Resize handle — drag to change timeline height */}
+      <div
+        onMouseDown={handleResizeMouseDown}
+        className="absolute top-0 left-0 right-0 h-1.5 -mt-0.5 cursor-ns-resize z-40 group"
+        title="Drag to resize timeline"
+      >
+        <div className="mx-auto mt-0.5 h-1 w-16 rounded-full bg-editor-border group-hover:bg-editor-accent transition-colors" />
+      </div>
+
       {/* Controls row */}
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-editor-border flex-none min-w-0 overflow-hidden">
         <Tooltip text="Stop (Home)">
@@ -649,14 +720,14 @@ export default function Timeline() {
               const isResizing  = resizingScene?.id === sc.id
               const isDragging  = draggedSceneIndex === index
               const isDropTarget = dropTargetIndex === index
-              const sceneColor  = SCENE_COLORS[index % SCENE_COLORS.length]
+              const sceneColor  = colorForId(sc.id)
               const isActive    = sc.id === currentSceneId
 
               return (
                 <div
                   key={sc.id}
-                  draggable
-                  onDragStart={e => { setDraggedSceneIndex(index); e.dataTransfer.effectAllowed = 'move' }}
+                  draggable={shiftHeld}
+                  onDragStart={e => { if (!shiftHeld) { e.preventDefault(); return } setDraggedSceneIndex(index); e.dataTransfer.effectAllowed = 'move' }}
                   onDragEnd={() => { setDraggedSceneIndex(null); setDropTargetIndex(null) }}
                   onDragOver={e => { e.preventDefault(); setDropTargetIndex(index) }}
                   onDragLeave={() => setDropTargetIndex(null)}
@@ -683,7 +754,9 @@ export default function Timeline() {
                     background: sceneColor, color: 'white',
                     fontWeight: isActive ? 600 : 400,
                     paddingBottom: 14,
+                    cursor: shiftHeld ? 'grab' : 'pointer',
                   }}
+                  title={shiftHeld ? 'Shift+drag to reorder' : sc.name}
                 >
                   <div
                     className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-white/30 rounded-l-md z-10"
@@ -735,22 +808,19 @@ export default function Timeline() {
             )
           })}
 
-          {/* Audio tracks */}
-          <div className="absolute left-0 right-0" style={{ top: RULER_HEIGHT + SCENE_HEIGHT, height: 'auto' }}>
+          {/* Audio tracks — lane-packed so non-overlapping clips share a row */}
+          <div className="absolute left-0 right-0" style={{ top: RULER_HEIGHT + SCENE_HEIGHT, height: (maxLane + 1) * TRACK_HEIGHT }}>
             {allAudioClips.map(({ audio, sc, scStart }) => {
               const audioDur     = audio.duration ?? 30
               const audioStartPx = (scStart + (audio.x ?? 0)) * PX_PER_SEC
               const audioWidthPx = audioDur * PX_PER_SEC
               const fileName     = (audio.name ?? 'Audio').substring(0, 10)
               const isSelected   = selectedAudioId === audio.id
+              const laneTop      = audioLaneOf(audio.id) * TRACK_HEIGHT + 2
 
               return (
-                <div
-                  key={audio.id}
-                  className="relative border-b border-editor-border/50"
-                  style={{ height: TRACK_HEIGHT }}
-                >
                   <div
+                    key={audio.id}
                     className={cn(
                       'absolute rounded overflow-hidden transition-shadow select-none cursor-grab group',
                       isSelected
@@ -760,7 +830,7 @@ export default function Timeline() {
                     style={{
                       left: audioStartPx,
                       width: Math.max(audioWidthPx, 60),
-                      top: 2,
+                      top: laneTop,
                       height: TRACK_HEIGHT - 4,
                       background: isSelected
                         ? 'linear-gradient(135deg, #79443e 0%, #883a31 100%)'
@@ -768,8 +838,17 @@ export default function Timeline() {
                       boxShadow: '0 2px 8px rgba(3, 3, 3, 0.3)',
                       color: 'black'
                     }}
-                    title={`${audio.name ?? 'Audio'} — ${audioDur.toFixed(1)}s — drag to reposition`}
-                    onMouseDown={e => handleAudioMouseDown(e, audio.id, audio.x ?? 0)}
+                    title={`${audio.name ?? 'Audio'} — ${audioDur.toFixed(1)}s — drag to move · Shift+click to change lane`}
+                    onMouseDown={e => {
+                      if (e.shiftKey) {
+                        e.stopPropagation()
+                        const cur = audioLaneOf(audio.id)
+                        updateElement(audio.id, { lane: (cur + 1) % (maxLane + 2) })
+                        setSelectedAudioId(audio.id)
+                        return
+                      }
+                      handleAudioMouseDown(e, audio.id, audio.x ?? 0)
+                    }}
                     onContextMenu={e => {
                       e.preventDefault(); e.stopPropagation()
                       const barRect = e.currentTarget.getBoundingClientRect()
@@ -830,7 +909,6 @@ export default function Timeline() {
                       title="Drag to trim end"
                     />
                   </div>
-                </div>
               )
             })}
           </div>
@@ -1058,10 +1136,13 @@ function AudioWaveformView({ url, startTime, clipDuration, speed, clipWidthPx, t
   )
 }
 
+// Readable duration label: "0.5s", "1s", "59.5s", "1m", "1m30s"
 function fmtTime(s: number) {
-  const m   = Math.floor(s / 60)
-  const sec = (s % 60).toFixed(1).padStart(4, '0')
-  return `${m}:${sec}`
+  const fmtNum = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1))
+  if (s < 60) return `${fmtNum(Math.round(s * 10) / 10)}s`
+  const m = Math.floor(s / 60)
+  const rem = Math.round((s - m * 60) * 10) / 10
+  return rem < 0.05 ? `${m}m` : `${m}m${fmtNum(rem)}s`
 }
 
 // Adaptive time ruler rendered inside each scene block
