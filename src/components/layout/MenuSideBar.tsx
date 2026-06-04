@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Type, Square, ArrowRight, Code2, Table2, Layers, Shuffle, ImagePlus, BarChart3, Music,
-  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointerBan, SquareDashedMousePointer, SquarePlay
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointerBan, SquareDashedMousePointer, SquarePlay, Sigma
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { useHistoryStore } from '../../store/historyStore'
@@ -23,6 +23,7 @@ const TOOLS: ToolItem[] = [
   { icon: <Square size={15} />, label: 'Shapes', tool: 'shape-rect', panel: 'shapes' },
   { icon: <ArrowRight size={15} />, label: 'Arrow', tool: 'arrow', panel: 'arrows' },
   { icon: <Code2 size={15} />, label: 'Code', tool: 'code', panel: 'code' },
+  { icon: <Sigma size={15} />, label: 'LaTeX', panel: 'latex' },
   { icon: <Table2 size={15} />, label: 'Table', tool: 'table', panel: 'table' },
   { icon: <BarChart3 size={15} />, label: 'Charts', tool: 'chart', panel: 'charts' },
   { icon: <Shapes size={15} />, label: 'Icons', panel: 'icons' },

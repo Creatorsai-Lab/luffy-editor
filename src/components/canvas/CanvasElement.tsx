@@ -13,6 +13,7 @@ import ChartKonva  from './elements/ChartKonva'
 import VideoKonva  from './elements/VideoKonva'
 import AudioKonva  from './elements/AudioKonva'
 import IconKonva   from './elements/IconKonva'
+import LatexKonva  from './elements/LatexKonva'
 
 interface Props {
   element:    EditorElement
@@ -118,6 +119,7 @@ export default function CanvasElement({ element, animProps, isSelected, onSelect
     case 'chart':  return <ChartKonva  el={element} konvaProps={props} animProgress={animProps?.chartAnimProgress ?? 1} />
     case 'video':  return <VideoKonva  el={element} konvaProps={props} />
     case 'icon':   return <IconKonva   el={element as import('../../types/editor').IconElement} konvaProps={props} textProgress={animProps?.textProgress ?? 1} wipeProgress={wipeProgress} wipeDir={wipeDir} />
+    case 'latex':  return <LatexKonva  el={element as import('../../types/editor').LatexElement} konvaProps={props} />
     case 'audio':  return null
     default:       return null
   }

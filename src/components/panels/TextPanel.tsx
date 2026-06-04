@@ -216,6 +216,67 @@ export default function TextPanel() {
               </Row>
             </div>
 
+            {/* ── Background ────────────────────────────────────────── */}
+            <div className="border-t border-editor-border px-3 py-2 flex flex-col gap-0.5">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-editor-text">Background</span>
+                <button
+                  onClick={() => upd({ bgEnabled: !el.bgEnabled })}
+                  className={cn(
+                    'px-2 py-0.5 rounded text-[11px] transition-colors',
+                    el.bgEnabled
+                      ? 'bg-editor-accent text-white'
+                      : 'bg-editor-elevated text-[#f2f2f2] border border-editor-border hover:text-editor-text'
+                  )}
+                >
+                  {el.bgEnabled ? 'On' : 'Off'}
+                </button>
+              </div>
+
+              {el.bgEnabled && (
+                <>
+                  <Row label="Color">
+                    <ColorInput value={el.bgColor || '#000000'} onChange={v => upd({ bgColor: v })} />
+                  </Row>
+                  <Row label="Transparency">
+                    <Slider value={el.bgOpacity ?? 1} min={0} max={1} step={0.01}
+                      onChange={v => upd({ bgOpacity: v })} display={`${Math.round((el.bgOpacity ?? 1) * 100)}%`} />
+                  </Row>
+                  <Row label="Padding X">
+                    <Slider value={el.bgPadX ?? 16} min={0} max={120} step={1}
+                      onChange={v => upd({ bgPadX: v })} display={`${el.bgPadX ?? 16}px`} />
+                  </Row>
+                  <Row label="Padding Y">
+                    <Slider value={el.bgPadY ?? 10} min={0} max={120} step={1}
+                      onChange={v => upd({ bgPadY: v })} display={`${el.bgPadY ?? 10}px`} />
+                  </Row>
+                  <Row label="Corner Radius">
+                    <Slider value={el.bgRadius ?? 0} min={0} max={100} step={1}
+                      onChange={v => upd({ bgRadius: v })} display={`${el.bgRadius ?? 0}px`} />
+                  </Row>
+                  <Row label="Shadow Color">
+                    <ColorInput value={el.bgShadowColor || '#000000'} onChange={v => upd({ bgShadowColor: v })} />
+                  </Row>
+                  <Row label="Shadow Blur">
+                    <Slider value={el.bgShadowBlur ?? 0} min={0} max={60} step={1}
+                      onChange={v => upd({ bgShadowBlur: v })} display={`${el.bgShadowBlur ?? 0}`} />
+                  </Row>
+                  <Row label="Shadow Offset">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <span className="label block">X</span>
+                        <NumberInput value={el.bgShadowOffsetX ?? 0} min={-50} max={50} onChange={v => upd({ bgShadowOffsetX: v })} />
+                      </div>
+                      <div className="flex-1">
+                        <span className="label block">Y</span>
+                        <NumberInput value={el.bgShadowOffsetY ?? 0} min={-50} max={50} onChange={v => upd({ bgShadowOffsetY: v })} />
+                      </div>
+                    </div>
+                  </Row>
+                </>
+              )}
+            </div>
+
             {/* ── Effects ───────────────────────────────────────────── */}
             <div className="border-t border-editor-border px-3 py-2">
               <span className="text-xs font-medium text-editor-text block mb-2">Effects</span>

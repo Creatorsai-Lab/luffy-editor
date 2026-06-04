@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Text, Group, Shape } from 'react-konva'
+import { Text, Group, Shape, Rect } from 'react-konva'
 import type Konva from 'konva'
 import type { TextElement, SlideDir } from '../../../types/editor'
 import { loadFont } from '../../../utils/fontLoader'
@@ -63,6 +63,13 @@ function resolveEffectProps(el: TextElement) {
 export default function TextKonva({ el, konvaProps, textProgress, textMode, wipeProgress = 1, wipeDir }: Props) {
   const nodeRef = useRef<Konva.Text | null>(null)
   const [offscreen, setOffscreen] = useState<HTMLCanvasElement | null>(null)
+  const [textH, setTextH] = useState(el.height)
+
+  // Measure rendered text height so the background box hugs the text vertically.
+  useEffect(() => {
+    const h = nodeRef.current?.height()
+    if (h && Math.abs(h - textH) > 0.5) setTextH(h)
+  })
 
   useEffect(() => {
     const weight = el.fontWeight === 'bold' ? '700' : el.fontWeight === 'semibold' ? '600' : el.fontWeight === 'medium' ? '500' : '400'
@@ -112,6 +119,29 @@ export default function TextKonva({ el, konvaProps, textProgress, textMode, wipe
     ...effectProps,
   }
 
+  // Text background box — sits behind the text, hugs it with padding.
+  const bgPadX = el.bgPadX ?? 16
+  const bgPadY = el.bgPadY ?? 10
+  const bgShadowOn = (el.bgShadowBlur ?? 0) > 0 || !!(el.bgShadowOffsetX || el.bgShadowOffsetY)
+  const bgNode = el.bgEnabled ? (
+    <Rect
+      x={-bgPadX}
+      y={-bgPadY}
+      width={el.width + bgPadX * 2}
+      height={textH + bgPadY * 2}
+      fill={el.bgColor || '#000000'}
+      opacity={el.bgOpacity ?? 1}
+      cornerRadius={el.bgRadius ?? 0}
+      shadowColor={el.bgShadowColor || '#000000'}
+      shadowBlur={el.bgShadowBlur ?? 0}
+      shadowOffsetX={el.bgShadowOffsetX ?? 0}
+      shadowOffsetY={el.bgShadowOffsetY ?? 0}
+      shadowEnabled={bgShadowOn}
+      listening={false}
+      perfectDrawEnabled={false}
+    />
+  ) : null
+
   if (el.perspectivePts && offscreen) {
     return (
       <Shape
@@ -142,6 +172,7 @@ export default function TextKonva({ el, konvaProps, textProgress, textMode, wipe
         clipWidth={Math.max(0, clipW)}
         clipHeight={Math.max(0, clipH)}
       >
+        {bgNode}
         <Text ref={nodeRef} {...textStyleProps} text={content} />
       </Group>
     )
@@ -157,6 +188,17 @@ export default function TextKonva({ el, konvaProps, textProgress, textMode, wipe
         clipWidth={clipW}
         clipHeight={el.height + el.fontSize * 2}
       >
+        {bgNode}
+        <Text ref={nodeRef} {...textStyleProps} text={content} />
+      </Group>
+    )
+  }
+
+  // Normal: wrap in a Group so the background box can sit behind the text.
+  if (bgNode) {
+    return (
+      <Group {...(konvaProps as Record<string, unknown>)}>
+        {bgNode}
         <Text ref={nodeRef} {...textStyleProps} text={content} />
       </Group>
     )

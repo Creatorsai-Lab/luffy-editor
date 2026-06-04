@@ -17,6 +17,7 @@ import IconEditPanel from '../panels/IconEditPanel'
 import PerspectivePanel from '../panels/PerspectivePanel'
 import VideoUploadPanel from '../panels/VideoUploadPanel'
 import VideoPanel from '../panels/VideoPanel'
+import LatexPanel from '../panels/LatexPanel'
 
 // When an element is selected and the sidebar panel matches the element's "home" panel,
 // show the element's property panel instead of the generic tool panel.
@@ -31,6 +32,7 @@ const ELEMENT_PANEL: Record<string, string> = {
   video: 'video',
   icon:  'icons',
   audio: 'audio',
+  latex: 'latex',
 }
 
 export default function OptionsSidebar() {
@@ -58,6 +60,7 @@ export default function OptionsSidebar() {
         if (firstEl.type === 'image')  return <ImagePanel />
         if (firstEl.type === 'video')  return <VideoPanel />
         if (firstEl.type === 'icon')   return <IconEditPanel />
+        if (firstEl.type === 'latex')  return <LatexPanel />
         if (firstEl.type === 'audio')  return <AudioPropertiesPanel element={firstEl} />
       }
     }
@@ -73,6 +76,7 @@ export default function OptionsSidebar() {
       case 'video':      return <VideoUploadPanel />
       case 'audio':      return <AudioPanel />
       case 'icons':      return <IconCollectionPanel />
+      case 'latex':      return <LatexPanel />
       case 'background': return <BackgroundPanel />
       case 'layers':     return <LayersPanel />
       case 'transitions':  return <TransitionPanel />

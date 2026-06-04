@@ -1,6 +1,6 @@
 // ─── Element subtypes ────────────────────────────────────────────────────────
 
-export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table' | 'chart' | 'video' | 'audio' | 'icon'
+export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table' | 'chart' | 'video' | 'audio' | 'icon' | 'latex'
 export type ShapeType     = 'rect' | 'circle' | 'triangle' | 'star' | 'pentagon' | 'hexagon' | 'octagon' | 'diamond' | 'oval' | 'speechBubble' | 'roundedSpeech' | 'cone' | 'cube' | 'rect-hand' | 'circle-hand' | 'square-hand'
 export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'wipeIn' | 'wipeOut' | 'typewriter' | 'drawPath' | 'spin' | 'pulse' | 'bounceLoop' | 'rotateLoop' |
   // Text-specific animations
@@ -19,8 +19,8 @@ export type SlideDir      = 'left' | 'right' | 'up' | 'down'
 export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'push' | 'morph'
 export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated'
 export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
-export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'shape-pentagon' | 'shape-hexagon' | 'shape-octagon' | 'shape-diamond' | 'shape-oval' | 'shape-speechBubble' | 'shape-roundedSpeech' | 'shape-cone' | 'shape-cube' | 'shape-rect-hand' | 'shape-circle-hand' | 'shape-square-hand' | 'arrow' | 'code' | 'table' | 'image' | 'chart' | 'video'
-export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'video' | 'icons' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | 'perspective' | null
+export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'shape-pentagon' | 'shape-hexagon' | 'shape-octagon' | 'shape-diamond' | 'shape-oval' | 'shape-speechBubble' | 'shape-roundedSpeech' | 'shape-cone' | 'shape-cube' | 'shape-rect-hand' | 'shape-circle-hand' | 'shape-square-hand' | 'arrow' | 'code' | 'table' | 'image' | 'chart' | 'video' | 'latex'
+export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'video' | 'icons' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | 'perspective' | 'latex' | null
 
 // ─── Animation ───────────────────────────────────────────────────────────────
 
@@ -80,6 +80,17 @@ export interface TextElement extends BaseElement {
   stretchX: number
   stretchY: number
   effects?: TextEffectType[]  // New: text effects
+  // Text background box
+  bgEnabled?: boolean
+  bgColor?: string
+  bgOpacity?: number          // 0-1
+  bgPadX?: number             // horizontal padding px
+  bgPadY?: number             // vertical padding px
+  bgRadius?: number           // corner radius px
+  bgShadowColor?: string
+  bgShadowBlur?: number
+  bgShadowOffsetX?: number
+  bgShadowOffsetY?: number
 }
 
 export interface ShapeElement extends BaseElement {
@@ -219,6 +230,14 @@ export interface IconElement extends BaseElement {
   strokeWidth: number
 }
 
+export interface LatexElement extends BaseElement {
+  type: 'latex'
+  latex: string       // raw LaTeX source
+  color: string
+  fontSize: number    // scale factor for the rendered equation
+  fontFamily?: string // applied to \text{} runs where possible
+}
+
 export interface AudioMarker {
   id: string
   offset: number  // seconds from clip start (audio.x)
@@ -239,7 +258,7 @@ export interface AudioElement extends BaseElement {
   markers?: AudioMarker[]
 }
 
-export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElement | ImageElement | TableElement | ChartElement | VideoElement | AudioElement | IconElement
+export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElement | ImageElement | TableElement | ChartElement | VideoElement | AudioElement | IconElement | LatexElement
 
 // ─── Background ───────────────────────────────────────────────────────────────
 

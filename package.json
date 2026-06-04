@@ -45,6 +45,7 @@
     "immer": "^10.1.1",
     "konva": "^9.3.6",
     "lucide-react": "^0.439.0",
+    "mathjax-full": "^3.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-konva": "^18.2.10",
@@ -74,12 +75,17 @@
     "directories": {
       "buildResources": "build"
     },
-    "files": ["out/**"],
+    "files": [
+      "out/**"
+    ],
     "extraResources": [
       {
         "from": "node_modules/@ffmpeg/core/dist/esm",
         "to": "ffmpeg-core",
-        "filter": ["ffmpeg-core.js", "ffmpeg-core.wasm"]
+        "filter": [
+          "ffmpeg-core.js",
+          "ffmpeg-core.wasm"
+        ]
       }
     ],
     "win": {
@@ -106,4 +112,4 @@
       }
     ]
   }
-  }
+}

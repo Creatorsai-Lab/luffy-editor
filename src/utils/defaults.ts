@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid'
 import type {
   Project, Scene, Background, TextElement, ShapeElement,
   ArrowElement, CodeElement, ImageElement, TableElement, ChartElement, VideoElement, AudioElement,
-  IconElement, ElementAnimation, SceneTransition, ShapeType
+  IconElement, LatexElement, ElementAnimation, SceneTransition, ShapeType
 } from '../types/editor'
 
 export const DEFAULT_BG: Background = { type: 'solid', color: '#fffaf7' }
@@ -50,6 +50,18 @@ export function makeText(x: number, y: number): TextElement {
     textStrokeWidth: 0,
     stretchX: 1,
     stretchY: 1,
+  }
+}
+
+export function makeLatex(x: number, y: number, latex: string, width: number, height: number): LatexElement {
+  return {
+    id: uuid(), type: 'latex', name: 'LaTeX',
+    x, y, width, height,
+    rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
+    animations: [],
+    latex,
+    color: '#222222',
+    fontSize: 48,
   }
 }
 
