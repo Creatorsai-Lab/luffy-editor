@@ -48,7 +48,7 @@ export function renderTransition(opts: TransitionRenderOptions): void {
       break
 
     case 'morph':
-      renderMorphTransition(ctx, width, height, progress, fromCanvas, toCanvas)
+      renderMorphTransition(ctx, width, height, progress, direction ?? 'right', fromCanvas, toCanvas)
       break
 
     default:
@@ -87,17 +87,17 @@ function renderSlideTransition(
   from: HTMLCanvasElement,
   to: HTMLCanvasElement
 ): void {
-  // Old scene stays in place, new scene slides in
+  // Old scene stays in place, new scene slides in from `dir` edge.
   ctx.drawImage(from, 0, 0, w, h)
-  
+
   let x = 0, y = 0
   switch (dir) {
-    case 'left':  x = w * (1 - t); break
-    case 'right': x = -w * (1 - t); break
-    case 'up':    y = h * (1 - t); break
-    case 'down':  y = -h * (1 - t); break
+    case 'right': x = w * (1 - t);  break  // enters from right
+    case 'left':  x = -w * (1 - t); break  // enters from left
+    case 'down':  y = h * (1 - t);  break  // enters from bottom
+    case 'up':    y = -h * (1 - t); break  // enters from top
   }
-  
+
   ctx.drawImage(to, x, y, w, h)
 }
 
@@ -110,28 +110,21 @@ function renderPushTransition(
   from: HTMLCanvasElement,
   to: HTMLCanvasElement
 ): void {
-  // Both scenes move together
+  // Both scenes move together. `dir` = edge the NEW scene enters from;
+  // the old scene exits toward the opposite edge.
   let fromX = 0, fromY = 0, toX = 0, toY = 0
-  
+
   switch (dir) {
-    case 'left':
-      fromX = -w * t
-      toX = w * (1 - t)
-      break
-    case 'right':
-      fromX = w * t
-      toX = -w * (1 - t)
-      break
-    case 'up':
-      fromY = -h * t
-      toY = h * (1 - t)
-      break
-    case 'down':
-      fromY = h * t
-      toY = -h * (1 - t)
-      break
+    case 'right':  // new in from right, old out to left
+      toX = w * (1 - t);  fromX = -w * t; break
+    case 'left':   // new in from left, old out to right
+      toX = -w * (1 - t); fromX = w * t;  break
+    case 'down':   // new in from bottom, old out to top
+      toY = h * (1 - t);  fromY = -h * t; break
+    case 'up':     // new in from top, old out to bottom
+      toY = -h * (1 - t); fromY = h * t;  break
   }
-  
+
   ctx.drawImage(from, fromX, fromY, w, h)
   ctx.drawImage(to, toX, toY, w, h)
 }
@@ -210,44 +203,42 @@ function renderMorphTransition(
   w: number,
   h: number,
   t: number,
+  dir: SlideDir,
   from: HTMLCanvasElement,
   to: HTMLCanvasElement
 ): void {
-  // Pixelate effect with cross-fade
-  const pixelSize = Math.max(1, Math.floor(20 * (1 - Math.abs(t - 0.5) * 2)))
-  
-  // Draw old scene
-  ctx.globalAlpha = 1 - t
-  drawPixelated(ctx, from, w, h, pixelSize)
-  
-  // Draw new scene
-  ctx.globalAlpha = t
-  drawPixelated(ctx, to, w, h, pixelSize)
-  
-  ctx.globalAlpha = 1
-}
+  // PowerPoint-style "Morph" approximation: the old scene scales up slightly and
+  // drifts in `dir` while fading out; the new scene starts a touch larger,
+  // settles to 1×, and drifts in from the opposite side while fading in.
+  // Eased so the motion accelerates then settles, reading as a smooth blend.
+  const e = easeInOutCubic(t)
+  const drift = Math.min(w, h) * 0.06   // max pan distance
 
-function drawPixelated(
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  w: number,
-  h: number,
-  pixelSize: number
-): void {
-  const tempCanvas = document.createElement('canvas')
-  const tempCtx = tempCanvas.getContext('2d')!
-  
-  const cols = Math.ceil(w / pixelSize)
-  const rows = Math.ceil(h / pixelSize)
-  
-  tempCanvas.width = cols
-  tempCanvas.height = rows
-  
-  tempCtx.drawImage(canvas, 0, 0, cols, rows)
-  
-  ctx.imageSmoothingEnabled = false
-  ctx.drawImage(tempCanvas, 0, 0, cols, rows, 0, 0, w, h)
-  ctx.imageSmoothingEnabled = true
+  // Direction unit vector (where the new scene drifts TOWARD = `dir` edge feel)
+  let dx = 0, dy = 0
+  switch (dir) {
+    case 'right': dx = 1;  break
+    case 'left':  dx = -1; break
+    case 'down':  dy = 1;  break
+    case 'up':    dy = -1; break
+  }
+
+  const drawScaledPanned = (img: HTMLCanvasElement, scale: number, panX: number, panY: number, alpha: number) => {
+    ctx.globalAlpha = alpha
+    ctx.save()
+    ctx.translate(w / 2 + panX, h / 2 + panY)
+    ctx.scale(scale, scale)
+    ctx.translate(-w / 2, -h / 2)
+    ctx.drawImage(img, 0, 0, w, h)
+    ctx.restore()
+  }
+
+  // Old: 1 → 1.08, pans toward dir, fades out
+  drawScaledPanned(from, 1 + e * 0.08,  dx * drift * e,        dy * drift * e,        1 - e)
+  // New: 1.08 → 1, pans in from opposite side, fades in
+  drawScaledPanned(to,   1.08 - e * 0.08, -dx * drift * (1 - e), -dy * drift * (1 - e), e)
+
+  ctx.globalAlpha = 1
 }
 
 /**

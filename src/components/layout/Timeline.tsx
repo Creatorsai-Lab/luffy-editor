@@ -8,6 +8,7 @@ import type { WaveformData } from '../../utils/waveform'
 import Tooltip from '../ui/Tooltip'
 import ContextMenu from '../ui/ContextMenu'
 import type { AudioElement } from '../../types/editor'
+import { TRANS_COLOR } from '../../utils/transitions'
 
 const RULER_HEIGHT = 22
 const SCENE_HEIGHT = 50
@@ -15,11 +16,6 @@ const TRACK_HEIGHT = 32
 const PX_PER_SEC_BASE = 60
 
 const SCENE_COLORS = ['#3b82f6', '#0ea5e9', '#6366f1', '#4169e1']
-
-const TRANS_COLORS: Record<string, string> = {
-  fade: '#6366f1', slide: '#06b6d4', push: '#0891b2',
-  zoom: '#22c55e', wipe: '#f59e0b', morph: '#ec4899'
-}
 
 const SPEED_OPTIONS = [
   { label: '0.25×', value: 0.25 },
@@ -44,6 +40,7 @@ export default function Timeline() {
     setTimelineZoom, setSnapEnabled,
     updateElement, removeElement, addElementToScene,
     addAudioMarker, removeAudioMarker,
+    setActivePanel,
   } = useEditorStore()
 
   const [editDurId, setEditDurId] = useState<string | null>(null)
@@ -712,7 +709,7 @@ export default function Timeline() {
             if (index === 0) return null
             if (!sc.transition || sc.transition.type === 'none') return null
             const startPx = sceneStarts[sc.id] * PX_PER_SEC
-            const color   = TRANS_COLORS[sc.transition.type] ?? '#6366f1'
+            const color   = TRANS_COLOR[sc.transition.type] ?? '#6366f1'
             const BLOCK_W = 20
             const BLOCK_H = 20
             const BLOCK_TOP = RULER_HEIGHT + 2 + Math.round(((SCENE_HEIGHT - 4) - BLOCK_H) / 2)
@@ -886,6 +883,14 @@ export default function Timeline() {
         x={contextMenu?.x ?? 0}
         y={contextMenu?.y ?? 0}
         items={[
+          {
+            label: 'Edit Transition',
+            icon: <Shuffle size={14} />,
+            onClick: () => {
+              if (contextMenu?.sceneId) { setCurrentScene(contextMenu.sceneId); setActivePanel('transitions') }
+              setContextMenu(null)
+            }
+          },
           {
             label: 'Duplicate',
             icon: <Copy size={14} />,

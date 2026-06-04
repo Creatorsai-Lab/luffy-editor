@@ -68,6 +68,8 @@ export function makeLatex(x: number, y: number, latex: string, width: number, he
 export function makeShape(type: ShapeType, x: number, y: number): ShapeElement {
   const is3D = type === 'cube' || type === 'cone'
   const size = type === 'cube' ? 300 : 280
+  // Hand-drawn whiteboard box: transparent fill + visible dark stroke
+  const isSketch = type === 'rect-sketch'
   return {
     id: uuid(), type: 'shape', name: type.charAt(0).toUpperCase() + type.slice(1),
     x, y,
@@ -76,7 +78,10 @@ export function makeShape(type: ShapeType, x: number, y: number): ShapeElement {
     rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
     animations: [],
     shapeType: type,
-    fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, cornerRadius: 8,
+    fill: isSketch ? 'transparent' : '#6366f1',
+    stroke: isSketch ? '#202020' : 'transparent',
+    strokeWidth: isSketch ? 3 : 0,
+    cornerRadius: 8,
     ...(is3D ? { depth: 55, faceColor: '' } : {}),
   }
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Rect, Circle, RegularPolygon, Star, Line, Ellipse, Shape, Group } from 'react-konva'
 import type Konva from 'konva'
 import type { ShapeElement, SlideDir } from '../../../types/editor'
-import { drawPerspectiveWarp, drawShapeToCtx } from '../../../engine/perspectiveUtils'
+import { drawPerspectiveWarp, drawShapeToCtx, heartPath, roughRoundRectPath, type PathCtx } from '../../../engine/perspectiveUtils'
 
 // ─── Color helpers ────────────────────────────────────────────────────────────
 
@@ -379,6 +379,32 @@ export default function ShapeKonva({ el, konvaProps, wipeProgress = 1, wipeDir, 
         />
       )
     }
+
+    case 'heart':
+      return wipe(
+        <Shape
+          {...shared}
+          width={w}
+          height={h}
+          sceneFunc={(ctx: Konva.Context, shape: Konva.Shape) => {
+            heartPath(ctx as unknown as PathCtx, w, h)
+            ctx.fillStrokeShape(shape)
+          }}
+        />
+      )
+
+    case 'rect-sketch':
+      return wipe(
+        <Shape
+          {...shared}
+          width={w}
+          height={h}
+          sceneFunc={(ctx: Konva.Context, shape: Konva.Shape) => {
+            roughRoundRectPath(ctx as unknown as PathCtx, w, h)
+            ctx.fillStrokeShape(shape)
+          }}
+        />
+      )
 
     default:
       return null

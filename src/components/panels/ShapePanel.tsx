@@ -1,4 +1,4 @@
-import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, MessageCircle, MessageSquare, Cone, Box, Plus, Trash2 } from 'lucide-react'
+import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, MessageCircle, MessageSquare, Cone, Box, Plus, Trash2, Heart, NotebookPen } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ShapeElement, ShapeType, ActiveTool, AnimationType, EasingType, SlideDir, ElementAnimation } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
@@ -18,6 +18,8 @@ const SHAPES: { icon: React.ReactNode; type: ShapeType; label: string }[] = [
   { icon: <MessageCircle size={14} />, type: 'roundedSpeech', label: 'Casual Speech'},
   { icon: <Cone size={14} />,          type: 'cone',          label: '3D Cone'      },
   { icon: <Box size={14} />,           type: 'cube',          label: '3D Cube'      },
+  { icon: <Heart size={14} />,         type: 'heart',         label: 'Heart'        },
+  { icon: <NotebookPen size={14} />,    type: 'rect-sketch',   label: 'Sketch Box'   },
 ]
 
 const SHAPES_3D = new Set<ShapeType>(['cone', 'cube'])

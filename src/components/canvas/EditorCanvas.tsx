@@ -397,7 +397,9 @@ export default function EditorCanvas() {
       case 'shape-cube':
       case 'shape-rect-hand':
       case 'shape-circle-hand':
-      case 'shape-square-hand': {
+      case 'shape-square-hand':
+      case 'shape-heart':
+      case 'shape-rect-sketch': {
         const t = activeTool.replace('shape-', '') as ShapeType
         addElement(makeShape(t, x - 60, y - 60))
         setActiveTool('select')
@@ -618,6 +620,9 @@ export default function EditorCanvas() {
       {transOverlay && (() => {
         const p = Math.min(1, (playhead - transOverlay.transitionStart) / transOverlay.duration)
         const dir = transOverlay.direction
+        // The overlay is the OLD (FROM) scene sitting on top; the NEW scene renders
+        // beneath. So we animate the OLD scene's EXIT. `dir` = edge the NEW scene
+        // enters from, therefore the OLD scene leaves toward the OPPOSITE edge.
         let overlayStyle: React.CSSProperties = {}
         switch (transOverlay.type) {
           case 'fade':
@@ -625,10 +630,12 @@ export default function EditorCanvas() {
             break
           case 'slide':
           case 'push':
-            if (dir === 'right') overlayStyle = { transform: `translateX(${p * 100}%)` }
-            else if (dir === 'left') overlayStyle = { transform: `translateX(-${p * 100}%)` }
-            else if (dir === 'down') overlayStyle = { transform: `translateY(${p * 100}%)` }
-            else overlayStyle = { transform: `translateY(-${p * 100}%)` }
+            // old exits opposite to where the new enters
+            if (dir === 'right') overlayStyle = { transform: `translateX(-${p * 100}%)` }
+            else if (dir === 'left') overlayStyle = { transform: `translateX(${p * 100}%)` }
+            else if (dir === 'down') overlayStyle = { transform: `translateY(-${p * 100}%)` }
+            else if (dir === 'up') overlayStyle = { transform: `translateY(${p * 100}%)` }
+            else overlayStyle = { transform: `translateX(-${p * 100}%)` }
             break
           case 'zoom':
             overlayStyle = { opacity: 1 - p, transform: `scale(${1 + p * 0.5})`, transformOrigin: 'center center' }
@@ -639,9 +646,18 @@ export default function EditorCanvas() {
             else if (dir === 'down') overlayStyle = { clipPath: `inset(${p * 100}% 0 0 0)` }
             else overlayStyle = { clipPath: `inset(0 0 ${p * 100}% 0)` }
             break
-          case 'morph':
-            overlayStyle = { opacity: 1 - p, transform: `scale(${1 + p * 0.15})`, transformOrigin: 'center center' }
+          case 'morph': {
+            // old scales up + drifts toward `dir` + fades out (matches export renderer)
+            const driftPct = 6 * p   // % of size
+            const tx = dir === 'right' ? driftPct : dir === 'left' ? -driftPct : 0
+            const ty = dir === 'down' ? driftPct : dir === 'up' ? -driftPct : 0
+            overlayStyle = {
+              opacity: 1 - p,
+              transform: `translate(${tx}%, ${ty}%) scale(${1 + p * 0.08})`,
+              transformOrigin: 'center center',
+            }
             break
+          }
         }
         return (
           <img

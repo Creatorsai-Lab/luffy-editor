@@ -113,6 +113,69 @@ function addWave(x: number, y: number, seed = 0): [number, number] {
   return [x + wave * (0.5 + (seed % 10) * 0.05), y + wave * (0.3 + (seed % 7) * 0.05)]
 }
 
+// ── Shared shape path builders ──────────────────────────────────────────────
+// Minimal context surface satisfied by both CanvasRenderingContext2D and
+// Konva.Context, so the same geometry is used in the editor AND in export.
+export interface PathCtx {
+  beginPath(): void
+  moveTo(x: number, y: number): void
+  lineTo(x: number, y: number): void
+  quadraticCurveTo(cx: number, cy: number, x: number, y: number): void
+  bezierCurveTo(c1x: number, c1y: number, c2x: number, c2y: number, x: number, y: number): void
+  closePath(): void
+}
+
+/** A heart that fills the w×h box. */
+export function heartPath(ctx: PathCtx, w: number, h: number) {
+  ctx.beginPath()
+  ctx.moveTo(w / 2, h * 0.30)
+  ctx.bezierCurveTo(w / 2, h * 0.08, 0,      h * 0.12, 0,      h * 0.38)
+  ctx.bezierCurveTo(0,      h * 0.66, w * 0.30, h * 0.82, w / 2, h)
+  ctx.bezierCurveTo(w * 0.70, h * 0.82, w,    h * 0.66, w,      h * 0.38)
+  ctx.bezierCurveTo(w,      h * 0.12, w / 2, h * 0.08, w / 2, h * 0.30)
+  ctx.closePath()
+}
+
+// Tiny seeded PRNG (mulberry32) — deterministic so the rough shape never
+// jitters between renders, but each seed gives a different organic outline.
+function seededRng(seed: number): () => number {
+  let t = seed + 0x6d2b79f5
+  return () => {
+    t = Math.imul(t ^ (t >>> 15), 1 | t)
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+/**
+ * Whiteboard-style hand-drawn rounded rectangle. Corners stay exactly on the
+ * box (clean rounded corners — no overshoot). Each of the four straight sides
+ * bows inward by its OWN amount (seeded, deterministic), so the sides differ
+ * instead of being a uniform bow.
+ */
+export function roughRoundRectPath(ctx: PathCtx, w: number, h: number) {
+  const base = Math.min(w, h) * 0.07       // small corner radius
+  const a = Math.min(w, h) * 0.04          // max inward bow
+  const rnd = seededRng(1337)
+  const rad = () => base * (0.5 + rnd())    // per-corner radius in [0.5, 1.5]·base
+  const bow = () => a * (0.35 + rnd() * 0.65)  // per-side bow in [0.35a, a]
+
+  const rTL = rad(), rTR = rad(), rBR = rad(), rBL = rad()
+  const bTop = bow(), bRight = bow(), bBottom = bow(), bLeft = bow()
+
+  ctx.beginPath()
+  ctx.moveTo(rTL, 0)
+  ctx.quadraticCurveTo(w / 2, bTop,        w - rTR, 0)    // top edge bows down
+  ctx.quadraticCurveTo(w, 0,               w, rTR)         // TR corner
+  ctx.quadraticCurveTo(w - bRight, h / 2,  w, h - rBR)     // right edge bows in
+  ctx.quadraticCurveTo(w, h,               w - rBR, h)     // BR corner
+  ctx.quadraticCurveTo(w / 2, h - bBottom, rBL, h)         // bottom edge bows up
+  ctx.quadraticCurveTo(0, h,               0, h - rBL)     // BL corner
+  ctx.quadraticCurveTo(bLeft, h / 2,       0, rTL)         // left edge bows in
+  ctx.quadraticCurveTo(0, 0,               rTL, 0)         // TL corner
+  ctx.closePath()
+}
+
 export function drawShapeToCtx(el: ShapeElement, ctx: CanvasRenderingContext2D) {
   const w = el.width, h = el.height
   const r = Math.min(w, h) / 2
@@ -227,6 +290,12 @@ export function drawShapeToCtx(el: ShapeElement, ctx: CanvasRenderingContext2D) 
       ctx.beginPath(); ctx.moveTo(tl[0],tl[1]); ctx.lineTo(tr2[0],tr2[1]); ctx.lineTo(br2[0],br2[1]); ctx.lineTo(bl[0],bl[1])
       ctx.closePath(); fillStroke(); break
     }
+
+    case 'heart':
+      heartPath(ctx, w, h); fillStroke(); break
+
+    case 'rect-sketch':
+      roughRoundRectPath(ctx, w, h); fillStroke(); break
 
     case 'circle-hand': {
       ctx.beginPath()
