@@ -206,9 +206,12 @@ export default function Timeline() {
           isPlaying ? pause() : play()
           break
         case 'ArrowLeft':
+          // Element movement takes priority — only scrub when nothing is selected
+          if (useEditorStore.getState().selectedIds.length > 0) break
           if (!isPlaying) { e.preventDefault(); setPlayhead(Math.max(0, playhead - 1/30)) }
           break
         case 'ArrowRight':
+          if (useEditorStore.getState().selectedIds.length > 0) break
           if (!isPlaying) { e.preventDefault(); setPlayhead(Math.min(getTotalDuration(), playhead + 1/30)) }
           break
         case 'Home':
@@ -736,7 +739,7 @@ export default function Timeline() {
                     if (draggedSceneIndex !== null && draggedSceneIndex !== index) reorderScenes(draggedSceneIndex, index)
                     setDraggedSceneIndex(null); setDropTargetIndex(null)
                   }}
-                  onClick={e => { e.stopPropagation(); setCurrentScene(sc.id) }}
+                  onClick={e => { e.stopPropagation(); setCurrentScene(sc.id); setSelectedAudioId(null) }}
                   onContextMenu={e => {
                     e.preventDefault(); e.stopPropagation()
                     setContextMenu({ x: e.clientX, y: e.clientY, sceneId: sc.id })

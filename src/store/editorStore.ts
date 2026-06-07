@@ -194,10 +194,31 @@ export const useEditorStore = create<EditorState & EditorActions>()(
 
       removeScene: (id) => set(s => {
         if (!s.project || s.project.scenes.length <= 1) return
-        const idx = s.project.scenes.findIndex(sc => sc.id === id)
-        s.project.scenes.splice(idx, 1)
+        const scenes = s.project.scenes
+        const idx = scenes.findIndex(sc => sc.id === id)
+        if (idx < 0) return
+
+        // Preserve audio clips: move them to a neighbor scene so deleting a scene
+        // never silently drops audio that visually overlaps an adjacent scene.
+        const startOf = (i: number) => scenes.slice(0, i).reduce((a, sc) => a + sc.duration, 0)
+        const removed = scenes[idx]
+        const audios = removed.elements.filter(e => e.type === 'audio')
+        if (audios.length > 0) {
+          const targetIdx   = idx > 0 ? idx - 1 : idx + 1
+          const target      = scenes[targetIdx]
+          const removedStart = startOf(idx)
+          const targetStart  = startOf(targetIdx)
+          for (const a of audios) {
+            const audio = a as { x?: number }
+            const absStart = removedStart + (audio.x ?? 0)
+            audio.x = Math.max(0, absStart - targetStart)
+            target.elements.push(a)
+          }
+        }
+
+        scenes.splice(idx, 1)
         if (s.currentSceneId === id) {
-          s.currentSceneId = s.project.scenes[Math.max(0, idx - 1)].id
+          s.currentSceneId = scenes[Math.max(0, idx - 1)].id
         }
         s.isDirty = true
       }, false, 'removeScene'),
@@ -438,7 +459,8 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       },
 
       undo: () => {
-        const previousState = useHistoryStore.getState().undo()
+        const current = get().project
+        const previousState = useHistoryStore.getState().undo(current)
         if (previousState) {
           isUndoRedo = true
           set(s => { s.project = previousState; s.isDirty = true })
@@ -447,7 +469,8 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       },
 
       redo: () => {
-        const nextState = useHistoryStore.getState().redo()
+        const current = get().project
+        const nextState = useHistoryStore.getState().redo(current)
         if (nextState) {
           isUndoRedo = true
           set(s => { s.project = nextState; s.isDirty = true })
@@ -571,7 +594,8 @@ useEditorStore.subscribe(
       if (!project || !lastProject) return
       const currentStr = JSON.stringify(project)
       if (currentStr !== JSON.stringify(lastProject)) {
-        useHistoryStore.getState().pushHistory(project, 'Edit')
+        // Push the PRE-edit baseline so a single undo restores the previous state.
+        useHistoryStore.getState().pushHistory(lastProject, 'Edit')
         lastProject = JSON.parse(currentStr)
       }
     }, 500)

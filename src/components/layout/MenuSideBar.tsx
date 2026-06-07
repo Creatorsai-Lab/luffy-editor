@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Type, Square, ArrowRight, Code2, Table2, Layers, Shuffle, ImagePlus, BarChart3, Music,
-  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, MousePointerBan, SquareDashedMousePointer, SquarePlay, Sigma
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, PointerOff, SquareDashedMousePointer, SquarePlay, Sigma
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { useHistoryStore } from '../../store/historyStore'
@@ -173,7 +173,7 @@ export default function MenuSideBar() {
                   : 'text-[#f2f2f2] hover:bg-editor-hover'
             )}
           >
-            <MousePointerBan size={15} />
+            <PointerOff size={15} />
             <span className="text-[0.78rem] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">Free Cursor</span>
           </button>
           {TOOLS.map((item, i) => {

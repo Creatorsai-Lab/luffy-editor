@@ -18,10 +18,19 @@ interface HistoryState {
 
 interface HistoryActions {
   pushHistory: (project: Project, description: string) => void
-  undo: () => Project | null
-  redo: () => Project | null
+  undo: (current?: Project | null) => Project | null
+  redo: (current?: Project | null) => Project | null
   clearHistory: () => void
   setMaxHistory: (max: number) => void
+}
+
+function makeEntry(project: Project, description: string): HistoryEntry {
+  return {
+    id: `${Date.now()}-${Math.random()}`,
+    timestamp: Date.now(),
+    description,
+    state: JSON.parse(JSON.stringify(project)),
+  }
 }
 
 export const useHistoryStore = create<HistoryState & HistoryActions>((set, get) => ({
@@ -55,7 +64,9 @@ export const useHistoryStore = create<HistoryState & HistoryActions>((set, get) 
     }
   }),
 
-  undo: () => {
+  // `past` holds PRE-edit snapshots. Undo restores the last one and pushes the
+  // CURRENT live project onto `future` so redo can return to it.
+  undo: (current) => {
     const { past } = get()
     if (past.length === 0) return null
 
@@ -64,7 +75,7 @@ export const useHistoryStore = create<HistoryState & HistoryActions>((set, get) 
 
     set(state => ({
       past: newPast,
-      future: [entry, ...state.future],
+      future: current ? [makeEntry(current, 'Edit'), ...state.future] : state.future,
       canUndo: newPast.length > 0,
       canRedo: true
     }))
@@ -72,7 +83,7 @@ export const useHistoryStore = create<HistoryState & HistoryActions>((set, get) 
     return entry.state
   },
 
-  redo: () => {
+  redo: (current) => {
     const { future } = get()
     if (future.length === 0) return null
 
@@ -80,7 +91,7 @@ export const useHistoryStore = create<HistoryState & HistoryActions>((set, get) 
     const newFuture = future.slice(1)
 
     set(state => ({
-      past: [...state.past, entry],
+      past: current ? [...state.past, makeEntry(current, 'Edit')] : state.past,
       future: newFuture,
       canUndo: true,
       canRedo: newFuture.length > 0

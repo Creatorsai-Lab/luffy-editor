@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { Stage, Layer, Shape, Transformer, Circle, Path } from 'react-konva'
 import type Konva from 'konva'
-import { Clipboard, Copy, Trash2, ImageIcon, Play, Pause, Check, X } from 'lucide-react'
+import { Clipboard, Copy, Trash2, ImageIcon, Play, Pause, Check, X, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { getAnimatedProps } from '../../engine/animator'
 import { drawBackground } from '../../engine/backgroundRenderer'
@@ -196,6 +196,28 @@ export default function EditorCanvas() {
         }
       }
       
+      // Arrow keys: nudge selected element(s). Shift = larger step.
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        if (selectedIds.length === 0) return  // let the timeline scrub instead
+        e.preventDefault()
+        // Ctrl = fastest, Shift = fast, plain = normal (canvas is HD-sized so steps are large)
+        const step = (e.ctrlKey || e.metaKey) ? 100 : e.shiftKey ? 40 : 12
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0
+        const dy = e.key === 'ArrowUp'   ? -step : e.key === 'ArrowDown'  ? step : 0
+        const scene = project?.scenes.find(s => s.id === currentSceneId)
+        if (!scene) return
+        for (const id of selectedIds) {
+          const el = scene.elements.find(x => x.id === id)
+          if (!el || el.locked) continue
+          if (el.type === 'arrow') {
+            updateElement(id, { x1: el.x1 + dx, y1: el.y1 + dy, x2: el.x2 + dx, y2: el.y2 + dy })
+          } else {
+            updateElement(id, { x: el.x + dx, y: el.y + dy })
+          }
+        }
+        return
+      }
+
       if (e.key === 'Escape') {
         deselectAll()
         setActiveTool('select')
@@ -204,7 +226,7 @@ export default function EditorCanvas() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selectedIds, removeElement, deselectAll, setActiveTool, undo, redo])
+  }, [selectedIds, removeElement, deselectAll, setActiveTool, undo, redo, project, currentSceneId, updateElement])
 
   // Reset local video plays when preview starts (VideoKonva takes over)
   useEffect(() => {
@@ -785,6 +807,24 @@ export default function EditorCanvas() {
           ? currentScene?.elements.find(e => e.id === contextMenu.elementId) ?? null
           : null
         const isImage = ctxEl?.type === 'image'
+
+        // Center the right-clicked element on the canvas using its mid-point.
+        const center = (axis: 'h' | 'v') => {
+          if (ctxEl && project) {
+            if (ctxEl.type === 'arrow') {
+              const a = ctxEl as unknown as { x1: number; y1: number; x2: number; y2: number }
+              if (axis === 'h') { const dx = project.width / 2 - (a.x1 + a.x2) / 2; updateElement(ctxEl.id, { x1: a.x1 + dx, x2: a.x2 + dx } as Partial<EditorElement>) }
+              else              { const dy = project.height / 2 - (a.y1 + a.y2) / 2; updateElement(ctxEl.id, { y1: a.y1 + dy, y2: a.y2 + dy } as Partial<EditorElement>) }
+            } else {
+              const w = (ctxEl as { width?: number }).width ?? 0
+              const h = (ctxEl as { height?: number }).height ?? 0
+              if (axis === 'h') updateElement(ctxEl.id, { x: Math.round(project.width / 2 - w / 2) } as Partial<EditorElement>)
+              else              updateElement(ctxEl.id, { y: Math.round(project.height / 2 - h / 2) } as Partial<EditorElement>)
+            }
+          }
+          setContextMenu(null)
+        }
+
         return (
           <ContextMenu
             visible={contextMenu !== null}
@@ -812,6 +852,16 @@ export default function EditorCanvas() {
                   selectedIds.forEach(id => duplicateElement(id))
                   setContextMenu(null)
                 }
+              },
+              {
+                label: 'Center Horizontally',
+                icon: <AlignHorizontalJustifyCenter size={14} />,
+                onClick: () => center('h')
+              },
+              {
+                label: 'Center Vertically',
+                icon: <AlignVerticalJustifyCenter size={14} />,
+                onClick: () => center('v')
               },
               ...(isImage ? [
                 {

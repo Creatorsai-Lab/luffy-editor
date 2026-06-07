@@ -1,4 +1,4 @@
-import { Grid3x3, Eye, EyeOff, Sparkles } from 'lucide-react'
+import { Grid3x3, Eye, EyeOff, Eraser } from 'lucide-react'
 import { useCanvasStore } from '../../store/canvasStore'
 import { useEditorStore } from '../../store/editorStore'
 import Tooltip from '../ui/Tooltip'
@@ -48,19 +48,18 @@ export default function CanvasToolbar() {
       </Tooltip>
 
       {/* Remove all animations from the current slide */}
-      <Tooltip text="Remove all animations on this slide">
+      <Tooltip text="Clear all animations on this slide">
         <button
           onClick={() => { if (currentSceneId && sceneHasAnim) clearSceneAnimations(currentSceneId) }}
           disabled={!sceneHasAnim}
           className={cn(
-            'p-1.5 rounded transition-colors relative',
+            'p-1.5 rounded transition-colors',
             sceneHasAnim
               ? 'text-[#f2f2f2] hover:text-white hover:bg-red-600'
               : 'text-[#555] cursor-not-allowed'
           )}
         >
-          <Sparkles size={14} />
-          <span className="absolute -top-0.5 -right-0.5 text-[10px] leading-none">✕</span>
+          <Eraser size={14} />
         </button>
       </Tooltip>
     </div>
