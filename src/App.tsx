@@ -3,6 +3,7 @@ import type { ErrorInfo, ReactNode } from 'react'
 import { useEditorStore } from './store/editorStore'
 import { makeProject } from './utils/defaults'
 import Header from './components/layout/Header'
+import AISidebar from './components/layout/AISidebar'
 import MenuSideBar from './components/layout/MenuSideBar'
 import OptionsSidebar from './components/layout/OptionsSidebar'
 import EditorCanvas from './components/canvas/EditorCanvas'
@@ -130,7 +131,7 @@ export default function App() {
       <div className="h-screen w-screen flex flex-col bg-black overflow-hidden gap-1.5">
         <Header />
 
-        {/* Main layout: MenuSideBar + Canvas + OptionsSidebar */}
+        {/* Main layout: MenuSideBar + Canvas + OptionsSidebar + AISidebar */}
         <div className="flex flex-1 min-h-0 overflow-hidden gap-1.5 px-2">
           {/* MenuSideBar on the left */}
           <div className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
@@ -152,6 +153,11 @@ export default function App() {
             style={{ width: optionsWidth }}
           >
             <OptionsSidebar />
+          </div>
+
+          {/* AI assistant sidebar — rightmost (placeholder) */}
+          <div className="flex-none border border-editor-border bg-[#171717] rounded-lg overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.4)]">
+            <AISidebar />
           </div>
         </div>
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Rect, Circle, RegularPolygon, Star, Line, Ellipse, Shape, Group } from 'react-konva'
 import type Konva from 'konva'
 import type { ShapeElement, SlideDir } from '../../../types/editor'
-import { drawPerspectiveWarp, drawShapeToCtx, heartPath, roughRoundRectPath, type PathCtx } from '../../../engine/perspectiveUtils'
+import { drawPerspectiveWarp, drawShapeToCtx, heartPath, drawSketchRect, type PathCtx } from '../../../engine/perspectiveUtils'
 
 // ─── Color helpers ────────────────────────────────────────────────────────────
 
@@ -399,9 +399,12 @@ export default function ShapeKonva({ el, konvaProps, wipeProgress = 1, wipeDir, 
           {...shared}
           width={w}
           height={h}
-          sceneFunc={(ctx: Konva.Context, shape: Konva.Shape) => {
-            roughRoundRectPath(ctx as unknown as PathCtx, w, h)
-            ctx.fillStrokeShape(shape)
+          hitFunc={(ctx, shape) => {
+            ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.closePath(); ctx.fillStrokeShape(shape)
+          }}
+          sceneFunc={(ctx: Konva.Context, _shape: Konva.Shape) => {
+            const raw = (ctx as unknown as { _context: CanvasRenderingContext2D })._context
+            drawSketchRect(raw, w, h, el.fill, el.stroke, el.strokeWidth || 0)
           }}
         />
       )

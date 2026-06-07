@@ -114,8 +114,6 @@ function addWave(x: number, y: number, seed = 0): [number, number] {
 }
 
 // ── Shared shape path builders ──────────────────────────────────────────────
-// Minimal context surface satisfied by both CanvasRenderingContext2D and
-// Konva.Context, so the same geometry is used in the editor AND in export.
 export interface PathCtx {
   beginPath(): void
   moveTo(x: number, y: number): void
@@ -136,8 +134,6 @@ export function heartPath(ctx: PathCtx, w: number, h: number) {
   ctx.closePath()
 }
 
-// Tiny seeded PRNG (mulberry32) — deterministic so the rough shape never
-// jitters between renders, but each seed gives a different organic outline.
 function seededRng(seed: number): () => number {
   let t = seed + 0x6d2b79f5
   return () => {
@@ -148,32 +144,104 @@ function seededRng(seed: number): () => number {
 }
 
 /**
- * Whiteboard-style hand-drawn rounded rectangle. Corners stay exactly on the
- * box (clean rounded corners — no overshoot). Each of the four straight sides
- * bows inward by its OWN amount (seeded, deterministic), so the sides differ
- * instead of being a uniform bow.
+ * Whiteboard-style hand-drawn rounded rectangle. 
  */
-export function roughRoundRectPath(ctx: PathCtx, w: number, h: number) {
-  const base = Math.min(w, h) * 0.07       // small corner radius
-  const a = Math.min(w, h) * 0.04          // max inward bow
-  const rnd = seededRng(1337)
-  const rad = () => base * (0.5 + rnd())    // per-corner radius in [0.5, 1.5]·base
-  const bow = () => a * (0.35 + rnd() * 0.65)  // per-side bow in [0.35a, a]
+export function roughRoundRectPath(ctx: PathCtx, w: number, h: number, seed = 1337) {
+  const base = Math.min(w, h) * 0.06       // corner radius
+  const a    = Math.min(w, h) * 0.018      // GENTLE bow — much less inward curve
+  const rnd  = seededRng(seed)
+  const rad  = () => base * (0.6 + rnd() * 0.8)
+  const bow  = () => a * (rnd() * 2 - 1)    // SIGNED: some sides bow out, some in (not all inward)
 
   const rTL = rad(), rTR = rad(), rBR = rad(), rBL = rad()
   const bTop = bow(), bRight = bow(), bBottom = bow(), bLeft = bow()
 
   ctx.beginPath()
   ctx.moveTo(rTL, 0)
-  ctx.quadraticCurveTo(w / 2, bTop,        w - rTR, 0)    // top edge bows down
-  ctx.quadraticCurveTo(w, 0,               w, rTR)         // TR corner
-  ctx.quadraticCurveTo(w - bRight, h / 2,  w, h - rBR)     // right edge bows in
-  ctx.quadraticCurveTo(w, h,               w - rBR, h)     // BR corner
-  ctx.quadraticCurveTo(w / 2, h - bBottom, rBL, h)         // bottom edge bows up
-  ctx.quadraticCurveTo(0, h,               0, h - rBL)     // BL corner
-  ctx.quadraticCurveTo(bLeft, h / 2,       0, rTL)         // left edge bows in
-  ctx.quadraticCurveTo(0, 0,               rTL, 0)         // TL corner
+  ctx.quadraticCurveTo(w / 2, bTop,        w - rTR, 0)
+  ctx.quadraticCurveTo(w, 0,               w, rTR)
+  ctx.quadraticCurveTo(w - bRight, h / 2,  w, h - rBR)
+  ctx.quadraticCurveTo(w, h,               w - rBR, h)
+  ctx.quadraticCurveTo(w / 2, h - bBottom, rBL, h)
+  ctx.quadraticCurveTo(0, h,               0, h - rBL)
+  ctx.quadraticCurveTo(bLeft, h / 2,       0, rTL)
+  ctx.quadraticCurveTo(0, 0,               rTL, 0)
   ctx.closePath()
+}
+
+// Ordered points around a rounded rectangle, each nudged by a small random
+// jitter so the outline wobbles like a hand-drawn line (not perfectly straight).
+function roughRectPoints(w: number, h: number, seed: number): [number, number][] {
+  const rnd = seededRng(seed)
+  const m = Math.min(w, h)
+
+  // ── PER-CORNER RADIUS — edit these freely (fraction of the short side) ──
+  const rTL = m * 0.09   // top-left
+  const rTR = m * 0.07   // top-right
+  const rBR = m * 0.09   // bottom-right
+  const rBL = m * 0.07   // bottom-left
+
+  const jit = m * 0.004                       // wobble amount (subtle)
+  const jx = () => (rnd() * 2 - 1) * jit
+  const jy = () => (rnd() * 2 - 1) * jit
+  const pts: [number, number][] = []
+  const line = (x0: number, y0: number, x1: number, y1: number, n: number) => {
+    for (let i = 0; i < n; i++) { const t = i / n; pts.push([x0 + (x1 - x0) * t + jx(), y0 + (y1 - y0) * t + jy()]) }
+  }
+  // `r` is now the radius of THIS corner
+  const arc = (cx: number, cy: number, r: number, a0: number, a1: number, n: number) => {
+    for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * (i / n); pts.push([cx + Math.cos(a) * r + jx(), cy + Math.sin(a) * r + jy()]) }
+  }
+  line(rTL, 0, w - rTR, 0, 14)                          // top edge
+  arc(w - rTR, rTR, rTR, -Math.PI / 2, 0, 4)           // TR corner
+  line(w, rTR, w, h - rBR, 14)                          // right edge
+  arc(w - rBR, h - rBR, rBR, 0, Math.PI / 2, 4)        // BR corner
+  line(w - rBR, h, rBL, h, 14)                          // bottom edge
+  arc(rBL, h - rBL, rBL, Math.PI / 2, Math.PI, 4)      // BL corner
+  line(0, h - rBL, 0, rTL, 14)                          // left edge
+  arc(rTL, rTL, rTL, Math.PI, Math.PI * 1.5, 4)        // TL corner
+  return pts
+}
+
+/**
+ * Hand-drawn sketch rectangle. The outline is stroked segment-by-segment with a
+ * width that swells and thins along each side (real pen-pressure feel), and the
+ * points wobble so the lines aren't straight. Two passes add sketch depth.
+ * Shared by the live canvas and export so they always match.
+ */
+export function drawSketchRect(
+  ctx: CanvasRenderingContext2D,
+  w: number, h: number,
+  fill: string, stroke: string, sw: number,
+) {
+  // Fill uses the smooth rounded path
+  roughRoundRectPath(ctx, w, h, 1337)
+  if (fill && fill !== 'transparent') { ctx.fillStyle = fill; ctx.fill() }
+  if (sw <= 0) return
+
+  ctx.save()
+  ctx.strokeStyle = stroke || '#202020'
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  const pass = (seed: number, alpha: number, widthScale: number, freq: number) => {
+    const pts = roughRectPoints(w, h, seed)
+    const wrnd = seededRng(seed * 31 + 7)
+    const n = pts.length
+    ctx.globalAlpha = alpha
+    for (let i = 0; i < n; i++) {
+      const A = pts[i], B = pts[(i + 1) % n]
+      // width swells/thins along the perimeter: smooth sine + a little noise
+      const phase = (i / n) * Math.PI * 2 * freq + seed
+      const wv = 0.4 + 0.7 * (0.5 + 0.5 * Math.sin(phase)) + (wrnd() - 0.5) * 0.4
+      ctx.lineWidth = Math.max(0.4, sw * widthScale * wv)
+      ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke()
+    }
+  }
+
+  pass(1337, 0.95, 1.0, 2.5)   // main, pressure-varied line
+  pass(8888, 0.4,  0.6, 3.5)   // fainter second line for sketch depth
+  ctx.restore()
 }
 
 export function drawShapeToCtx(el: ShapeElement, ctx: CanvasRenderingContext2D) {
@@ -185,9 +253,40 @@ export function drawShapeToCtx(el: ShapeElement, ctx: CanvasRenderingContext2D) 
   ctx.strokeStyle = el.stroke || 'transparent'
   ctx.lineWidth = el.strokeWidth || 0
 
+  // Identify if the shape is one of the hand-drawn variants
+  const isHandStyle = el.shapeType.includes('sketch') || el.shapeType.includes('hand')
+
   const fillStroke = () => {
     ctx.fill()
-    if ((el.strokeWidth || 0) > 0) ctx.stroke()
+    
+    if ((el.strokeWidth || 0) > 0) {
+      if (isHandStyle) {
+        // MULTI-PASS STROKE: Creates the uneven marker bleed effect
+        ctx.save()
+        
+        // Pass 1: Main solid line
+        ctx.lineWidth = el.strokeWidth
+        ctx.globalAlpha = 0.9
+        ctx.stroke()
+
+        // Pass 2: Slightly thinner, offset slightly, lower opacity
+        ctx.lineWidth = (el.strokeWidth || 0) * 0.7
+        ctx.translate(0.5, -0.5) 
+        ctx.globalAlpha = 0.5
+        ctx.stroke()
+
+        // Pass 3: Even thinner, offset in a different direction
+        ctx.lineWidth = (el.strokeWidth || 0) * 0.4
+        ctx.translate(-1, 1)
+        ctx.globalAlpha = 0.3
+        ctx.stroke()
+        
+        ctx.restore()
+      } else {
+        // Standard perfect stroke for regular geometric shapes
+        ctx.stroke()
+      }
+    }
   }
 
   switch (el.shapeType) {
@@ -295,7 +394,7 @@ export function drawShapeToCtx(el: ShapeElement, ctx: CanvasRenderingContext2D) 
       heartPath(ctx, w, h); fillStroke(); break
 
     case 'rect-sketch':
-      roughRoundRectPath(ctx, w, h); fillStroke(); break
+      drawSketchRect(ctx, w, h, el.fill, el.stroke, el.strokeWidth || 0); break
 
     case 'circle-hand': {
       ctx.beginPath()
