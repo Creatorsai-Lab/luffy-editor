@@ -27,6 +27,8 @@ interface EditorState {
   cropElementId:     string | null
   previewOpen:       boolean
   exportOpen:        boolean
+  userGuideOpen:     boolean
+  subtitleOpen:      boolean
   exportProgress:    number
   timelineZoom:      number
   snapEnabled:       boolean
@@ -87,6 +89,8 @@ interface EditorActions {
   setCropElement:   (id: string | null) => void
   setPreviewOpen:   (v: boolean) => void
   setExportOpen:    (v: boolean) => void
+  setUserGuideOpen: (v: boolean) => void
+  setSubtitleOpen:  (v: boolean) => void
   setExportProgress:(v: number) => void
   setTimelineZoom:  (z: number) => void
   setSnapEnabled:   (enabled: boolean) => void
@@ -137,6 +141,8 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       cropElementId:    null,
       previewOpen:      false,
       exportOpen:       false,
+      userGuideOpen:    false,
+      subtitleOpen:     false,
       exportProgress:   0,
       timelineZoom:     1,
       snapEnabled:      true,
@@ -443,6 +449,8 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       setCropElement:   (id) => set(s => { s.cropElementId = id }),
       setPreviewOpen:   (v) => set(s => { s.previewOpen = v }),
       setExportOpen:    (v) => set(s => { s.exportOpen = v }),
+      setUserGuideOpen: (v) => set(s => { s.userGuideOpen = v }),
+      setSubtitleOpen:  (v) => set(s => { s.subtitleOpen = v }),
       setExportProgress:(v) => set(s => { s.exportProgress = v }),
       setTimelineZoom:  (z) => set(s => { s.timelineZoom = Math.max(0.1, Math.min(5, z)) }),
       setSnapEnabled:   (enabled) => set(s => { s.snapEnabled = enabled }),

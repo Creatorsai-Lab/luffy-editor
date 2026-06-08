@@ -11,6 +11,8 @@ import Timeline from './components/layout/Timeline'
 import CodeEditorModal from './components/modals/CodeEditorModal'
 import PreviewModal from './components/modals/PreviewModal'
 import ExportModal from './components/modals/ExportModal'
+import UserGuideModal from './components/modals/UserGuideModal'
+import SubtitleModal from './subtitle/SubtitleModal'
 
 const AUTO_SAVE_DELAY = 2500
 
@@ -43,7 +45,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 export default function App() {
   const {
     project, isDirty, markClean, loadProject,
-    codeModalOpen, previewOpen, exportOpen
+    codeModalOpen, previewOpen, exportOpen, userGuideOpen, subtitleOpen
   } = useEditorStore()
 
   const [ready, setReady] = useState(false)
@@ -169,6 +171,8 @@ export default function App() {
         {codeModalOpen && <CodeEditorModal />}
         {previewOpen   && <PreviewModal />}
         {exportOpen    && <ExportModal />}
+        {userGuideOpen && <UserGuideModal />}
+        {subtitleOpen  && <SubtitleModal />}
       </div>
     </ErrorBoundary>
   )

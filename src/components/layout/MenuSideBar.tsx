@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Type, Square, ArrowRight, Code2, Table2, Layers, Shuffle, ImagePlus, BarChart3, Music,
-  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, PointerOff, SquareDashedMousePointer, SquarePlay, Sigma
+  Play, Download, Monitor, ChevronDown, Undo2, Redo2, PaintBucket, Shapes, PointerOff, SquareDashedMousePointer, SquarePlay, Sigma, BookOpen, Captions
 } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { useHistoryStore } from '../../store/historyStore'
@@ -39,6 +39,7 @@ export default function MenuSideBar() {
     setActiveTool, setActivePanel,
     setProjectName, setCanvasSize,
     setPreviewOpen, setExportOpen,
+    setUserGuideOpen, setSubtitleOpen,
     openCodeModal,
     deselectAll,
     undo, redo
@@ -150,6 +151,7 @@ export default function MenuSideBar() {
             <span>Export</span>
           </button>
         </div>
+
       </div>
 
       {/* Menu Bar Tools Grid (2 items per row) */}
@@ -199,6 +201,26 @@ export default function MenuSideBar() {
               </button>
             )
           })}
+
+          {/* Less-frequent tools — open as modals */}
+          <button
+            disabled={disabled}
+            onClick={() => { if (!disabled) setSubtitleOpen(true) }}
+            className={cn(
+              'flex flex-col items-center justify-center gap-1.5 p-2 rounded transition-all',
+              disabled ? 'text-editor-accent cursor-not-allowed' : 'text-[#f2f2f2] hover:bg-editor-hover'
+            )}
+          >
+            <Captions size={15} />
+            <span className="text-[0.78rem] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">Subtitle</span>
+          </button>
+          <button
+            onClick={() => setUserGuideOpen(true)}
+            className="flex flex-col items-center justify-center gap-1.5 p-2 rounded transition-all text-[#f2f2f2] hover:bg-editor-hover"
+          >
+            <BookOpen size={15} />
+            <span className="text-[0.78rem] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">User Guide</span>
+          </button>
         </div>
       </div>
     </aside>
