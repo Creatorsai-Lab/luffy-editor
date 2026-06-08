@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/images//luffy_create_template.webp" alt="Luffy Create — fast and lightweight video creation and editor app" width="100%" />
+<img src="public/images/luffy_create_template.webp" alt="Luffy Create — fast and lightweight video creation and editor app" width="100%" />
 
 # Luffy Create
 
