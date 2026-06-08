@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Creatorsai-Lab/luffy-create/main/public/images/luffy_app_logo.webp" alt="Luffy Create" width="84" />
+<img src="https://raw.githubusercontent.com/Creatorsai-Lab/luffy-create/main/public\images\luffy_create_logo.webp" alt="Luffy Create" width="84" />
 
 # Luffy Create Application User Guide
 

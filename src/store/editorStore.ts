@@ -93,7 +93,6 @@ interface EditorActions {
   setSubtitleOpen:  (v: boolean) => void
   setExportProgress:(v: number) => void
   setTimelineZoom:  (z: number) => void
-  setSnapEnabled:   (enabled: boolean) => void
 
   // Assets
   addAsset:         (a: AssetMeta) => void
@@ -453,7 +452,6 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       setSubtitleOpen:  (v) => set(s => { s.subtitleOpen = v }),
       setExportProgress:(v) => set(s => { s.exportProgress = v }),
       setTimelineZoom:  (z) => set(s => { s.timelineZoom = Math.max(0.1, Math.min(5, z)) }),
-      setSnapEnabled:   (enabled) => set(s => { s.snapEnabled = enabled }),
 
       markDirty:        ()  => set(s => { s.isDirty = true }),
       markClean:        ()  => set(s => { s.isDirty = false }),

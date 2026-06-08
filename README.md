@@ -33,7 +33,7 @@ Code walkthroughs, system-design diagrams, and slide-based animations — with f
 
 <img src="public/images/luffy-ui-screenshot.webp" alt="Luffy Create editor interface" width="100%" />
 
-<sub>The Luffy Create editor — tools on the left, canvas in the center, properties on the right, timeline below.</sub>
+<sub>The Luffy Create editor: tools on the left, canvas in the center, properties on the right, ai agent at right most and timeline below.</sub>
 
 </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Minus, Square, X, FolderOpen, Plus, Trash2, Check } from 'lucide-react'
-import luffyLogo from '../../assets/luffy_app_logo.webp'
+import luffyLogo from '/images/luffy_create_logo.webp'
 import { useEditorStore } from '../../store/editorStore'
 import { makeProject } from '../../utils/defaults'
 import type { ProjectRecord } from '../../types/global'

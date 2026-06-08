@@ -15,7 +15,7 @@ const SCENE_HEIGHT = 50
 const TRACK_HEIGHT = 32
 const PX_PER_SEC_BASE = 60
 
-const SCENE_COLORS = ['#3b82f6', '#0ea5e9', '#6366f1', '#4169e1', '#8b5cf6', '#0891b2', '#2563eb', '#7c3aed']
+const SCENE_COLORS = ['#3a5a8d', '#437f9b', '#474899', '#46945d', '#513988', '#43899b']
 
 // Stable color from a scene id — stays the same after reordering, so a scene
 // keeps its color + name identity wherever it moves.
@@ -44,8 +44,7 @@ export default function Timeline() {
     timelineZoom, snapEnabled,
     addScene, setCurrentScene, updateScene, reorderScenes, removeScene, duplicateScene,
     setPlayhead, play, pause, stop,
-    getTotalDuration,
-    setTimelineZoom, setSnapEnabled,
+    getTotalDuration, setTimelineZoom, 
     updateElement, removeElement, addElementToScene,
     addAudioMarker, removeAudioMarker,
     setActivePanel,
@@ -579,18 +578,6 @@ export default function Timeline() {
         <Tooltip text="Reset Zoom (Ctrl 0)">
           <button onClick={() => setTimelineZoom(1)} className="text-xs text-[#f2f2f2] hover:text-editor-text transition-colors px-1 flex-none">
             1:1
-          </button>
-        </Tooltip>
-
-        <Tooltip text="Snap to Grid">
-          <button
-            onClick={() => setSnapEnabled(!snapEnabled)}
-            className={cn(
-              'flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors flex-none',
-              snapEnabled ? 'bg-editor-accent-dim text-editor-accent' : 'text-[#f2f2f2] hover:text-editor-text'
-            )}
-          >
-            <Magnet size={11} />
           </button>
         </Tooltip>
 

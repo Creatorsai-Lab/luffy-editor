@@ -145,7 +145,7 @@ export default function App() {
 
           {/* Drag handle for OptionsSidebar */}
           <div
-            className="flex-none w-1 cursor-col-resize hover:bg-editor-accent/40 transition-colors rounded"
+            className="flex-none w-0.5 cursor-ew-resize hover:bg-editor-accent/40 transition-colors rounded"
             onMouseDown={handleDragStart}
           />
 

@@ -1,4 +1,4 @@
-import { BrainCircuit, Send } from 'lucide-react'
+import { BrainCircuit, DraftingCompass } from 'lucide-react'
 
 // Leftmost sidebar — placeholder for an upcoming AI assistant.
 // The input is intentionally non-functional for now.
@@ -17,20 +17,19 @@ export default function AISidebar() {
       </div>
 
       {/* Sample, non-working input bar */}
-      <div className="p-3 border-t border-editor-border flex-none">
+      <div title='Under testing, will available in next patch' className="p-3 border-t border-editor-border flex-none">
         <div className="flex items-center gap-1.5 bg-editor-elevated border border-editor-border rounded-lg px-2.5 py-2 opacity-70">
           <input
             type="text"
             disabled
-            placeholder="Describe what you want…"
+            placeholder="Describe what you edit"
             className="flex-1 bg-transparent text-xs text-editor-text placeholder:text-editor-secondary outline-none cursor-not-allowed"
           />
           <button
             disabled
             className="flex-none text-editor-secondary cursor-not-allowed"
-            title="Coming soon"
           >
-            <Send size={14} />
+            <DraftingCompass size={14} />
           </button>
         </div>
       </div>

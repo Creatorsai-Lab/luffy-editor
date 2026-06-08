@@ -145,7 +145,7 @@ export default function MenuSideBar() {
           <button
             disabled={disabled}
             onClick={() => setExportOpen(true)}
-            className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-[#f2f2f2] hover:text-purple-400 hover:bg-editor-hover disabled:text-[#f2f2f2] disabled:bg-transparent"
+            className="flex flex-col items-center gap-1 text-[0.78rem] py-2 rounded transition-colors text-red hover:text-purple-400 hover:bg-editor-hover disabled:text-[#f2f2f2] disabled:bg-transparent"
           >
             <Download size={15} />
             <span>Export</span>
@@ -193,7 +193,7 @@ export default function MenuSideBar() {
                 className={cn(
                   'flex flex-col items-center justify-center gap-1.5 p-2 rounded transition-all',
                   disabled ? 'text-editor-accent cursor-not-allowed' :
-                    isActive ? 'bg-editor-accent/10 text-editor-accent' : 'text-[#f2f2f2] hover:bg-editor-hover'
+                    isActive ? 'text-editor-accent' : 'text-[#f2f2f2] hover:bg-editor-hover'
                 )}
               >
                 {item.icon}

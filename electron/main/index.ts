@@ -21,11 +21,22 @@ protocol.registerSchemesAsPrivileged([
 import { join, normalize } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { mkdir, readFile, writeFile, copyFile, readdir, rm, stat, open } from 'fs/promises'
-import { existsSync } from 'fs'
+import { existsSync, writeFileSync } from 'fs'
 
 const USER_DATA   = app.getPath('userData')
 const PROJECTS_DIR = join(USER_DATA, 'projects')
 const INDEX_FILE   = join(USER_DATA, 'projects.json')
+
+// Safety net: never let an unhandled error silently kill the app at startup.
+// Errors are absorbed (so the process doesn't exit) and written to userData/crash.log.
+function logCrash(tag: string, err: unknown) {
+  try {
+    const msg = err instanceof Error ? `${err.message}\n${err.stack}` : String(err)
+    writeFileSync(join(USER_DATA, 'crash.log'), `[${tag}] ${new Date().toISOString()}\n${msg}\n`)
+  } catch { /* ignore */ }
+}
+process.on('uncaughtException', e => logCrash('uncaughtException', e))
+process.on('unhandledRejection', e => logCrash('unhandledRejection', e))
 
 // Production renderer location (electron-vite output).
 const RENDERER_DIR = join(__dirname, '../renderer')
@@ -85,6 +96,10 @@ function createWindow(): void {
   })
 
   win.on('ready-to-show', () => win.show())
+  win.webContents.on('did-fail-load', (_e, code, desc, url) => logCrash('did-fail-load', `${code} ${desc} ${url}`))
+  win.webContents.on('render-process-gone', (_e, d) => logCrash('render-gone', JSON.stringify(d)))
+  // Force-show even if ready-to-show never fires, so a blank window is visible instead of nothing
+  setTimeout(() => { if (!win.isDestroyed() && !win.isVisible()) win.show() }, 3000)
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
