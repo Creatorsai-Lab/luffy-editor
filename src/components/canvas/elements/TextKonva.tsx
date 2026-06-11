@@ -160,10 +160,17 @@ export default function TextKonva({ el, konvaProps, textProgress, textMode, wipe
   }
 
   if (wipeDir && wipeProgress < 1) {
-    const clipX = wipeDir === 'left' ? el.width * (1 - wipeProgress) : 0
-    const clipY = wipeDir === 'up'   ? el.height * (1 - wipeProgress) : 0
-    const clipW = (wipeDir === 'left' || wipeDir === 'right') ? el.width * wipeProgress : el.width
-    const clipH = (wipeDir === 'up'   || wipeDir === 'down')  ? el.height * wipeProgress : el.height
+    // Wipe animation: the clip rectangle grows from the starting edge
+    // Direction indicates which side the wipe "enters" from
+    // left: wipe enters from left (clip starts at x=0, grows right)
+    // right: wipe enters from right (clip starts at x=width*(1-progress), grows left)
+    // up: wipe enters from top (clip starts at y=0, grows down)
+    // down: wipe enters from bottom (clip starts at y=height*(1-progress), grows up)
+    const clipX = wipeDir === 'left' ? 0 : el.width * (1 - wipeProgress)
+    const clipY = wipeDir === 'up' ? 0 : el.height * (1 - wipeProgress)
+    const clipW = wipeDir === 'left' || wipeDir === 'right' ? el.width * wipeProgress : el.width
+    const clipH = wipeDir === 'up' || wipeDir === 'down' ? el.height * wipeProgress : el.height
+    
     return (
       <Group
         {...(konvaProps as Record<string, unknown>)}

@@ -112,11 +112,11 @@ export default function TextPanel() {
             <div className="flex flex-col gap-0.5 px-3 py-2">
               <Row label="Content">
                 <textarea
-                  className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1.5 resize-none"
-                  rows={3}
-                  value={el.content}
-                  onChange={e => upd({ content: e.target.value })}
-                />
+                className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1.5 resize-y"
+                rows={5}
+                value={el.content}
+                onChange={e => upd({ content: e.target.value })}
+              />
               </Row>
 
               <Row label="Font">
@@ -165,7 +165,7 @@ export default function TextPanel() {
               </Row>
 
               <Row label="Line Height">
-                <Slider value={el.lineHeight} min={0.8} max={3} step={0.05}
+                <Slider value={el.lineHeight} min={0.8} max={5} step={0.05}
                   onChange={v => upd({ lineHeight: v })} display={el.lineHeight.toFixed(2)} />
               </Row>
 
@@ -219,7 +219,7 @@ export default function TextPanel() {
             {/* ── Background ────────────────────────────────────────── */}
             <div className="border-t border-editor-border px-3 py-2 flex flex-col gap-0.5">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-editor-text">Background</span>
+                <span className="text-ms font-medium text-editor-text">Add Text Background</span>
                 <button
                   onClick={() => upd({ bgEnabled: !el.bgEnabled })}
                   className={cn(

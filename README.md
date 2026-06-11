@@ -41,6 +41,8 @@ Code walkthroughs, system-design diagrams, and slide-based animations — with f
 
 ## Download & Install
 
+You can download the app from `release` page or `site`
+
 ### Windows
 
 1. Download the latest `Luffy_Create_Installer_v1.exe` from the [**Releases page**](https://github.com/Creatorsai-Lab/luffy-create/releases/latest).

@@ -20,7 +20,7 @@ const TOOLS: ToolItem[] = [
   { icon: <Shuffle size={15} />, label: 'Transitions', panel: 'transitions' },
   { icon: <Layers size={15} />, label: 'Layers', panel: 'layers' },
   { icon: <Type size={15} />, label: 'Text', tool: 'text', panel: 'text' },
-  { icon: <Square size={15} />, label: 'Shapes', tool: 'shape-rect', panel: 'shapes' },
+  { icon: <Square size={15} />, label: 'Shapes', tool: 'select', panel: 'shapes' },
   { icon: <ArrowRight size={15} />, label: 'Arrow', tool: 'arrow', panel: 'arrows' },
   { icon: <Code2 size={15} />, label: 'Code', tool: 'code', panel: 'code' },
   { icon: <Sigma size={15} />, label: 'LaTeX', panel: 'latex' },
@@ -187,6 +187,13 @@ export default function MenuSideBar() {
                 onClick={() => {
                   if (disabled) return
                   if (item.tool === 'code') { openCodeModal(); setActivePanel('code'); return }
+                  // For shapes panel, just open it without setting a specific shape tool
+                  // This allows the user to choose a shape from the panel first
+                  if (item.panel === 'shapes') {
+                    setActivePanel(activePanel === 'shapes' ? null : 'shapes')
+                    // Don't set a shape tool - user needs to pick one from the panel
+                    return
+                  }
                   if (item.tool) setActiveTool(item.tool)
                   setActivePanel(activePanel === item.panel ? null : item.panel)
                 }}

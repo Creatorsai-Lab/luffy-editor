@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "description": "Lightweight and ai video creation and editor app",
   "private": true,
-  "author": "Adya Prasad",
+  "author": "Creators AI Lab",
   "main": "out/main/index.js",
   "repository": {
     "type": "git",

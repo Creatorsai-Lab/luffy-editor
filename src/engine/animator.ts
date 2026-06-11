@@ -133,12 +133,24 @@ export function getAnimatedProps(el: EditorElement, localTime: number): Animated
   const loopWindowStart = enters.length > 0 ? lastEnterEnd : 0
   const loopWindowEnd   = firstExitStart
 
+  // Skip loop animations if the window is invalid (e.g., exit starts before enters finish)
+  const hasValidLoopWindow = loopWindowEnd > loopWindowStart
+
   for (const anim of loops) {
     const animStart      = safe(anim.startTime) + safe(anim.delay)
     const effectiveStart = Math.max(animStart, loopWindowStart)
+    
+    // If there's a valid loop window, only run within it
+    if (hasValidLoopWindow && localTime < loopWindowStart) continue
+    if (hasValidLoopWindow && localTime >= loopWindowEnd)  continue
+    
+    // For loops with their own window that extends beyond valid loop window
     if (localTime < effectiveStart) continue
-    if (localTime >= loopWindowEnd)  continue
-    applyAnim(anim, 0, false, false, el, props, localTime, effectiveStart)
+    
+    // Calculate proper progress within the loop ( accounting for delay )
+    const timeSinceAnimStart = localTime - animStart
+    const loopProgress = anim.duration > 0 ? ((timeSinceAnimStart % anim.duration) / anim.duration) : 0
+    applyAnim(anim, loopProgress, false, false, el, props, localTime, effectiveStart)
   }
 
   return props
@@ -305,7 +317,7 @@ function applyAnim(
 
     // ─── Loop animations ────────────────────────────────────────────────────
     // loopStart is the effectiveStart passed from the loop dispatch section;
-    // it is always >= anim.startTime+anim.delay so elapsed is always >= 0.
+    // loopProgress is the normalized progress (0-1) within the current loop cycle
     case 'pulse': {
       if (before) return
       const elapsed = localTime - (loopStart ?? (anim.startTime + anim.delay))

@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect, useState, useMemo } from 'react'
-import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, Magnet, Music, Trash2, Copy, Scissors, Split, X, Volume2, Bookmark, Shuffle } from 'lucide-react'
+import { Plus, Play, Pause, SkipBack, ZoomIn, ZoomOut, ArrowLeftRight, Music, Trash2, Copy, Scissors, Split, X, Volume2, Bookmark, Shuffle } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { cn } from '../../utils/cn'
 import { toFileUrl } from '../../utils/pathUtils'
@@ -167,7 +167,11 @@ export default function Timeline() {
             player.playbackRate = audio.speed ?? 1
 
             if (player.paused) {
-              player.currentTime = Math.max(0, (audio.startTime ?? 0) + (ph - absStart) * (audio.speed ?? 1))
+              // Calculate current time based on playhead position within this audio element
+              // account for trim start (startTime) and playback speed
+              const trimStart = audio.startTime ?? 0
+              const timeWithinAudio = (ph - absStart) * (audio.speed ?? 1)
+              player.currentTime = Math.max(trimStart, trimStart + timeWithinAudio)
               player.play().catch(() => {})
             }
           }
@@ -378,7 +382,7 @@ export default function Timeline() {
   if (!project) return (
     <div className="flex flex-col bg-orange flex-none" style={{ height: 120 }}>
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-editor-border">
-        <span className="text-xs text-[#f2f2f2]">Timeline</span>
+        <span className="text-xs text-editor-text">Timeline</span>
       </div>
     </div>
   )
@@ -536,10 +540,10 @@ export default function Timeline() {
         <div className="mx-auto mt-0.5 h-1 w-16 rounded-full bg-editor-border group-hover:bg-editor-accent transition-colors" />
       </div>
 
-      {/* Controls row */}
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-editor-border flex-none min-w-0 overflow-hidden">
+      {/* Controls row - Increased gap-2 to gap-4, and py-1.5 to py-2.5 */}
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-editor-border flex-none min-w-0 overflow-hidden">
         <Tooltip text="Stop (Home)">
-          <button onClick={stop} className="text-[#f2f2f2] hover:text-editor-text transition-colors flex-none">
+          <button onClick={stop} className="text-editor-text hover:text-editor-text transition-colors flex-none">
             <SkipBack size={12} />
           </button>
         </Tooltip>
@@ -553,48 +557,50 @@ export default function Timeline() {
           </button>
         </Tooltip>
 
-        <span className="text-xs text-[#f2f2f2] tabular-nums ml-1 flex-none">
-          {fmtTime(playhead)} / {fmtTime(totalDur)}
-        </span>
+        {/* Cleaned text alignment layout */}
+        <div className="text-xs text-editor-text tabular-nums ml-1 flex-none flex items-center gap-1.5">
+          <span>current time:</span>
+          <span className="text-sm bg-editor-elevated rounded px-1.5 py-0.5">{fmtTime(playhead)} / {fmtTime(totalDur)}</span>
+        </div>
 
-        <div className="w-px h-4 bg-editor-border mx-1 flex-none" />
+        {/* Fixed zoom box layout by adding flex items-center */}
+        <div className="flex items-center border border-editor-border p-1.5 gap-3 rounded bg-neutral-900/40">
+          <Tooltip text="Zoom Out (Ctrl -)">
+            <button onClick={() => setTimelineZoom(Math.max(0.1, timelineZoom / 1.2))} className="text-editor-text hover:text-editor-text transition-colors flex-none">
+              <ZoomOut size={14} />
+            </button>
+          </Tooltip>
 
-        <Tooltip text="Zoom Out (Ctrl -)">
-          <button onClick={() => setTimelineZoom(Math.max(0.1, timelineZoom / 1.2))} className="text-[#f2f2f2] hover:text-editor-text transition-colors flex-none">
-            <ZoomOut size={12} />
-          </button>
-        </Tooltip>
+          <span className="text-xs text-editor-text tabular-nums min-w-[36px] text-center flex-none">
+            {Math.round(timelineZoom * 100)}%
+          </span>
 
-        <span className="text-xs text-[#f2f2f2] tabular-nums min-w-[36px] text-center flex-none">
-          {Math.round(timelineZoom * 100)}%
-        </span>
+          <Tooltip text="Zoom In (Ctrl +) ">
+            <button onClick={() => setTimelineZoom(Math.min(5, timelineZoom * 1.2))} className="text-editor-text hover:text-editor-text transition-colors flex-none">
+              <ZoomIn size={14} />
+            </button>
+          </Tooltip>
 
-        <Tooltip text="Zoom In (Ctrl +)">
-          <button onClick={() => setTimelineZoom(Math.min(5, timelineZoom * 1.2))} className="text-[#f2f2f2] hover:text-editor-text transition-colors flex-none">
-            <ZoomIn size={12} />
-          </button>
-        </Tooltip>
-
-        <Tooltip text="Reset Zoom (Ctrl 0)">
-          <button onClick={() => setTimelineZoom(1)} className="text-xs text-[#f2f2f2] hover:text-editor-text transition-colors px-1 flex-none">
-            1:1
-          </button>
-        </Tooltip>
+          <Tooltip text="Reset Zoom (Ctrl 0)">
+            <button onClick={() => setTimelineZoom(1)} className="text-xs text-editor-text hover:text-editor-text transition-colors px-1 flex-none border-l border-gray-700 pl-2">
+              [1:1]
+            </button>
+          </Tooltip>
+        </div>
 
         {selectedAudio ? (
           <>
-            <div className="w-px h-4 bg-editor-border mx-1 flex-none" />
-            <Music size={13} className="text-[#79443e] flex-none" />
+            <Music size={15} className="text-editor-accent flex-none" />
 
-            <div className="flex items-center gap-1 flex-none">
-              <Volume2 size={13} className="text-[#f2f2f2]" />
+            <div className="flex items-center gap-2 flex-none">
+              <Volume2 size={15} className="text-editor-text" />
               <input
                 type="range" min={0} max={1} step={0.01}
                 value={selectedAudio.volume ?? 1}
                 onChange={e => updateElement(selectedAudio!.id, { volume: parseFloat(e.target.value) })}
-                className="w-20 accent-[#79443e]"
+                className="w-20 text-editor-text h-1 accent-editor-accent"
               />
-              <span className="text-[10px] text-[#f2f2f2] w-10 flex-none">
+              <span className="text-xs text-editor-text w-10 flex-none">
                 {Math.round((selectedAudio.volume ?? 1) * 100)}%
               </span>
             </div>
@@ -606,82 +612,79 @@ export default function Timeline() {
                 const rawAudioS = selectedAudio!.duration * (selectedAudio!.speed ?? 1)
                 updateElement(selectedAudio!.id, { speed: newSpeed, duration: rawAudioS / newSpeed })
               }}
-              className="bg-editor-elevated border border-editor-border rounded text-[10px] text-editor-text px-1 py-0.5 flex-none"
+              className="bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-1.5 py-1 flex-none"
               title="Playback speed"
             >
               {SPEED_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
 
-            <div className="flex items-center gap-1 flex-none">
-              <span className="text-[10px] text-[#f2f2f2]">FI</span>
+            <div className="flex items-center gap-1.5 flex-none">
+              <span className="text-xs text-editor-text">Fade In</span>
               <input
                 type="number" min={0} max={10} step={0.1}
                 value={selectedAudio.fadeIn}
                 onChange={e => updateElement(selectedAudio!.id, { fadeIn: Math.max(0, parseFloat(e.target.value) || 0) })}
-                className="w-10 bg-editor-elevated border border-editor-border rounded text-[10px] text-editor-text px-1 py-0.5 nodrag"
+                className="w-12 bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-1 py-1 text-center nodrag"
                 title="Fade in (seconds)"
               />
-              <span className="text-[10px] text-[#f2f2f2]">s</span>
+              <span className="text-xs text-editor-text">s</span>
             </div>
 
-            <div className="flex items-center gap-1 flex-none">
-              <span className="text-[10px] text-[#f2f2f2]">FO</span>
+            <div className="flex items-center gap-1.5 flex-none">
+              <span className="text-xs text-editor-text">Fade Out</span>
               <input
                 type="number" min={0} max={10} step={0.1}
                 value={selectedAudio.fadeOut}
                 onChange={e => updateElement(selectedAudio!.id, { fadeOut: Math.max(0, parseFloat(e.target.value) || 0) })}
-                className="w-10 bg-editor-elevated border border-editor-border rounded text-[10px] text-editor-text px-1 py-0.5 nodrag"
+                className="w-12 bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-1 py-1 text-center nodrag"
                 title="Fade out (seconds)"
               />
-              <span className="text-[10px] text-[#f2f2f2]">s</span>
+              <span className="text-xs text-editor-text">s</span>
             </div>
 
-            <div className="w-px h-4 bg-editor-border mx-0.5 flex-none" />
+            <div className="w-px h-5 bg-editor-border mx-1 flex-none" />
 
-            <Tooltip text="Trim after playhead (cut end)">
-              <button
-                onClick={trimAtPlayhead}
-                className="flex items-center gap-1 px-2 py-1 text-[10px] rounded bg-editor-elevated border border-editor-border text-[#f2f2f2] hover:text-editor-text hover:border-editor-text/40 transition-colors flex-none"
-              >
-                <Scissors size={10} /> Trim ▶
-              </button>
-            </Tooltip>
+            <div className="flex items-center gap-2 flex-none">
+              <Tooltip text="Trim after playhead (cut end)">
+                <button
+                  onClick={trimAtPlayhead}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs rounded bg-editor-elevated border border-editor-border text-editor-text hover:text-editor-text hover:border-editor-text/40 transition-colors flex-none"
+                >
+                  <Scissors size={13} /> Trim</button>
+              </Tooltip>
 
-            <Tooltip text="Split at playhead">
-              <button
-                onClick={splitAtPlayhead}
-                className="flex items-center gap-1 px-2 py-1 text-[10px] rounded bg-editor-elevated border border-editor-border text-[#f2f2f2] hover:text-editor-text hover:border-editor-text/40 transition-colors flex-none"
-              >
-                <Split size={10} /> Split
-              </button>
-            </Tooltip>
+              <Tooltip text="Split at playhead">
+                <button
+                  onClick={splitAtPlayhead}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs rounded bg-editor-elevated border border-editor-border text-editor-text hover:text-editor-text hover:border-editor-text/40 transition-colors flex-none"
+                >
+                  <Split size={13} /> Split
+                </button>
+              </Tooltip>
+            </div>
 
             <button
               onClick={() => setSelectedAudioId(null)}
-              className="text-[#f2f2f2] hover:text-editor-text transition-colors flex-none"
+              className="text-editor-text hover:text-red-400 transition-colors ml-1 flex-none"
               title="Deselect audio"
             >
-              <X size={10} />
+              <X size={12} />
             </button>
           </>
-        ) : (
-          <>
-            <div className="flex-1" />
-            <span className="text-sm text-[#f2f2f2]">Drag scene edges • Drag playhead • Right-click to add marker</span>
-          </>
-        )}
+        ) : null}
 
         <div className="flex-1" />
 
         <Tooltip text="Add Scene">
           <button
             onClick={addScene}
-            className="flex items-center gap-1 text-xs text-[#f2f2f2] bg-editor-accent px-2 py-1 rounded"
+            className="flex items-center gap-1.5 text-xs text-white bg-editor-accent hover:bg-editor-accent-hover transition-colors px-3 py-1.5 rounded font-medium flex-none shadow-sm"
           >
-            <Plus size={11} /> Scene
+            <Plus size={12} /> Scene
           </button>
         </Tooltip>
       </div>
+
 
       {/* Scrollable track area */}
       <div
@@ -697,7 +700,7 @@ export default function Timeline() {
             {Array.from({ length: Math.ceil(totalDur) + 1 }, (_, i) => (
               <div key={i} className="absolute flex flex-col items-start" style={{ left: i * PX_PER_SEC }}>
                 <div className="w-px h-2 bg-editor-border-strong" />
-                <span className="text-[#f2f2f2]" style={{ fontSize: 9 }}>{fmtTime(i)}</span>
+                <span className="text-editor-text" style={{ fontSize: 9 }}>{fmtTime(i)}</span>
               </div>
             ))}
           </div>
@@ -969,6 +972,11 @@ export default function Timeline() {
             icon: <Trash2 size={14} />,
             dangerous: true,
             onClick: () => { if (contextMenu?.sceneId) removeScene(contextMenu.sceneId); setContextMenu(null) }
+          },
+          {
+            label: 'Shift + drag to reposition',
+            icon: <ArrowLeftRight size={14} />,
+            onClick: () => setContextMenu(null),
           }
         ]}
         onClose={() => setContextMenu(null)}

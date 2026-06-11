@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, MessageCircle, MessageSquare, Cone, Box, Plus, Trash2, Heart, SquareDashedBottom } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ShapeElement, ShapeType, ActiveTool, AnimationType, EasingType, SlideDir, ElementAnimation } from '../../types/editor'
@@ -69,12 +70,23 @@ const LOOP_TYPE_SET = new Set<string>(['pulse', 'bounceLoop', 'rotateLoop', 'flo
 const isLoopAnim = (a: ElementAnimation) => LOOP_TYPE_SET.has(a.type) || a.timing === 'loop'
 
 export default function ShapePanel() {
-  const { getSelectedEls, updateElement, setActiveTool, addAnimation } = useEditorStore()
+  const { getSelectedEls, updateElement, setActiveTool, activePanel, activeTool, addAnimation } = useEditorStore()
   const el = getSelectedEls().find(e => e.type === 'shape') as ShapeElement | undefined
 
   function upd(patch: Partial<ShapeElement>) {
     if (el) updateElement(el.id, patch)
   }
+  
+  // Auto-select shape style when a shape is selected
+  useEffect(() => {
+    if (el && activePanel === 'shapes') {
+      // Auto-select the tool for this shape type
+      const tool = `shape-${el.shapeType}` as ActiveTool
+      if (activeTool !== tool) {
+        setActiveTool(tool)
+      }
+    }
+  }, [el, activePanel])
 
   return (
     <div className="flex flex-col overflow-y-auto flex-1">
@@ -82,12 +94,17 @@ export default function ShapePanel() {
 
       {/* Shape picker */}
       <div className="px-3 py-2 border-b border-editor-border">
-        <span className="label block mb-1.5">Add Shape</span>
+        <span className="label block mb-1.5">Shape Style</span>
         <div className="grid grid-cols-4 gap-1">
           {SHAPES.map(s => (
             <button
               key={s.type}
-              onClick={() => setActiveTool(`shape-${s.type}` as ActiveTool)}
+              onClick={() => {
+                // Only set tool if we're in shapes panel (user explicitly clicked a shape)
+                if (activePanel === 'shapes') {
+                  setActiveTool(`shape-${s.type}` as ActiveTool)
+                }
+              }}
               title={s.label}
               className={cn(
                 'flex items-center justify-center w-full h-8 rounded border transition-colors',
@@ -104,7 +121,7 @@ export default function ShapePanel() {
 
       {!el && (
         <p className="text-sm text-[#f2f2f2] px-3 py-3">
-          Click a shape above, then click the canvas to place it.
+          Click a shape style above to select it, then click on canvas to add.
         </p>
       )}
 

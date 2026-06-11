@@ -55,11 +55,41 @@ export default function EditorCanvas() {
     playhead, isPlaying, activeTool, activePanel, pendingChartType,
     cropElementId, setCropElement,
     addElement, selectElement, deselectAll,
-    removeElement, updateElement, updateScene, setActiveTool, openCodeModal,
+    removeElement, updateElement, updateScene, setActiveTool, setActivePanel, openCodeModal,
     undo, redo, duplicateElement
   } = useEditorStore()
 
   const currentScene = project?.scenes.find(s => s.id === currentSceneId) ?? null
+
+  // ── Auto-select sidebar panel based on selected element ──────────────────────
+  useEffect(() => {
+    if (selectedIds.length === 0) return
+    
+    const scene = project?.scenes.find(s => s.id === currentSceneId)
+    if (!scene) return
+    
+    const firstSelected = scene.elements.find(e => e.id === selectedIds[0])
+    if (!firstSelected) return
+    
+    const ELEMENT_PANEL: Record<string, string> = {
+      text:  'text',
+      shape: 'shapes',
+      arrow: 'arrows',
+      code:  'code',
+      table: 'table',
+      chart: 'charts',
+      image: 'upload',
+      video: 'video',
+      icon:  'icons',
+      audio: 'audio',
+      latex: 'latex',
+    }
+    
+    const homePanel = ELEMENT_PANEL[firstSelected.type]
+    if (homePanel && activePanel !== homePanel) {
+      setActivePanel(homePanel)
+    }
+  }, [selectedIds, project, currentSceneId, activePanel])
 
   // ── Register stage in module registry (never stored in Zustand/Immer) ─────────
   useEffect(() => {

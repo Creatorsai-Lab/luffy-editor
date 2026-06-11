@@ -15,7 +15,7 @@ module.exports = {
           muted:        '#737373',
           secondary:    '#a3a3a3',
           text:         '#e5e5e5',
-          accent:       '#7e33ff',
+          accent:       '#6a32c9',
           'accent-hover': '#6028c0',
           'accent-dim': '#9563f126',
           success:      '#22c55e',
