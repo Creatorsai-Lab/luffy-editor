@@ -67,19 +67,19 @@ export default function Header() {
       {/* Left: logo + project switcher */}
       <div className="nodrag flex items-center gap-2" ref={panelRef}>
         <img src={luffyLogo} alt="Luffy" className="w-7 h-7 rounded-sm flex-none object-cover" />
-        <span className="text-xs font-semibold text-white tracking-wide">Luffy Editor</span>
+        <span className="text-xs font-semibold text-white tracking-wide">Luffy Create</span>
 
         {/* Project button */}
         <button
           onClick={() => setPanelOpen(v => !v)}
           className={cn(
-            'flex items-center gap-1.5 text-xs px-2 py-0.5 rounded transition-colors max-w-[180px]',
+            'flex items-center gap-1.5 text-[13px] px-3 py-0.5 border-b max-w-[180px]',
             panelOpen
               ? 'bg-editor-accent-dim text-editor-accent'
-              : 'text-editor-secondary hover:text-editor-text hover:bg-editor-hover'
+              : 'text-editor-secondary hover:text-editor-text rounded hover:bg-editor-hover border-gray-500'
           )}
         >
-          <FolderOpen size={11} className="flex-none" />
+          <FolderOpen size={12} className="flex-none" />
           <span className="truncate">{project?.name ?? 'No project'}</span>
           {isDirty && <span className="text-editor-accent">•</span>}
         </button>

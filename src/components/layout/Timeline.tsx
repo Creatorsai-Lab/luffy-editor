@@ -541,7 +541,7 @@ export default function Timeline() {
       </div>
 
       {/* Controls row - Increased gap-2 to gap-4, and py-1.5 to py-2.5 */}
-      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-editor-border flex-none min-w-0 overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-1.5 border-b border-editor-border flex-none min-w-0 overflow-hidden">
         <Tooltip text="Stop (Home)">
           <button onClick={stop} className="text-editor-text hover:text-editor-text transition-colors flex-none">
             <SkipBack size={12} />

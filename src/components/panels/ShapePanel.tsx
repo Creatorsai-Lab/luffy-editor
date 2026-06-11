@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, MessageCircle, MessageSquare, Cone, Box, Plus, Trash2, Heart, SquareDashedBottom } from 'lucide-react'
+import { Shapes, Square, Circle, Triangle, Star, Pentagon, Hexagon, Octagon, Diamond, MessageCircle, MessageSquare, Cone, Box, Plus, Trash2, Heart, SquareDashedBottom } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import type { ShapeElement, ShapeType, ActiveTool, AnimationType, EasingType, SlideDir, ElementAnimation } from '../../types/editor'
 import { PanelHeader, Row, ColorInput, Slider, NumberInput } from './TextPanel'
@@ -90,17 +90,15 @@ export default function ShapePanel() {
 
   return (
     <div className="flex flex-col overflow-y-auto flex-1">
-      <PanelHeader icon={<Square size={12} />} title="Shape" />
+      <PanelHeader icon={<Shapes size={14} />} title="Shape" />
 
       {/* Shape picker */}
       <div className="px-3 py-2 border-b border-editor-border">
-        <span className="label block mb-1.5">Shape Style</span>
         <div className="grid grid-cols-4 gap-1">
           {SHAPES.map(s => (
             <button
               key={s.type}
               onClick={() => {
-                // Only set tool if we're in shapes panel (user explicitly clicked a shape)
                 if (activePanel === 'shapes') {
                   setActiveTool(`shape-${s.type}` as ActiveTool)
                 }
