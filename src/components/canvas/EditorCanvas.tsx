@@ -7,7 +7,7 @@ import { getAnimatedProps } from '../../engine/animator'
 import { drawBackground } from '../../engine/backgroundRenderer'
 import { registerStage } from '../../engine/stageRegistry'
 import { videoRegistry } from '../../engine/videoRegistry'
-import { makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo } from '../../utils/defaults'
+import { makeShape, makeArrow, makeCode, makeTable, makeChart, makeVideo, makeCounter } from '../../utils/defaults'
 import type { Background, ImageBg, ImageElement, VideoElement, ShapeType, EditorElement } from '../../types/editor'
 import { toFileUrl } from '../../utils/pathUtils'
 import CanvasElement from './CanvasElement'
@@ -83,13 +83,14 @@ export default function EditorCanvas() {
       icon:  'icons',
       audio: 'audio',
       latex: 'latex',
+      counter: 'counter',
     }
     
     const homePanel = ELEMENT_PANEL[firstSelected.type]
     if (homePanel && activePanel !== homePanel) {
       setActivePanel(homePanel)
     }
-  }, [selectedIds, project, currentSceneId, activePanel])
+  }, [selectedIds, project, currentSceneId, activePanel, setActivePanel])
 
   // ── Register stage in module registry (never stored in Zustand/Immer) ─────────
   useEffect(() => {
@@ -473,6 +474,9 @@ export default function EditorCanvas() {
         setActiveTool('select')
         break
       }
+      case 'counter':
+        // Don't add counter on canvas click - user configures in panel first
+        break
     }
   }
 

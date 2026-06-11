@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Minus, Square, X, FolderOpen, Plus, Trash2, Check } from 'lucide-react'
+import { Minus, Square, ChevronDown, X, BriefcaseBusiness, Plus, Trash2, Check } from 'lucide-react'
 import luffyLogo from '/images/luffy_create_logo.webp'
 import { useEditorStore } from '../../store/editorStore'
 import { makeProject } from '../../utils/defaults'
@@ -79,9 +79,10 @@ export default function Header() {
               : 'text-editor-secondary hover:text-editor-text rounded hover:bg-editor-hover border-gray-500'
           )}
         >
-          <FolderOpen size={12} className="flex-none" />
+          <BriefcaseBusiness size={12} className="flex-none" />
           <span className="truncate">{project?.name ?? 'No project'}</span>
           {isDirty && <span className="text-editor-accent">•</span>}
+          <ChevronDown size={11} className="flex-none" />
         </button>
 
         {/* Projects dropdown panel */}

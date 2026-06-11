@@ -1,6 +1,6 @@
 // ─── Element subtypes ────────────────────────────────────────────────────────
 
-export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table' | 'chart' | 'video' | 'audio' | 'icon' | 'latex'
+export type ElementType   = 'text' | 'shape' | 'arrow' | 'code' | 'image' | 'table' | 'chart' | 'video' | 'audio' | 'icon' | 'latex' | 'counter'
 export type ShapeType     = 'rect' | 'circle' | 'triangle' | 'star' | 'pentagon' | 'hexagon' | 'octagon' | 'diamond' | 'oval' | 'speechBubble' | 'roundedSpeech' | 'cone' | 'cube' | 'rect-hand' | 'circle-hand' | 'square-hand' | 'heart' | 'rect-sketch'
 export type AnimationType = 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'wipeIn' | 'wipeOut' | 'typewriter' | 'drawPath' | 'spin' | 'pulse' | 'bounceLoop' | 'rotateLoop' |
   // Text-specific animations
@@ -19,8 +19,8 @@ export type SlideDir      = 'left' | 'right' | 'up' | 'down'
 export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'wipe' | 'push' | 'morph'
 export type BgType        = 'solid' | 'gradient' | 'grid' | 'dots' | 'animated' | 'transparent'
 export type FontWeight    = 'normal' | 'medium' | 'semibold' | 'bold'
-export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'shape-pentagon' | 'shape-hexagon' | 'shape-octagon' | 'shape-diamond' | 'shape-oval' | 'shape-speechBubble' | 'shape-roundedSpeech' | 'shape-cone' | 'shape-cube' | 'shape-rect-hand' | 'shape-circle-hand' | 'shape-square-hand' | 'shape-heart' | 'shape-rect-sketch' | 'arrow' | 'code' | 'table' | 'image' | 'chart' | 'video' | 'latex'
-export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'video' | 'icons' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | 'perspective' | 'latex' | null
+export type ActiveTool    = 'select' | 'text' | 'shape-rect' | 'shape-circle' | 'shape-triangle' | 'shape-star' | 'shape-pentagon' | 'shape-hexagon' | 'shape-octagon' | 'shape-diamond' | 'shape-oval' | 'shape-speechBubble' | 'shape-roundedSpeech' | 'shape-cone' | 'shape-cube' | 'shape-rect-hand' | 'shape-circle-hand' | 'shape-square-hand' | 'shape-heart' | 'shape-rect-sketch' | 'arrow' | 'code' | 'table' | 'image' | 'chart' | 'video' | 'latex' | 'counter'
+export type ActivePanel   = 'text' | 'shapes' | 'arrows' | 'code' | 'table' | 'upload' | 'audio' | 'video' | 'icons' | 'textAnimations' | 'shapeAnimations' | 'arrowAnimations' | 'textEffects' | 'background' | 'layers' | 'transitions' | 'charts' | 'perspective' | 'latex' | 'counter' | null
 
 // ─── Animation ───────────────────────────────────────────────────────────────
 
@@ -239,6 +239,34 @@ export interface LatexElement extends BaseElement {
   fontFamily?: string // applied to \text{} runs where possible
 }
 
+export interface CounterElement extends BaseElement {
+  type: 'counter'
+  mode: 'number' | 'english' | 'hindi'
+  start: number | string
+  end: number | string
+  speedMs: number
+  fontSize: number
+  fontFamily: string
+  fontWeight: FontWeight
+  italic: boolean
+  color: string
+  lineHeight: number
+  shadowColor: string
+  shadowBlur: number
+  shadowOffsetX: number
+  shadowOffsetY: number
+  bgEnabled?: boolean
+  bgColor?: string
+  bgOpacity?: number
+  bgPadX?: number
+  bgPadY?: number
+  bgRadius?: number
+  bgShadowColor?: string
+  bgShadowBlur?: number
+  bgShadowOffsetX?: number
+  bgShadowOffsetY?: number
+}
+
 export interface AudioMarker {
   id: string
   offset: number  // seconds from clip start (audio.x)
@@ -260,7 +288,7 @@ export interface AudioElement extends BaseElement {
   lane?: number      // explicit vertical lane in the timeline (manual override)
 }
 
-export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElement | ImageElement | TableElement | ChartElement | VideoElement | AudioElement | IconElement | LatexElement
+export type EditorElement = TextElement | ShapeElement | ArrowElement | CodeElement | ImageElement | TableElement | ChartElement | VideoElement | AudioElement | IconElement | LatexElement | CounterElement
 
 // ─── Background ───────────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid'
 import type {
   Project, Scene, Background, TextElement, ShapeElement,
   ArrowElement, CodeElement, ImageElement, TableElement, ChartElement, VideoElement, AudioElement,
-  IconElement, LatexElement, ElementAnimation, SceneTransition, ShapeType
+  IconElement, LatexElement, CounterElement, ElementAnimation, SceneTransition, ShapeType
 } from '../types/editor'
 
 export const DEFAULT_BG: Background = { type: 'solid', color: '#fffaf7' }
@@ -217,5 +217,28 @@ export function makeAudio(src: string, assetId: string, duration: number): Audio
     duration,
     loop: false,
     track: 'background'
+  }
+}
+
+export function makeCounter(x: number, y: number): CounterElement {
+  return {
+    id: uuid(), type: 'counter', name: 'Counter',
+    x, y, width: 300, height: 100,
+    rotation: 0, opacity: 1, zIndex: 0, locked: false, visible: true,
+    animations: [],
+    mode: 'number',
+    start: 1,
+    end: 50,
+    speedMs: 100,
+    fontSize: 60,
+    fontFamily: 'Inter',
+    fontWeight: 'bold',
+    italic: false,
+    color: '#333333',
+    lineHeight: 1.2,
+    shadowBlur: 0,
+    shadowColor: 'transparent',
+    shadowOffsetX: 0,
+    shadowOffsetY: 0,
   }
 }

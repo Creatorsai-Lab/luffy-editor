@@ -35,6 +35,8 @@ export interface AnimatedProps {
   wipeProgress: number
   wipeDir: SlideDir | undefined
   chartAnimProgress: number
+  counterValue: number
+  counterText: string
 }
 
 export function getAnimatedProps(el: EditorElement, localTime: number): AnimatedProps {
