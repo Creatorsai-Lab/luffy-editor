@@ -47,95 +47,88 @@ export default function CounterPanel() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <PanelHeader icon={<Hash size={12} />} title="Counter" />
-
-      {/* Add counter configuration section */}
-      <div className="px-3 py-2 border-b border-editor-border flex flex-col gap-2">
-        <Row label="Mode">
-          <select
-            value={counterConfig.mode}
-            onChange={e => setCounterConfig({ ...counterConfig, mode: e.target.value as CounterMode })}
-            className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
-          >
-            <option value="number">Numbers (1, 2, 3...)</option>
-            <option value="english">Letters (A, B, C...)</option>
-            <option value="hindi">Hindi (अ, आ, इ...)</option>
-          </select>
-        </Row>
-
-        <Row label="Range">
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <span className="text-[10px] text-editor-secondary block mb-1">Start</span>
-              {counterConfig.mode === 'number' ? (
-                <input
-                  type="number"
-                  value={counterConfig.start}
-                  onChange={e => setCounterConfig({ ...counterConfig, start: Number(e.target.value) })}
-                  className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={counterConfig.start}
-                  onChange={e => setCounterConfig({ ...counterConfig, start: e.target.value })}
-                  className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
-                  placeholder={counterConfig.mode === 'english' ? 'A' : 'अ'}
-                  maxLength={1}
-                />
-              )}
-            </div>
-            <div className="flex-1">
-              <span className="text-[10px] text-editor-secondary block mb-1">End</span>
-              {counterConfig.mode === 'number' ? (
-                <input
-                  type="number"
-                  value={counterConfig.end}
-                  onChange={e => setCounterConfig({ ...counterConfig, end: Number(e.target.value) })}
-                  className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={counterConfig.end}
-                  onChange={e => setCounterConfig({ ...counterConfig, end: e.target.value })}
-                  className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
-                  placeholder={counterConfig.mode === 'english' ? 'Z' : 'ह'}
-                  maxLength={1}
-                />
-              )}
-            </div>
-          </div>
-        </Row>
-
-        <Row label="Speed (ms per change)">
-          <Slider 
-            value={counterConfig.speedMs} 
-            min={1} 
-            max={5000} 
-            step={1}
-            onChange={v => setCounterConfig({ ...counterConfig, speedMs: v })} 
-            display={`${counterConfig.speedMs}ms`} 
-          />
-        </Row>
-
+      <div className="px-3 py-2 flex flex-col gap-2">
         <button
           disabled={!project}
           onClick={handleAddCounter}
-          className="w-full text-xs py-2 text-[#f2f2f2] bg-editor-accent rounded hover:bg-editor-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+          className="w-full text-xs py-2 text-editor-text bg-editor-accent rounded hover:bg-editor-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           + Add Counter
         </button>
       </div>
-
       <div className="flex-1 overflow-y-auto">
-        {!el && (
-          <p className="text-xs text-[#c1c1c1] px-3 py-4 text-center">
-            Configure settings above, then click "Add Counter" to create one on the canvas.
-          </p>
-        )}
-
         {el && (
           <>
+            {/* Counter-specific properties */}
+            <div className="border-b border-editor-border px-3 py-2 flex flex-col gap-0.5">
+              <Row label="Mode">
+                <select
+                  value={el.mode}
+                  onChange={e => upd({ mode: e.target.value as CounterMode })}
+                  className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+                >
+                  <option value="number">Numbers (1, 2, 3...)</option>
+                  <option value="english">Letters (A, B, C...)</option>
+                  <option value="hindi">Hindi (क, ख, ग...)</option>
+                </select>
+              </Row>
+
+              <Row label="Range">
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <span className="text-[10px] text-editor-secondary block mb-1">Start</span>
+                    {el.mode === 'number' ? (
+                      <input
+                        type="number"
+                        value={el.start}
+                        onChange={e => upd({ start: Number(e.target.value) })}
+                        className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={String(el.start)}
+                        onChange={e => upd({ start: e.target.value })}
+                        className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+                        placeholder={el.mode === 'english' ? 'A' : 'क'}
+                        maxLength={1}
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-[10px] text-editor-secondary block mb-1">End</span>
+                    {el.mode === 'number' ? (
+                      <input
+                        type="number"
+                        value={el.end}
+                        onChange={e => upd({ end: Number(e.target.value) })}
+                        className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={String(el.end)}
+                        onChange={e => upd({ end: e.target.value })}
+                        className="w-full bg-editor-elevated border border-editor-border rounded text-xs text-editor-text px-2 py-1"
+                        placeholder={el.mode === 'english' ? 'Z' : 'ज्ञ'}
+                        maxLength={1}
+                      />
+                    )}
+                  </div>
+                </div>
+              </Row>
+
+              <Row label="Speed (seconds per change)">
+              <Slider
+                value={el.speedMs / 1000}
+                min={0.05}
+                max={5}
+                step={0.05}
+                onChange={v => upd({ speedMs: Math.round(v * 1000) })}
+                display={`${(el.speedMs / 1000).toFixed(2)}s`}
+              />
+              </Row>
+            </div>
+
             {/* Text properties */}
             <div className="flex flex-col gap-0.5 px-3 py-2">
               <Row label="Font">
@@ -147,7 +140,7 @@ export default function CounterPanel() {
                   {FONT_FAMILIES.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
               </Row>
-
+              <div className='flex justify-between'>
               <Row label="Size">
                 <NumberInput value={el.fontSize} min={8} max={400} onChange={v => upd({ fontSize: v })} />
               </Row>
@@ -162,13 +155,14 @@ export default function CounterPanel() {
                 </select>
               </Row>
 
-              <Row label="Style">
+              <Row label="Italic">
                 <div className="flex gap-1">
                   <ToggleBtn active={el.italic} onClick={() => upd({ italic: !el.italic })}>
                     <Italic size={11} />
                   </ToggleBtn>
                 </div>
               </Row>
+              </div>
 
               <Row label="Color">
                 <ColorInput value={el.color} onChange={v => upd({ color: v })} />
@@ -183,7 +177,6 @@ export default function CounterPanel() {
                 <Slider value={el.opacity} min={0} max={1} step={0.01}
                   onChange={v => upd({ opacity: v })} display={`${Math.round(el.opacity * 100)}%`} />
               </Row>
-
               <Row label="Shadow Color">
                 <ColorInput value={el.shadowColor || '#000000'} onChange={v => upd({ shadowColor: v })} />
               </Row>
@@ -210,7 +203,7 @@ export default function CounterPanel() {
             {/* Background */}
             <div className="border-t border-editor-border px-3 py-2 flex flex-col gap-0.5">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-ms font-medium text-editor-text">Counter Background</span>
+                <span className="text-ms font-medium text-editor-text">Counter Text Background</span>
                 <button
                   onClick={() => upd({ bgEnabled: !el.bgEnabled })}
                   className={cn(
